@@ -39,8 +39,9 @@ size_t TRAINING_DATA_SIZE;
 size_t TEST_DATA_SIZE;
 string SECURITY_TYPE;
 
-extern void print_linear(myType var, string type);
-extern void funcReconstruct(const RSSVectorMyType &a, vector<myType> &b, size_t size, string str, bool print);
+// extern void print_linear(myType var, string type);
+template<typename T, typename U>
+extern void funcReconstruct(const T &a, vector<U> &b, size_t size, string str, bool print);
 
 /******************* Main train and test functions *******************/
 void parseInputs(int argc, char* argv[])
@@ -75,7 +76,8 @@ void train(NeuralNetwork* net)
 }
 
 
-extern void print_vector(RSSVectorMyType &var, string type, string pre_text, int print_nos);
+extern void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
+extern void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos);
 extern string which_network(string network);
 void test(bool PRELOADING, string network, NeuralNetwork* net)
 {

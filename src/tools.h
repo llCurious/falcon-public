@@ -21,6 +21,7 @@
 #include "AESObject.h"
 #include "connect.h"
 #include "globals.h"
+#include <bitset>
 
 extern int partyNum;
 
@@ -161,22 +162,217 @@ void log_print(string str);
 void error(string str);
 string which_network(string network);
 
-void print_myType(myType var, string message, string type);
-void print_linear(myType var, string type);
-void print_vector(RSSVectorMyType &var, string type, string pre_text, int print_nos);
+template<typename T>
+void print_myType(T var, string message, string type)
+{
+	if(std::is_same<T, RSSVectorHighType>::value)
+	{
+		if (type == "BITS")
+			cout << message << ": " << bitset<BIT_SIZE>(var) << endl;
+		else if (type == "FLOAT")
+			cout << message << ": " << (static_cast<int64_t>(var))/(float)(1 << FLOAT_PRECISION) << endl;
+		else if (type == "SIGNED")
+			cout << message << ": " << static_cast<int64_t>(var) << endl;
+		else if (type == "UNSIGNED")
+			cout << message << ": " << var << endl;
+	}
+	if (std::is_same<T, RSSVectorLowType>::value)
+	{
+		if (type == "BITS")
+			cout << message << ": " << bitset<BIT_SIZE>(var) << endl;
+		else if (type == "FLOAT")
+			cout << message << ": " << (static_cast<int32_t>(var))/(float)(1 << FLOAT_PRECISION) << endl;
+		else if (type == "SIGNED")
+			cout << message << ": " << static_cast<int32_t>(var) << endl;
+		else if (type == "UNSIGNED")
+			cout << message << ": " << var << endl;
+	}
+}
+
+template<typename T>
+void print_linear(T var, string type);
+template<typename T>
+void print_linear(T var, string type)
+{
+	if (std::is_same<T, highBit>::value)
+	{
+		if (type == "BITS")
+			cout << bitset<BIT_SIZE>(var) << " ";
+		else if (type == "FLOAT")
+			cout << (static_cast<int64_t>(var))/(float)(1 << FLOAT_PRECISION) << " ";
+		else if (type == "SIGNED")
+			cout << static_cast<int64_t>(var) << " ";
+		else if (type == "UNSIGNED")
+			cout << var << " ";	
+	}
+	if (std::is_same<T, lowBit>::value)
+	{
+		if (type == "BITS")
+			cout << bitset<BIT_SIZE>(var) << " ";
+		else if (type == "FLOAT")
+			cout << (static_cast<int32_t>(var))/(float)(1 << FLOAT_PRECISION) << " ";
+		else if (type == "SIGNED")
+			cout << static_cast<int32_t>(var) << " ";
+		else if (type == "UNSIGNED")
+			cout << var << " ";	
+	}
+}
+// move to Functionalities.h
+// extern template void funcReconstruct<RSSVectorHighType, highBit>(const RSSVectorHighType &a, vector<highBit> &b, size_t size, string str, bool print);
+// extern template void funcReconstruct<RSSVectorLowType, lowBit>(const RSSVectorLowType &a, vector<lowBit> &b, size_t size, string str, bool print);
+
+// template<typename T>
+// void print_vector(T &var, string type, string pre_text, int print_nos) {
+// 	size_t temp_size = var.size();
+// 	// FIXME
+// 	typedef typename std::conditional<std::is_same<T, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+// 	vector<computeType> b(temp_size);
+// 	funcReconstruct(var, b, temp_size, "anything", false);
+// 	cout << pre_text << endl;
+// 	for (int i = 0; i < print_nos; ++i){
+// 		print_linear(b[i], type);
+// 		// if (i % 10 == 9)
+// 			// std::cout << std::endl;
+// 	}
+// 	cout << endl;
+// }
+
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
-void matrixMultRSS(const RSSVectorMyType &a, const RSSVectorMyType &b, vector<myType> &temp3, 
+template<typename Vec, typename T>
+void matrixMultRSS(const Vec &a, const Vec &b, vector<T> &temp3, 
 					size_t rows, size_t common_dim, size_t columns,
 				 	size_t transpose_a, size_t transpose_b);
+template<typename Vec, typename T>
+void matrixMultRSS(const Vec &a, const Vec &b, vector<T> &temp3, 
+					size_t rows, size_t common_dim, size_t columns,
+				 	size_t transpose_a, size_t transpose_b)
+{
+#if (!USING_EIGEN)
+/********************************* Triple For Loop *********************************/
+	Vec triple_a(rows*common_dim), triple_b(common_dim*columns);
 
-myType dividePlain(myType a, int b);
-void dividePlain(vector<myType> &vec, int divisor);
+    for (size_t i = 0; i < rows; ++i)
+    {
+        for (size_t j = 0; j < common_dim; ++j)
+        {
+            if (transpose_a)
+                triple_a[i*common_dim + j] = a[j*rows + i];
+            else
+                triple_a[i*common_dim + j] = a[i*common_dim + j];
+        }
+    }
+ 
+    for (size_t i = 0; i < common_dim; ++i)
+    {
+        for (size_t j = 0; j < columns; ++j)
+        {
+            if (transpose_b)
+                triple_b[i*columns + j] = b[j*common_dim + i];  
+            else
+                triple_b[i*columns + j] = b[i*columns + j]; 
+        }
+    }
+ 
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < columns; ++j)
+        {
+            temp3[i*columns + j] = 0;
+            for (int k = 0; k < common_dim; ++k)
+            {
+                temp3[i*columns + j] += triple_a[i*common_dim + k].first * triple_b[k*columns + j].first +
+                                        triple_a[i*common_dim + k].first * triple_b[k*columns + j].second +
+                                        triple_a[i*common_dim + k].second * triple_b[k*columns + j].first;
+            }
+        }
+    }
+/********************************* Triple For Loop *********************************/	
+#endif
+#if (USING_EIGEN)
+/********************************* WITH EIGEN Mat-Mul *********************************/
+	eigenMatrix eigen_a(rows, common_dim), eigen_b(common_dim, columns), eigen_c(rows, columns);
+
+	for (size_t i = 0; i < rows; ++i)
+	{
+		for (size_t j = 0; j < common_dim; ++j)
+		{
+			if (transpose_a)
+			{
+				eigen_a.m_share[0](i, j) = a[j*rows + i].first;
+				eigen_a.m_share[1](i, j) = a[j*rows + i].second;
+			}
+			else
+			{
+				eigen_a.m_share[0](i, j) = a[i*common_dim + j].first;
+				eigen_a.m_share[1](i, j) = a[i*common_dim + j].second;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < common_dim; ++i)
+	{
+		for (size_t j = 0; j < columns; ++j)
+		{
+			if (transpose_b)
+			{
+				eigen_b.m_share[0](i, j) = b[j*common_dim + i].first;	
+				eigen_b.m_share[1](i, j) = b[j*common_dim + i].second;	
+			}
+			else
+			{
+				eigen_b.m_share[0](i, j) = b[i*columns + j].first;	
+				eigen_b.m_share[1](i, j) = b[i*columns + j].second;	
+			}
+		}
+	}
+
+	eigen_c = eigen_a * eigen_b;
+
+	for (size_t i = 0; i < rows; ++i)
+		for (size_t j = 0; j < columns; ++j)
+				temp3[i*columns + j] = eigen_c.m_share[0](i,j);
+/********************************* WITH EIGEN Mat-Mul *********************************/
+#endif
+}
+
+template<typename T>
+T dividePlain(T a, int b);
+template<typename T>
+T dividePlain(T a, int b)
+{
+	assert((b != 0) && "Cannot divide by 0");
+	
+	if (std::is_same<T, lowBit>::value)
+		return static_cast<myType>(static_cast<int32_t>(a)/static_cast<int32_t>(b));
+	if (std::is_same<T, highBit>::value)
+		return static_cast<myType>(static_cast<int64_t>(a)/static_cast<int64_t>(b));
+}
+
+template<typename T>
+void dividePlain(vector<T> &vec, int divisor);
+template<typename T>
+void dividePlain(vector<T> &vec, int divisor)
+{
+	assert((divisor != 0) && "Cannot divide by 0");
+	
+	if (std::is_same<T, lowBit>::value)
+		for (int i = 0; i < vec.size(); ++i)
+			vec[i] = (T)((double)((int32_t)vec[i])/(double)((int32_t)divisor)); 
+
+	if (std::is_same<T, highBit>::value)
+		for (int i = 0; i < vec.size(); ++i)
+			vec[i] = (T)((double)((int64_t)vec[i])/(double)((int64_t)divisor)); 
+}
+
 
 size_t nextParty(size_t party);
 size_t prevParty(size_t party);
 
 
-inline smallType getMSB(myType a)
+inline smallType getMSB(lowBit a)
+{return ((smallType)((a >> (BIT_SIZE - 1)) & 1));}
+
+inline smallType getMSB(highBit a)
 {return ((smallType)((a >> (BIT_SIZE - 1)) & 1));}
 
 inline RSSSmallType addModPrime(RSSSmallType a, RSSSmallType b)
@@ -227,27 +423,74 @@ inline RSSSmallType XORPublicModPrime(RSSSmallType a, bool r)
 }
 
 
-inline smallType wrapAround(myType a, myType b)
+inline smallType wrapAround(lowBit a, lowBit b)
 {return (a > MINUS_ONE - b);}
 
-inline smallType wrap3(myType a, myType b, myType c)
+inline smallType wrapAround(highBit a, highBit b)
+{return (a > MINUS_ONE - b);}
+
+inline smallType wrap3(lowBit a, lowBit b, lowBit c)
 {
-	myType temp = a+b;
+	lowBit temp = a+b;
 	if (wrapAround(a,b))
 		return 1 - wrapAround(temp, c);
 	else 
 		return wrapAround(temp, c);
 }
 
-void wrapAround(const vector<myType> &a, const vector<myType> &b, 
-				vector<smallType> &c, size_t size);
-void wrap3(const RSSVectorMyType &a, const vector<myType> &b, 
-				vector<smallType> &c, size_t size);
+inline smallType wrap3(highBit a, highBit b, highBit c)
+{
+	highBit temp = a+b;
+	if (wrapAround(a,b))
+		return 1 - wrapAround(temp, c);
+	else 
+		return wrapAround(temp, c);
+}
 
-void multiplyByScalar(const RSSVectorMyType &a, size_t scalar, RSSVectorMyType &b);
+template<typename T>
+void wrapAround(const vector<T> &a, const vector<T> &b, 
+				vector<smallType> &c, size_t size)
+{
+	for (size_t i = 0; i < size; ++i)
+		c[i] = wrapAround(a[i], b[i]);
+}
+
+template<typename VEC, typename T>
+void wrap3(const VEC &a, const vector<T> &b, 
+				vector<smallType> &c, size_t size)
+{
+	for (size_t i = 0; i < size; ++i)
+		c[i] = wrap3(a[i].first, a[i].second, b[i]);
+}
+
+template<typename VEC>
+void multiplyByScalar(const VEC &a, size_t scalar, VEC &b)
+{
+	size_t size = a.size();
+	for (int i = 0; i < size; ++i)
+	{
+		b[i].first  = a[i].first * scalar;
+		b[i].second  = a[i].second * scalar;
+	}
+}
 // void transposeVector(const RSSVectorMyType &a, RSSVectorMyType &b, size_t rows, size_t columns);
-void zeroPad(const RSSVectorMyType &a, RSSVectorMyType &b, 
-			size_t iw, size_t ih, size_t f, size_t Din, size_t B);
+template<typename VEC>
+void zeroPad(const VEC &a, VEC &b, 
+			size_t iw, size_t ih, size_t P, size_t Din, size_t B)
+{
+	size_t size_B 	= (iw+2*P)*(ih+2*P)*Din;
+	size_t size_Din = (iw+2*P)*(ih+2*P);
+	size_t size_w 	= (iw+2*P);
+
+	for (size_t i = 0; i < B; ++i)
+		for (size_t j = 0; j < Din; ++j) 
+			for (size_t k = 0; k < ih; ++k)
+				for (size_t l = 0; l < iw; ++l)
+				{
+					b[i*size_B + j*size_Din + (k+P)*size_w + l + P]
+						= a[i*Din*iw*ih + j*iw*ih + k*iw + l];
+				}
+}
 // void convToMult(const RSSVectorMyType &vec1, RSSVectorMyType &vec2, 
 // 				size_t iw, size_t ih, size_t f, size_t Din, size_t S, size_t B);
 

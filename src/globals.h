@@ -15,6 +15,8 @@
 #define _aligned_free free
 #define getrandom(min, max) ((rand()%(int)(((max) + 1)-(min)))+ (min))
 #define floatToMyType(a) ((myType)(a * (1 << FLOAT_PRECISION)))
+#define floatToLowType(a) ((lowBit)(a * (1 << FLOAT_PRECISION)))
+#define floatToHighType(a) ((highBit)(a * (1 << FLOAT_PRECISION)))
 
 
 /********************* AES and other globals *********************/
@@ -59,9 +61,19 @@ typedef std::pair<smallType, smallType> RSSSmallType;
 typedef std::vector<RSSMyType> RSSVectorMyType;
 typedef std::vector<RSSSmallType> RSSVectorSmallType;
 
+/********************* Quantized Training Types *********************/
+typedef uint32_t lowBit;
+typedef uint64_t highBit;
+typedef std::pair<lowBit, lowBit> RSSLowType;
+typedef std::pair<highBit, highBit> RSSHighType;
+typedef std::vector<RSSLowType> RSSVectorLowType;
+typedef std::vector<RSSHighType> RSSVectorHighType;
+const int BIT_SIZE_HIGH = (sizeof(highBit) * CHAR_BIT);
+const int BIT_SIZE_LOW = (sizeof(lowBit) * CHAR_BIT);
+
 const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
-const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));
-const myType MINUS_ONE = (myType)-1;
-const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;
+const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
+const myType MINUS_ONE = (myType)-1;                            // wrap computation in tools.h
+const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES 
 
 #endif

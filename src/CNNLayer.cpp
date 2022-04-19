@@ -99,7 +99,7 @@ void CNNLayer::forward(const RSSVectorMyType& inputActivation)
 	//Perform the multiplication.
 	RSSVectorMyType temp3(Dout * (ow*oh*B));
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul, weights, temp2, temp3, Dout, (f*f*Din), (ow*oh*B), 0, 0, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, weights, temp2, temp3, Dout, (f*f*Din), (ow*oh*B), 0, 0, FLOAT_PRECISION) << endl;
 	else
 		funcMatMul(weights, temp2, temp3, Dout, (f*f*Din), (ow*oh*B), 0, 0, FLOAT_PRECISION);
 
@@ -186,7 +186,7 @@ void CNNLayer::computeDelta(RSSVectorMyType& prevDelta)
 	RSSVectorMyType temp3((Din) * (iw*ih*B), make_pair(0,0));
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul, temp2, temp1, temp3, Din, (f*f*Dout), (iw*ih*B), 0, 0, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, temp2, temp1, temp3, Din, (f*f*Dout), (iw*ih*B), 0, 0, FLOAT_PRECISION) << endl;
 	else
 		funcMatMul(temp2, temp1, temp3, Din, (f*f*Dout), (iw*ih*B), 0, 0, FLOAT_PRECISION);
 
@@ -290,7 +290,7 @@ void CNNLayer::updateEquations(const RSSVectorMyType& prevActivations)
 	//Compute product, truncate and subtract
 	RSSVectorMyType temp4((Dout) * (f*f*Din));
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul, temp2, temp3, temp4, (Dout), (ow*oh*B), (f*f*Din), 0, 1, FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, temp2, temp3, temp4, (Dout), (ow*oh*B), (f*f*Din), 0, 1, FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE) << endl;
 	else
 		funcMatMul(temp2, temp3, temp4, (Dout), (ow*oh*B), (f*f*Din), 0, 1, 
 					FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE);

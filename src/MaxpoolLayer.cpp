@@ -64,7 +64,7 @@ void MaxpoolLayer::forward(const RSSVectorMyType& inputActivation)
 
 	//Pooling operation
 	if (FUNCTION_TIME)
-		cout << "funcMaxpool: " << funcTime(funcMaxpool, temp1, activations, maxPrime, ow*oh*Din*B, f*f) << endl;
+		cout << "funcMaxpool: " << funcTime(funcMaxpool<RSSVectorMyType>, temp1, activations, maxPrime, ow*oh*Din*B, f*f) << endl;
 	else
 		funcMaxpool(temp1, activations, maxPrime, ow*oh*Din*B, f*f);
 	

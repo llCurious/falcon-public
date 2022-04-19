@@ -70,6 +70,7 @@ void NeuralNetwork::forward()
 
 	for (size_t i = 1; i < NUM_LAYERS; ++i)
 	{
+		cout << "Layer" << i << endl;
 		layers[i]->forward(*(layers[i-1]->getActivation()));
 		if (LARGE_NETWORK)
 			cout << "Forward \t" << layers[i]->layerNum << " completed..." << endl;

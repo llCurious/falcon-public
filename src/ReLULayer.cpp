@@ -29,7 +29,7 @@ void ReLULayer::forward(const RSSVectorMyType &inputActivation)
 	size_t size = rows*columns;
 
 	if (FUNCTION_TIME)
-		cout << "funcRELU: " << funcTime(funcRELU, inputActivation, reluPrime, activations, size) << endl;
+		cout << "funcRELU: " << funcTime(funcRELU<RSSVectorMyType>, inputActivation, reluPrime, activations, size) << endl;
 	else
 		funcRELU(inputActivation, reluPrime, activations, size);
 }
