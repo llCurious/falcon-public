@@ -14,9 +14,9 @@
 #define _aligned_malloc(size,alignment) aligned_alloc(alignment,size)
 #define _aligned_free free
 #define getrandom(min, max) ((rand()%(int)(((max) + 1)-(min)))+ (min))
-#define floatToMyType(a) ((myType)(a * (1 << FLOAT_PRECISION)))
-#define floatToLowType(a) ((lowBit)(a * (1 << FLOAT_PRECISION)))
-#define floatToHighType(a) ((highBit)(a * (1 << FLOAT_PRECISION)))
+#define floatToMyType(a) ((myType)(int)floor(a * (1 << FLOAT_PRECISION)))
+#define floatToLowType(a) ((lowBit)(int)floor(a * (1 << FLOAT_PRECISION)))
+#define floatToHighType(a) ((highBit)(int)floor(a * (1 << FLOAT_PRECISION)))
 
 
 /********************* AES and other globals *********************/
