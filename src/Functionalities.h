@@ -1241,7 +1241,6 @@ void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 	if (SECURITY_TYPE.compare("Malicious") == 0)
 		funcCheckMaliciousMatMul(a, b, c, temp3, rows, common_dim, columns, transpose_a, transpose_b);
 
-		cout << truncation << endl;
 	dividePlain(diffReconst, (1 << truncation));
 
 	// for (int i = 0; i < 128; ++i)
