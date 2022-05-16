@@ -2,6 +2,6 @@
 
 make 
 
-./build ~/Downloads/mnist_train ~/Downloads/mnist_test
+./build ~/Downloads/mnist_train.csv ~/Downloads/mnist_test.csv
 
 make clean
