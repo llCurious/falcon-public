@@ -65,7 +65,15 @@ int main(int argc, char** argv)
 	runTest("Debug", "Maxpool", network);
 	runTest("Debug", "Mat-Mul", network);
 	runTest("Debug", "DotProd", network);
+
+	runTest("Debug", "Reduction", network);
 	// runTest("Test", "ReLUPrime1", network);
+
+	// runTest("Test", "BN", network);
+	// runTest("Test", "Division", network);
+	// runTest("Test", "Maxpool", network);
+	// runTest("Test", "Mat-Mul", network);
+	// runTest("Test", "DotProd", network);
 
 	// Run forward/backward for single layers
 	//  1. what {F, D, U}

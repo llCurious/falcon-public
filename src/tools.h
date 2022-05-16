@@ -134,6 +134,8 @@ __m128i square(__m128i x);
 
 __m128i inverse(__m128i x);
 
+
+
 string _sha256hash_(char *input, int length);
 
 string sha256hash(char *input, int length);

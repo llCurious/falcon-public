@@ -61,6 +61,17 @@ void runTest(string str, string whichTest, string &network)
 			network = "Debug Maxpool";
 			debugMaxpool();
 		}
+		else if (whichTest.compare("Reduction")==0)
+		{
+			network = "Reduction";
+			debugReduction();
+		}
+		else if (whichTest.compare("OneShare")==0)
+		{
+			network = "OneShare";
+			debugOneSS();
+		}
+		
 		else
 			assert(false && "Unknown debug mode selected");
 	}
@@ -140,6 +151,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Test Maxpool3";
 			testMaxpool(8, 8, 50, 4, 4, MINI_BATCH_SIZE, NUM_ITERATIONS);
+		}
+		else if (whichTest.compare("Reduction") == 0)
+		{
+			network = "reduction";
+			testReduction(4);
 		}
 		else
 			assert(false && "Unknown test mode selected");

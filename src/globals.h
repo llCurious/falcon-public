@@ -38,8 +38,8 @@
 #define USING_EIGEN false
 #define PRIME_NUMBER 67
 #define FLOAT_PRECISION 13
+#define FLOAT_BIAS (1 << FLOAT_PRECISION)
 #define PRECISE_DIVISION false
-
 
 /********************* Neural Network globals *********************/
 //Batch size has to be a power of two
@@ -70,6 +70,7 @@ typedef std::vector<RSSLowType> RSSVectorLowType;
 typedef std::vector<RSSHighType> RSSVectorHighType;
 const int BIT_SIZE_HIGH = (sizeof(highBit) * CHAR_BIT);
 const int BIT_SIZE_LOW = (sizeof(lowBit) * CHAR_BIT);
+const lowBit BIT_RANG_LOW = 4294967295;
 
 const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
 const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used

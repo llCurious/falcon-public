@@ -22,6 +22,8 @@ private:
 	uint8_t random8BitCounter = 0; 
 	__m128i random64BitNumber {0};
 	uint8_t random64BitCounter = 0;
+	__m128i random32BitNumber {0};
+	uint8_t random32BitCounter = 0;
 
 	//Private extraction functions
 	__m128i newRandomNumber();
@@ -35,6 +37,7 @@ public:
 	
 	//Randomness functions
 	myType get64Bits();
+	lowBit get32Bits();
 	smallType get8Bits();
 
 	//Other randomness functions
