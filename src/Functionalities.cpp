@@ -16,7 +16,7 @@ void funcTruncate(RSSVectorMyType &a, size_t power, size_t size)
 
 	RSSVectorMyType r(size), rPrime(size);
 	vector<myType> reconst(size);
-	PrecomputeObject.getDividedShares(r, rPrime, (1 << power), size);
+	PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -56,7 +56,7 @@ void funcTruncatePublic(RSSVectorMyType &a, size_t divisor, size_t size)
 
 	RSSVectorMyType r(size), rPrime(size);
 	vector<myType> reconst(size);
-	PrecomputeObject.getDividedShares(r, rPrime, divisor, size);
+	PrecomputeObject->getDividedShares(r, rPrime, divisor, size);
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -402,7 +402,7 @@ void funcCheckMaliciousDotProdBits(const RSSVectorSmallType &a, const RSSVectorS
 								   const vector<smallType> &temp, size_t size)
 {
 	RSSVectorSmallType x(size), y(size), z(size);
-	PrecomputeObject.getTriplets(x, y, z, size);
+	PrecomputeObject->getTriplets(x, y, z, size);
 
 	subtractVectors<RSSSmallType>(x, a, x, size);
 	subtractVectors<RSSSmallType>(y, b, y, size);
@@ -1132,7 +1132,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 	RSSVectorSmallType c(size), bXORc(size);
 	RSSVectorHighType m_c(size);
 	vector<smallType> reconst_b(size);
-	PrecomputeObject.getSelectorBitShares(c, m_c, size);
+	PrecomputeObject->getSelectorBitShares(c, m_c, size);
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1177,7 +1177,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 	RSSVectorSmallType c(size), bXORc(size);
 	RSSVectorLowType m_c(size);
 	vector<smallType> reconst_b(size);
-	PrecomputeObject.getSelectorBitShares(c, m_c, size);
+	PrecomputeObject->getSelectorBitShares(c, m_c, size);
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1506,7 +1506,7 @@ void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input)
 		}
 
 		vector<tuple<highBit, highBit, highBit>> w0_share(size);
-		funcOneGetShares(w0_share, w);
+		// funcOneGetShares(w0_share, w);
 		// funcOneGetShares
 	}
 }
@@ -1934,24 +1934,16 @@ void debugReduction()
 
 	cout << "Reconstruct" << endl;
 
+#if (!LOG_DEBUG)
 	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", true);
 	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", true);
+#endif
 
 	for (size_t i = 0; i < size; i++)
 	{
 		// cout << data_plain[i] << " " << result_plain[i] << endl;
 		assert((lowBit)(data_plain[i]) == (lowBit)(result_plain[i]));
 	}
-}
-
-void debugOneSS()
-{
-	size_t size = 5;
-
-	vector<highBit> a = {-5, 25, 0, 976, -916};
-
-	RSSVectorHighType test_result1(size);
-	RSSVectorLowType test_result2(size);
 }
 
 /******************************** Test ********************************/

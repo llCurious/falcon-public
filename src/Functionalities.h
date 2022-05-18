@@ -11,7 +11,7 @@ using namespace std;
 #include <thread>
 
 using namespace std;
-extern Precompute PrecomputeObject;
+extern Precompute *PrecomputeObject;
 extern string SECURITY_TYPE;
 
 extern void start_time();
@@ -56,21 +56,70 @@ void funcGetShares(Vec &a, const vector<T> &data)
 
 /**
  * @brief generate ss of data and send to other party
- * 
- * @tparam T 
- * @param data 
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param a secret share of plain data
+ * @param data plain data
+ * @param size
  */
-template <typename Vec,typename T>
-void funcOneShares(const vector<T> &data)
+template <typename Vec, typename T>
+void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 {
-	size_t size = a.size();
-	
+	assert(a.size() == size && "a.size mismatch for reconstruct function");
+
+	PrecomputeObject->getZeroShareSender<Vec, T>(a, size);
+	// PrecomputeObject->getZeroShareRand<Vec, T>(a, size, partyNum);
+	cout << "0 sender" << endl;
 	for (size_t i = 0; i < size; i++)
 	{
-		T temp = LoadSeedNew;
-		
+		cout << a[i].first << " " << a[i].second << endl;
 	}
 	
+
+	vector<T> a1_plus_data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		T temp = data[i] + a[i].first;
+		a[i].first = temp;
+		a1_plus_data[i] = temp;
+	}
+
+	// send a1+x to prevparty
+	thread sender(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size);
+	sender.join();
+}
+
+/**
+ * @brief receive share from shareParty
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param a
+ * @param size
+ * @param shareParty
+ */
+template <typename Vec, typename T>
+void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
+{
+	assert(a.size() == size && "a.size mismatch for reconstruct function");
+
+	if (partyNum == prevParty(shareParty))
+	{
+		vector<T> a3(size);
+		PrecomputeObject->getZeroSharePrev<T>(a3, size);
+		//PrecomputeObject->getZeroShareRand<vector<T>, T>(a3, size, shareParty);
+
+		vector<T> a1_plus_data(size);
+		thread receiver(receiveVector<T>, ref(a1_plus_data), shareParty, size); // receive a1+x
+		receiver.join();
+
+		Merge2Vec<Vec, T>(a, a1_plus_data, a3, size);
+	}
+	else
+	{
+		PrecomputeObject->getZeroShareReceiver<Vec, T>(a, size);
+	}
 }
 
 void funcGetShares(RSSVectorSmallType &a, const vector<smallType> &data);
@@ -221,7 +270,7 @@ void funcTruncate(VEC &a, size_t power, size_t size)
 
 	VEC r(size), rPrime(size);
 	vector<computeType> reconst(size);
-	PrecomputeObject.getDividedShares(r, rPrime, (1 << power), size);
+	PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -270,7 +319,7 @@ inline void funcCheckMaliciousDotProd(const RSSVectorSmallType &a, const RSSVect
 									  const vector<smallType> &temp, size_t size)
 {
 	RSSVectorSmallType x(size), y(size), z(size);
-	PrecomputeObject.getTriplets(x, y, z, size);
+	PrecomputeObject->getTriplets(x, y, z, size);
 
 	subtractVectors<RSSSmallType>(x, a, x, size);
 	subtractVectors<RSSSmallType>(y, b, y, size);
@@ -720,7 +769,7 @@ void funcWrap(const VEC &a, RSSVectorSmallType &theta, size_t size)
 	vector<smallType> delta(size), etaPrime(size);
 	vector<computeType> reconst_x(size);
 
-	PrecomputeObject.getShareConvertObjects(r, shares_r, alpha, size);
+	PrecomputeObject->getShareConvertObjects(r, shares_r, alpha, size);
 
 	addVectors<RSScomputeType>(a, r, x, size);
 	for (int i = 0; i < size; ++i)
@@ -751,7 +800,7 @@ void funcWrap(const VEC &a, RSSVectorSmallType &theta, size_t size)
 		reconst_x[i] = reconst_x[i] + x_prev[i];
 
 	wrap3(x, x_prev, delta, size); // All parties have delta
-	PrecomputeObject.getRandomBitShares(eta, size);
+	PrecomputeObject->getRandomBitShares(eta, size);
 
 	// cout << "PC: \t\t" << funcTime(funcPrivateCompare, shares_r, reconst_x, eta, etaPrime, size, bits_size) << endl;
 	funcPrivateCompare(shares_r, reconst_x, eta, etaPrime, size);
@@ -821,7 +870,7 @@ void funcRELU(const VEC &a, RSSVectorSmallType &temp, VEC &b, size_t size)
 
 	// cout << "ReLU': \t\t" << funcTime(funcRELUPrime, a, temp, size) << endl;
 	funcRELUPrime(a, temp, size);
-	PrecomputeObject.getSelectorBitShares(c, m_c, size);
+	PrecomputeObject->getSelectorBitShares(c, m_c, size);
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1048,7 +1097,7 @@ void funcCheckMaliciousDotProd(const VEC &a, const VEC &b, const VEC &c,
 		std::cout << "funcCheckMaliciousDotProd" << std::endl;
 	}
 	VEC x(size), y(size), z(size);
-	PrecomputeObject.getTriplets(x, y, z, size);
+	PrecomputeObject->getTriplets(x, y, z, size);
 
 	subtractVectors(x, a, x, size);
 	subtractVectors(y, b, y, size);
@@ -1099,7 +1148,7 @@ void funcCheckMaliciousMatMul(const Vec &a, const Vec &b, const Vec &c,
 							  size_t transpose_a, size_t transpose_b)
 {
 	Vec x(a.size()), y(b.size()), z(c.size());
-	PrecomputeObject.getTriplets(x, y, z, rows, common_dim, columns);
+	PrecomputeObject->getTriplets(x, y, z, rows, common_dim, columns);
 
 	subtractVectors(x, a, x, rows * common_dim);
 	subtractVectors(y, b, y, common_dim * columns);
@@ -1189,7 +1238,7 @@ void funcDotProduct(const T &a, const T &b,
 	{
 		vector<computeType> diffReconst(size, 0);
 		T r(size), rPrime(size);
-		PrecomputeObject.getDividedShares(r, rPrime, (1 << precision), size);
+		PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
 
 		for (int i = 0; i < size; ++i)
 		{
@@ -1253,7 +1302,7 @@ void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 	matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
 
 	Vec r(final_size), rPrime(final_size);
-	PrecomputeObject.getDividedShares(r, rPrime, (1 << truncation), final_size);
+	PrecomputeObject->getDividedShares(r, rPrime, (1 << truncation), final_size);
 	for (int i = 0; i < final_size; ++i)
 		temp3[i] = temp3[i] - rPrime[i].first;
 
@@ -1308,7 +1357,7 @@ void debugSSBits();
 void debugSS();
 void debugMaxpool();
 void debugReduction();
-void debugOneSS();
+// void debugPartySS();
 
 // Test
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter);
@@ -1367,9 +1416,9 @@ void print_vector(Vec &var, string type, string pre_text, int print_nos)
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
 /********************* Share Conversion Functionalites *********************/
-void funcReduction(RSSVectorLowType &output,const RSSVectorHighType &input);
+void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
 void funcExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
-void funcPosWrap(vector<highBit> &w,const RSSVectorLowType & input);
+void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input);
 void funcMixedShareGeneration();
 void funcTruncation(const RSSVectorHighType &a, const RSSVectorLowType &b, int trunc_bits);
 void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);

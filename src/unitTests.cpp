@@ -1,6 +1,45 @@
-
 #include "Functionalities.h"
 
+void debugPartySS()
+{
+	size_t size = 5;
+
+	vector<highBit> a1 = {-5, 25, 0, 976, -916};
+	vector<lowBit> a2 = {-5, 25, 0, 976, -916};
+
+	RSSVectorHighType test_result1(size);
+	RSSVectorLowType test_result2(size);
+
+	vector<highBit> result_plain1(size);
+	vector<lowBit> result_plain2(size);
+
+	for (size_t i = 0; i < NUM_OF_PARTIES; i++)
+	{
+		if (i == partyNum)
+		{
+			funcShareSender<RSSVectorHighType, highBit>(test_result1, a1, size);
+		}
+		else
+		{
+			funcShareReceiver<RSSVectorHighType, highBit>(test_result1, size, i);
+		}
+
+		if (i == partyNum)
+		{
+			funcShareSender<RSSVectorLowType, lowBit>(test_result2, a2, size);
+		}
+		else
+		{
+			funcShareReceiver<RSSVectorLowType, lowBit>(test_result2, size, i);
+		}
+
+#if (!LOG_DEBUG)
+		cout << "shareParty: " << i << endl;
+		funcReconstruct<RSSVectorHighType, highBit>(test_result1, result_plain1, size, "high output", true);
+		funcReconstruct<RSSVectorLowType, lowBit>(test_result2, result_plain2, size, "low output", true);
+#endif
+	}
+}
 
 void runTest(string str, string whichTest, string &network)
 {
@@ -11,7 +50,7 @@ void runTest(string str, string whichTest, string &network)
 			network = "Debug Mat-Mul";
 			debugMatMul();
 		}
-		else if (whichTest.compare("DotProd") == 0)	
+		else if (whichTest.compare("DotProd") == 0)
 		{
 			network = "Debug DotProd";
 			debugDotProd();
@@ -45,11 +84,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Debug BN";
 			debugBN();
-		}		
+		}
 		else if (whichTest.compare("SSBits") == 0)
 		{
 			network = "Debug SS Bits";
-			debugSSBits();  
+			debugSSBits();
 		}
 		else if (whichTest.compare("SS") == 0)
 		{
@@ -61,28 +100,27 @@ void runTest(string str, string whichTest, string &network)
 			network = "Debug Maxpool";
 			debugMaxpool();
 		}
-		else if (whichTest.compare("Reduction")==0)
+		else if (whichTest.compare("Reduction") == 0)
 		{
 			network = "Reduction";
 			debugReduction();
 		}
-		else if (whichTest.compare("OneShare")==0)
+		else if (whichTest.compare("PartyShare") == 0)
 		{
-			network = "OneShare";
-			debugOneSS();
+			network = "PartyShare";
+			debugPartySS();
 		}
-		
 		else
 			assert(false && "Unknown debug mode selected");
 	}
 	else if (str.compare("Test") == 0)
-	{	
+	{
 		if (whichTest.compare("Mat-Mul1") == 0)
 		{
 			network = "Test Mat-Mul1";
 			testMatMul(784, 128, 10, NUM_ITERATIONS);
 		}
-		else if (whichTest.compare("Mat-Mul2") == 0)	
+		else if (whichTest.compare("Mat-Mul2") == 0)
 		{
 			network = "Test Mat-Mul2";
 			testMatMul(1, 500, 100, NUM_ITERATIONS);
@@ -121,7 +159,7 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Test ReLUPrime3";
 			testReluPrime(64, 16, NUM_ITERATIONS);
-		}				
+		}
 		else if (whichTest.compare("Conv1") == 0)
 		{
 			network = "Test Conv1";

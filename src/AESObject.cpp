@@ -9,7 +9,7 @@
 using namespace std;
 
 
-AESObject::AESObject(char* filename)
+AESObject::AESObject(std::string filename)
 {
 	ifstream f(filename);
 	string str { istreambuf_iterator<char>(f), istreambuf_iterator<char>() };
@@ -76,6 +76,41 @@ smallType AESObject::get8Bits()
 
 	return ret;
 }
+
+lowBit AESObject::getLowBitRand()
+{
+	lowBit ret;
+
+	if (random32BitCounter == 0)
+		random32BitNumber = newRandomNumber();
+		random32BitArray = (lowBit*)&random32BitNumber;
+	
+	ret = (lowBit)random32BitArray[random32BitCounter];
+
+	random32BitCounter++;
+	if (random32BitCounter == 4)
+		random32BitCounter = 0;
+
+	return ret;
+}
+
+highBit AESObject::getHighBitRand()
+{
+	highBit ret;
+
+	if (random64BitCounter == 0)
+		random64BitNumber = newRandomNumber();
+		random64BitArray = (highBit*)&random64BitNumber;
+	
+	ret = (highBit)random64BitArray[random64BitCounter];
+
+	random64BitCounter++;
+	if (random64BitCounter == 2)
+		random64BitCounter = 0;
+
+	return ret;
+}
+
 
 smallType AESObject::randModPrime()
 {
