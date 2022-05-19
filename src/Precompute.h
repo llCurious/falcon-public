@@ -92,7 +92,11 @@ void Precompute::getNextRand(vector<T> &a, size_t size)
 {
 	assert(a.size() == size && "a.size is incorrect");
 
-	aes_next->getRand<T>(a);
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = aes_next->getRand<T>();
+	}
+	// aes_next->getRand<T>(a);
 }
 
 template <typename T>
@@ -100,7 +104,11 @@ void Precompute::getPrevRand(vector<T> &a, size_t size)
 {
 	assert(a.size() == size && "a.size is incorrect");
 
-	aes_prev->getRand<T>(a);
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = aes_prev->getRand<T>();
+	}
+	// aes_prev->getRand<T>(a);
 }
 
 template <typename T>
@@ -122,6 +130,7 @@ void Precompute::getPairRand(Vec &a, size_t size)
 	}
 }
 
+// shareparty: a1, a2, (extra a3)
 template <typename Vec, typename T>
 void Precompute::getZeroShareSender(Vec &a, size_t size)
 {
@@ -138,9 +147,9 @@ void Precompute::getZeroShareSender(Vec &a, size_t size)
 		T temp = 0 - a3[i] - a2[i];
 		a[i] = make_pair(temp, a2[i]);
 	}
-	cout << endl;
 }
 
+// shareparty - 1 : a3
 template <typename T>
 void Precompute::getZeroSharePrev(vector<T> &a, size_t size)
 {
@@ -149,6 +158,7 @@ void Precompute::getZeroSharePrev(vector<T> &a, size_t size)
 	sender.join();
 }
 
+// shareparty + 1 : a2, a3
 template <typename Vec, typename T>
 void Precompute::getZeroShareReceiver(Vec &a, size_t size)
 {
@@ -157,7 +167,7 @@ void Precompute::getZeroShareReceiver(Vec &a, size_t size)
 
 /**
  * @brief work for three-party
- * shareparty     : a1, a2
+ * shareparty     : a1, a2, (extra a3)
  * shareparty + 1 : a2, a3
  * shareparty - 1 : a3
  * a1 + a2 + a3 = 0

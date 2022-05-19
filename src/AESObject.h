@@ -4,6 +4,7 @@
 
 #pragma once
 #include <algorithm>
+#include <iostream>
 #include "TedKrovetzAesNiWrapperC.h"
 #include "globals.h"
 using namespace std;
@@ -29,8 +30,8 @@ private:
 	highBit *random64BitArray;
 
 	__m128i randomTNumber{0};
-	uint8_t randomTCounter = 0;
-	uint8_t randomTNum = 0;
+	int randomTCounter = 0;
+	int randomTNum = 0;
 
 	// Private extraction functions
 	__m128i newRandomNumber();
@@ -69,7 +70,7 @@ T AESObject::getRand()
 	T ret;
 
 	if (randomTCounter == 0)
-		randomTNum = 128 / sizeof(T);
+		randomTNum = 16 / sizeof(T);
 		randomTNumber = newRandomNumber();
 
 	T *temp = (T *)&randomTNumber;
@@ -86,7 +87,7 @@ template <typename T>
 void AESObject::getRand(vector<T> &a)
 {
 	size_t a_size = a.size();
-	size_t type_num = (128 / sizeof(T));
+	size_t type_num = (16 / sizeof(T));
 	int j = 0;
 	__m128i randomBitNumber{0};
 

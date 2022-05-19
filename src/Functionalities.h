@@ -69,13 +69,6 @@ void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 	assert(a.size() == size && "a.size mismatch for reconstruct function");
 
 	PrecomputeObject->getZeroShareSender<Vec, T>(a, size);
-	// PrecomputeObject->getZeroShareRand<Vec, T>(a, size, partyNum);
-	cout << "0 sender" << endl;
-	for (size_t i = 0; i < size; i++)
-	{
-		cout << a[i].first << " " << a[i].second << endl;
-	}
-	
 
 	vector<T> a1_plus_data(size);
 	for (size_t i = 0; i < size; i++)
@@ -108,13 +101,13 @@ void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
 	{
 		vector<T> a3(size);
 		PrecomputeObject->getZeroSharePrev<T>(a3, size);
-		//PrecomputeObject->getZeroShareRand<vector<T>, T>(a3, size, shareParty);
 
 		vector<T> a1_plus_data(size);
 		thread receiver(receiveVector<T>, ref(a1_plus_data), shareParty, size); // receive a1+x
 		receiver.join();
 
-		Merge2Vec<Vec, T>(a, a1_plus_data, a3, size);
+		Merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
+
 	}
 	else
 	{
@@ -1356,7 +1349,7 @@ void debugBN();
 void debugSSBits();
 void debugSS();
 void debugMaxpool();
-void debugReduction();
+// void debugReduction();
 // void debugPartySS();
 
 // Test

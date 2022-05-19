@@ -160,6 +160,43 @@ void log_print(string str);
 void error(string str);
 string which_network(string network);
 
+/************Debug Tools****************/
+template <typename V>
+bool equalRssVector(const V &v1, const V &v2, size_t size)
+{
+	assert(v1.size()==v2.size() && v2.size()==size && "size is not consistent");
+
+	for (size_t i = 0; i < size; i++)
+	{
+		if(v1[i]!=v2[i]) return false;
+	}
+	return true;
+}
+// template <typename T, typename B>
+// void printOneRss(T var, string type)
+// {
+// 	if (type == "BITS")
+// 		cout << "( " << bitset<BIT_SIZE>(var.fisrt) << ", " << bitset<BIT_SIZE>(var.second) << ") ";
+// 	else if (type == "FLOAT")
+// 		cout << "(" << (static_cast<B>(var.first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<B>(var.second)) / (float)(1 << FLOAT_PRECISION) << ") ";
+// 	else if (type == "SIGNED")
+// 		cout << "(" << (static_cast<B>(var.first)) << ", " << (static_cast<B>(var.second)) << ") ";
+// 	else if (type == "UNSIGNED")
+// 		cout << "(" << var.first << ", " << var.second << ") ";
+// }
+
+template <typename Vec>
+void printRssVector(Vec &var, string type, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		cout << "(" << var[i].first << ", " << var[i].second << ")" << endl;
+		// printOneRss<T, B>(var[i], type);
+	}
+	cout << endl;
+}
+
 template <typename T>
 void print_myType(T var, string message, string type)
 {
@@ -368,13 +405,12 @@ size_t prevParty(size_t party);
 template <typename Vec, typename T>
 void Merge2Vec(Vec &a, const vector<T> v1, const vector<T> v2, size_t size)
 {
-	assert(a.size()==v1.size() && v1.size()==v2.size() && v2.size()==size);
+	assert(a.size() == v1.size() && v1.size() == v2.size() && v2.size() == size);
 
 	for (size_t i = 0; i < size; i++)
 	{
-		a[i] = make_pair(v1[i],v2[i]);
+		a[i] = make_pair(v1[i], v2[i]);
 	}
-	
 }
 
 inline smallType getMSB(lowBit a)

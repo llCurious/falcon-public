@@ -64,14 +64,16 @@ int main(int argc, char **argv)
 	//	1. Debug {Mat-Mul, DotProd, PC, Wrap, ReLUPrime, ReLU, Division, BN, SSBits, SS, and Maxpool}
 	//	2. Test {Mat-Mul1, Mat-Mul2, Mat-Mul3 (and similarly) Conv*, ReLU*, ReLUPrime*, and Maxpool*} where * = {1,2,3}
 	//  runTest("Debug", "DotProd", network);
-	runTest("Debug", "BN", network);
-	runTest("Debug", "Division", network);
-	runTest("Debug", "Maxpool", network);
-	runTest("Debug", "Mat-Mul", network);
-	runTest("Debug", "DotProd", network);
-
+	// runTest("Debug", "BN", network);
+	// runTest("Debug", "Division", network);
+	// runTest("Debug", "Maxpool", network);
+	// runTest("Debug", "Mat-Mul", network);
+	// runTest("Debug", "DotProd", network);
 	// runTest("Debug", "Reduction", network);
+	// runTest("Debug", "PairRandom", network);
 	runTest("Debug", "PartyShare", network);
+
+	cout << "DEBUG end" << endl;
 	// runTest("Test", "ReLUPrime1", network);
 
 	// runTest("Test", "BN", network);
@@ -87,6 +89,7 @@ int main(int argc, char **argv)
 	// string what = "F";
 	// runOnly(net, l, what, network);
 
+#if (!DEBUG_ONLY)
 	// Run training
 	network += " train";
 	train(net);
@@ -102,6 +105,7 @@ int main(int argc, char **argv)
 		 << "Running " << security << " " << network << " on " << dataset << " dataset" << endl;
 	cout << "----------------------------------------------" << endl
 		 << endl;
+#endif
 
 	// printNetwork(net);
 

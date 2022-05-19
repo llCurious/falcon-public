@@ -1912,40 +1912,6 @@ void debugMaxpool()
 #endif
 }
 
-void debugReduction()
-{
-	size_t size = 5;
-	RSSVectorHighType test_data(size);
-	RSSVectorLowType test_result(size);
-
-	vector<highBit> a = {-5, 25, 0, 976, -916};
-
-	funcGetShares(test_data, a);
-
-	funcReduction(test_result, test_data);
-
-	// cout << "begin print ss" << endl;
-
-	// print_vector(test_data, "UNSIGNED", "test_data ss", test_data.size());
-	// print_vector(test_result, "UNSIGNED", "test_result ss", test_result.size());
-
-	vector<highBit> data_plain(size);
-	vector<lowBit> result_plain(size);
-
-	cout << "Reconstruct" << endl;
-
-#if (!LOG_DEBUG)
-	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", true);
-	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", true);
-#endif
-
-	for (size_t i = 0; i < size; i++)
-	{
-		// cout << data_plain[i] << " " << result_plain[i] << endl;
-		assert((lowBit)(data_plain[i]) == (lowBit)(result_plain[i]));
-	}
-}
-
 /******************************** Test ********************************/
 
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter)

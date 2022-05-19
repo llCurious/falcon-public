@@ -13,6 +13,7 @@ void debugPartySS()
 	vector<highBit> result_plain1(size);
 	vector<lowBit> result_plain2(size);
 
+	// NUM_OF_PARTIES
 	for (size_t i = 0; i < NUM_OF_PARTIES; i++)
 	{
 		if (i == partyNum)
@@ -34,10 +35,55 @@ void debugPartySS()
 		}
 
 #if (!LOG_DEBUG)
-		cout << "shareParty: " << i << endl;
-		funcReconstruct<RSSVectorHighType, highBit>(test_result1, result_plain1, size, "high output", true);
-		funcReconstruct<RSSVectorLowType, lowBit>(test_result2, result_plain2, size, "low output", true);
+		funcReconstruct<RSSVectorHighType, highBit>(test_result1, result_plain1, size, "high output", false);
+		funcReconstruct<RSSVectorLowType, lowBit>(test_result2, result_plain2, size, "low output", false);
+		assert(equalRssVector(result_plain1, a1, size));
+		assert(equalRssVector(result_plain2, a2, size));
 #endif
+	}
+}
+
+void debugPairRandom()
+{
+	size_t size = 5;
+	RSSVectorHighType test_result1(size);
+	PrecomputeObject->getPairRand<RSSVectorHighType, highBit>(test_result1, size);
+
+	printRssVector<RSSVectorHighType>(test_result1, "UNSIGNED", "pair random", size);
+	// Precompute::getPairRand(Vec &a, size_t size)
+}
+
+void debugReduction()
+{
+	size_t size = 5;
+	RSSVectorHighType test_data(size);
+	RSSVectorLowType test_result(size);
+
+	vector<highBit> a = {-5, 25, 0, 976, -916};
+
+	funcGetShares(test_data, a);
+
+	funcReduction(test_result, test_data);
+
+	// cout << "begin print ss" << endl;
+
+	// print_vector(test_data, "UNSIGNED", "test_data ss", test_data.size());
+	// print_vector(test_result, "UNSIGNED", "test_result ss", test_result.size());
+
+	vector<highBit> data_plain(size);
+	vector<lowBit> result_plain(size);
+
+	cout << "Reconstruct" << endl;
+
+#if (!LOG_DEBUG)
+	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", true);
+	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", true);
+#endif
+
+	for (size_t i = 0; i < size; i++)
+	{
+		// cout << data_plain[i] << " " << result_plain[i] << endl;
+		assert((lowBit)(data_plain[i]) == (lowBit)(result_plain[i]));
 	}
 }
 
@@ -109,6 +155,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "PartyShare";
 			debugPartySS();
+		}
+		else if (whichTest.compare("PairRandom") == 0)
+		{
+			network = "PairRandom";
+			debugPairRandom();
 		}
 		else
 			assert(false && "Unknown debug mode selected");

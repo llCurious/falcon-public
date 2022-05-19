@@ -77,4 +77,6 @@ const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
 const myType MINUS_ONE = (myType)-1;                            // wrap computation in tools.h
 const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES 
 
+/********************* DEBUG AND TEST *********************/
+#define DEBUG_ONLY true
 #endif
