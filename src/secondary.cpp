@@ -71,6 +71,7 @@ void train(NeuralNetwork* net)
 		readMiniBatch(net, "TRAINING");
 		net->forward();
 		net->backward();
+		net->getAccuracy();
 		// cout << "----------------------------------" << endl;  
 	}
 }
@@ -771,8 +772,8 @@ void loadData(string net, string dataset)
 	{
 		INPUT_SIZE = 784;
 		LAST_LAYER_SIZE = 10;
-		TRAINING_DATA_SIZE = 8;
-		TEST_DATA_SIZE = 8;
+		TRAINING_DATA_SIZE = 100;
+		TEST_DATA_SIZE = 100;
 		LARGE_NETWORK = false;
 	}
 	else if (dataset.compare("CIFAR10") == 0)

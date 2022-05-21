@@ -71,7 +71,7 @@ void NeuralNetwork::forward()
 
 	for (size_t i = 1; i < NUM_LAYERS; ++i)
 	{
-		cout << "Layer" << i << endl;
+		// cout << "Layer" << i << endl;
 		layers[i]->forward(*(layers[i-1]->getActivation()));
 		if (LARGE_NETWORK)
 			cout << "Forward \t" << layers[i]->layerNum << " completed..." << endl;
@@ -175,8 +175,9 @@ void NeuralNetwork::predict(RSSVectorMyType &maxIndex)
 }
 
 /* new implementation, may still have bug and security flaws */
-void NeuralNetwork::getAccuracy(const RSSVectorMyType &maxIndex, vector<size_t> &counter)
+void NeuralNetwork::getAccuracy()
 {
+	vector<size_t> counter(2);
 	log_print("NN.getAccuracy");
 
 	size_t rows = MINI_BATCH_SIZE;
@@ -212,6 +213,13 @@ void NeuralNetwork::getAccuracy(const RSSVectorMyType &maxIndex, vector<size_t> 
 			}
 		}
 	}
+
+	// for (myType target_label: groundTruth) cout << target_label << ", ";
+	// cout << endl;
+	// for (smallType predict_label: prediction) {
+	// 	cout << unsigned(predict_label) << ", ";
+	// }
+	// cout << endl;
 
 	cout << "Rolling accuracy: " << counter[0] << " out of " 
 		 << counter[1] << " (" << (counter[0]*100/counter[1]) << " %)" << endl;
