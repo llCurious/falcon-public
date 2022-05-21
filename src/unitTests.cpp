@@ -4,8 +4,13 @@ void debugPartySS()
 {
 	size_t size = 5;
 
-	vector<highBit> a1 = {-5, 25, 0, 976, -916};
-	vector<lowBit> a2 = {-5, 25, 0, 976, -916};
+	vector<highBit> a1(size);
+	vector<lowBit> a2(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		a1[i] = rand();
+		a2[i] = rand();
+	}
 
 	RSSVectorHighType test_result1(size);
 	RSSVectorLowType test_result2(size);
@@ -87,6 +92,27 @@ void debugReduction()
 	}
 }
 
+void debugZeroRandom()
+{
+	size_t size = 4;
+	vector<highBit> a1(size);
+	PrecomputeObject->getZeroShareRand<RSSVectorHighType, highBit>(a1, size);
+	print_vector(a1, "UNSIGNED", "0 high bit", size);
+
+	vector<lowBit> a2(size);
+	PrecomputeObject->getZeroShareRand<RSSVectorLowType, lowBit>(a2, size);
+	print_vector(a2, "UNSIGNED", "0 low bit", size);
+
+}
+
+void debugPosWrap()
+{
+}
+
+void debugWCExtension()
+{
+}
+
 void runTest(string str, string whichTest, string &network)
 {
 	if (str.compare("Debug") == 0)
@@ -160,6 +186,21 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "PairRandom";
 			debugPairRandom();
+		}
+		else if (whichTest.compare("PosWrap") == 0)
+		{
+			network = "PosWrap";
+			debugPosWrap();
+		}
+		else if (whichTest.compare("WC-Extension") == 0)
+		{
+			network = "WC-Extension";
+			debugWCExtension();
+		}
+		else if (whichTest.compare("ZeroRandom"))
+		{
+			network = "ZeroRandom";
+			debugZeroRandom();
 		}
 		else
 			assert(false && "Unknown debug mode selected");

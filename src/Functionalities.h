@@ -1410,8 +1410,9 @@ void print_vector(RSSVectorSmallType &var, string type, string pre_text, int pri
 
 /********************* Share Conversion Functionalites *********************/
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
-void funcExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
-void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input);
+void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
+void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
+void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGeneration();
 void funcTruncation(const RSSVectorHighType &a, const RSSVectorLowType &b, int trunc_bits);
 void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);

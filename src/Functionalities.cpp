@@ -1493,21 +1493,23 @@ void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data)
  * @param w the wrap count of x0 + x1 + x2
  * @param input rss of x
  */
-void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input)
+void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size)
 {
-	size_t size = input.size();
+
 	if (partyNum == PARTY_B)
 	{
+		vector<highBit> w0(size);
 		for (size_t i = 0; i < size; i++)
 		{
 			// w0 = (x1 + x2 > 2^32)
 			lowBit temp = input[i].first + input[i].second;
-			w[i] = ((temp < input[i].first) || (temp < input[i].second)) ? FLOAT_BIAS : 0;
+			w0[i] = (highBit)(((temp < input[i].first) || (temp < input[i].second)) ? FLOAT_BIAS : 0);
 		}
-
-		vector<tuple<highBit, highBit, highBit>> w0_share(size);
-		// funcOneGetShares(w0_share, w);
-		// funcOneGetShares
+		funcShareSender<RSSVectorHighType, highBit>(w, w0, size);
+	}
+	else
+	{
+		funcShareReceiver<RSSVectorHighType, highBit>(w, size, PARTY_B);
 	}
 }
 

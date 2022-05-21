@@ -39,6 +39,11 @@ private:
 	// Private helper functions
 	smallType AES_random(int i);
 
+	// bool random
+	bool * boolRandomArray;
+	int boolNum = 128;
+	int boolCnt = 0;
+
 public:
 	// Constructor
 	AESObject(std::string filename);
@@ -49,6 +54,8 @@ public:
 
 	lowBit getLowBitRand();
 	highBit getHighBitRand();
+
+	bool getBoolRand();
 
 	template <typename T>
 	T getRand();

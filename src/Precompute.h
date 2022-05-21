@@ -83,8 +83,12 @@ public:
 	template <typename Vec, typename T>
 	void getZeroShareReceiver(Vec &a, size_t size);
 
+	// shareParty can know the all rand
 	template <typename Vec, typename T>
 	void getZeroShareRand(Vec &a, size_t size, int shareParty);
+
+	template <typename Vec, typename T>
+	void getZeroShareRand(vector<T> &a, size_t size);
 };
 
 template <typename T>
@@ -209,6 +213,28 @@ void Precompute::getZeroShareRand(Vec &a, size_t size, int shareParty)
 	// 	thread sender(sendVector<T>, ref(a), prevParty(partyNum), size);
 	// 	sender.join();
 	// }
+}
+
+/**
+ * @brief a0+a1+a2 = 0
+ * every party only have one share of zero
+ * 
+ * @tparam Vec 
+ * @tparam T 
+ * @param a 
+ * @param size 
+ */
+template <typename Vec, typename T>
+void Precompute::getZeroShareRand(vector<T> &a, size_t size)
+{
+	assert(a.size() == size && "a.size is incorrect");
+	Vec paira(size);
+	getPairRand<Vec, T>(paira, size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		a = paira[i].first - paira[i].second;
+	}
 }
 
 template <typename Vec>
