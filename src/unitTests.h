@@ -2,6 +2,8 @@
 #define UNITTESTS_H
 #pragma once
 
+#include <thread>
+
 /************Debug****************/
 
 // one party has the plain value and secret share to other

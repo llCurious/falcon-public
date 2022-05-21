@@ -164,11 +164,12 @@ string which_network(string network);
 template <typename V>
 bool equalRssVector(const V &v1, const V &v2, size_t size)
 {
-	assert(v1.size()==v2.size() && v2.size()==size && "size is not consistent");
+	assert(v1.size() == v2.size() && v2.size() == size && "size is not consistent");
 
 	for (size_t i = 0; i < size; i++)
 	{
-		if(v1[i]!=v2[i]) return false;
+		if (v1[i] != v2[i])
+			return false;
 	}
 	return true;
 }
@@ -186,13 +187,25 @@ bool equalRssVector(const V &v1, const V &v2, size_t size)
 // }
 
 template <typename Vec>
-void printRssVector(Vec &var, string type, string pre_text, int print_nos)
+void printRssVector(Vec &var, string pre_text, int print_nos)
 {
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
 		cout << "(" << var[i].first << ", " << var[i].second << ")" << endl;
 		// printOneRss<T, B>(var[i], type);
+	}
+	cout << endl;
+}
+
+
+template <typename T>
+void printVector(const vector<T> &var, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		cout << var[i] << endl;
 	}
 	cout << endl;
 }
@@ -271,6 +284,7 @@ void print_linear(T var, string type)
 // 	}
 // 	cout << endl;
 // }
+
 
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 template <typename Vec, typename T>

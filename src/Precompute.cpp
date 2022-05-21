@@ -140,3 +140,13 @@ void Precompute::getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVe
 	for (auto &it : c)
 		it = std::make_pair(0, 0);
 }
+
+void Precompute::getZeroBoolRand(vector<bool> &a, size_t size)
+{
+	assert(a.size()==size && "zero bool share random");
+
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = aes_prev->getBoolRand() ^ aes_next->getBoolRand();
+	}
+}
