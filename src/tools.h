@@ -428,12 +428,12 @@ void Merge2Vec(Vec &a, const vector<T> v1, const vector<T> v2, size_t size)
 
 inline smallType getMSB(lowBit a)
 {
-	return ((smallType)((a >> (BIT_SIZE - 1)) & 1));
+	return ((smallType)((a >> (BIT_SIZE_LOW - 1)) & 1));
 }
 
 inline smallType getMSB(highBit a)
 {
-	return ((smallType)((a >> (BIT_SIZE - 1)) & 1));
+	return ((smallType)((a >> (BIT_SIZE_HIGH - 1)) & 1));
 }
 
 inline RSSSmallType addModPrime(RSSSmallType a, RSSSmallType b)
@@ -492,12 +492,12 @@ inline RSSSmallType XORPublicModPrime(RSSSmallType a, bool r)
 
 inline smallType wrapAround(lowBit a, lowBit b)
 {
-	return (a > MINUS_ONE - b);
+	return (a > ((lowBit)-1) - b);
 }
 
 inline smallType wrapAround(highBit a, highBit b)
 {
-	return (a > MINUS_ONE - b);
+	return (a > ((highBit)-1) - b);
 }
 
 inline smallType wrap3(lowBit a, lowBit b, lowBit c)

@@ -1192,10 +1192,10 @@ void funcDotProduct(const T &a, const T &b,
 {
 	log_print("funcDotProduct");
 	typedef typename std::conditional<std::is_same<T, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
-	if (std::is_same<T, RSSVectorHighType>::value)
-	{
-		std::cout << "high" << std::endl;
-	}
+	// if (std::is_same<T, RSSVectorHighType>::value)
+	// {
+	// 	std::cout << "high" << std::endl;
+	// }
 	assert(a.size() == size && "Matrix a incorrect for Mat-Mul");
 	assert(b.size() == size && "Matrix b incorrect for Mat-Mul");
 	assert(c.size() == size && "Matrix c incorrect for Mat-Mul");
@@ -1354,6 +1354,7 @@ void debugMaxpool();
 // void debugPartySS();
 void debugSquare();
 void debugExp();
+void debugSoftmax();
 
 // Test
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter);
@@ -1462,11 +1463,11 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
 	dividePlain(diffReconst, (1 << float_precision));
 
-	cout << "Reconstrut Square Diff." << endl;
-	for (size_t i = 0; i < size; i++) {
-		print_linear(diffReconst[i], "FLOAT");
-	}
-	cout << endl;
+	// cout << "Reconstrut Square Diff." << endl;
+	// for (size_t i = 0; i < size; i++) {
+	// 	print_linear(diffReconst[i], "FLOAT");
+	// }
+	// cout << endl;
 
 	// Reshare 2-3 RSS
 	if (partyNum == PARTY_A)
@@ -1531,11 +1532,11 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
 	dividePlain(diffReconst, (1 << EXP_PRECISION));
 
-	cout << "Reconstrut Exp Diff." << endl;
-	for (size_t i = 0; i < size; i++) {
-		print_linear(diffReconst[i], "FLOAT");
-	}
-	cout << endl;
+	// cout << "Reconstrut Exp Diff." << endl;
+	// for (size_t i = 0; i < size; i++) {
+	// 	print_linear(diffReconst[i], "FLOAT");
+	// }
+	// cout << endl;
 
 	if (partyNum == PARTY_A)
 	{
@@ -1570,8 +1571,59 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 }
 
+// Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
 template <typename Vec>
-void funcSoftmax(const Vec &a, const Vec &b, size_t rows, size_t cols, bool masked)
+void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 {
 	log_print("funcSoftmax");
+	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+
+	size_t size = rows * cols;
+
+	// normalize the input
+	Vec temp(size), max(rows);
+	RSSVectorSmallType maxPrime(size);
+
+	temp = a;
+	funcMaxpool(temp, max, maxPrime, rows, cols);
+
+	vector<elementType> temp_reconst(rows);
+	funcReconstruct(max, temp_reconst, rows, "Softmax Log", true);
+
+	vector<smallType> reconst_maxPrime(maxPrime.size());
+	funcReconstructBit(maxPrime, reconst_maxPrime, rows * cols, "maxP", true);
+
+	for (size_t i = 0; i < rows; i++) {
+		for (size_t j = 0; j < cols; j++) {
+			temp[i * cols + j].first -= max[i].first;
+			temp[i * cols + j].second -= max[i].second;
+		}
+	}
+
+	// compute exp of each element
+	Vec exp_elements(size);
+	funcExp(temp, exp_elements, size);
+
+	vector<elementType> reconst_exp_elements(size);
+	funcReconstruct(exp_elements, reconst_exp_elements, size, "exp", true);
+
+	// compute the dividend, i.e., the sum of the exps
+	Vec dividend(size);
+	for (size_t i = 0; i < rows; i++) {
+		elementType tmp_sum_first = 0, tmp_sum_second = 0;
+		for (size_t j = 0; j < cols; j++) {
+			tmp_sum_first += exp_elements[i * cols + j].first;
+			tmp_sum_second += exp_elements[i * cols + j].second;
+		}
+		for (size_t j = 0; j < cols; j++) {
+			dividend[i * cols + j].first = tmp_sum_first;
+			dividend[i * cols + j].second = tmp_sum_second;
+		}
+	}
+
+	vector<elementType> reconst_dividend(size);
+	funcReconstruct(dividend, reconst_dividend, size, "dividend", true);
+
+	// compute the division
+	funcDivision(exp_elements, dividend, b, size);
 }

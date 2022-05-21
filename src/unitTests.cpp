@@ -242,6 +242,11 @@ void runTest(string str, string whichTest, string &network)
 			network = "Exp";
 			debugExp();
 		}
+		else if (whichTest.compare("Softmax") == 0)
+		{
+			network = "Softmax";
+			debugSoftmax();
+		}
 		else
 			assert(false && "Unknown debug mode selected");
 	}
