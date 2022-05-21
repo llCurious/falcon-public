@@ -79,4 +79,5 @@ const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
+
 #endif
