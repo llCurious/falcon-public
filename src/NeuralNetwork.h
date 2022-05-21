@@ -19,5 +19,5 @@ public:
 	void computeDelta();
 	void updateEquations();
 	void predict(RSSVectorMyType &maxIndex);
-	void getAccuracy(const RSSVectorMyType &maxIndex, vector<size_t> &counter);
+	void getAccuracy();
 };

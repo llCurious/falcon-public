@@ -25,27 +25,65 @@ void FCLayer::initialize()
 	size_t decimation = 10000;
 	size_t size = weights.size();
 
-	float temp[size];
-	for (size_t i = 0; i < size; ++i){
-		temp[i] = (float)(rand() % (higher - lower) + lower)/decimation;
+	// float temp[size];
+	// for (size_t i = 0; i < size; ++i){
+	// 	temp[i] = (float)(rand() % (higher - lower) + lower)/decimation;
 		
-		if (partyNum == PARTY_A){
-			weights[i].first = floatToMyType(temp[i]);
+	// 	if (partyNum == PARTY_A){
+	// 		weights[i].first = floatToMyType(temp[i]);
+	// 		weights[i].second = 0;
+	// 	}
+		
+	// 	if (partyNum == PARTY_B){
+	// 		weights[i].first = 0;
+	// 		weights[i].second = 0;
+	// 	}
+		
+	// 	if (partyNum == PARTY_C){
+	// 		weights[i].first = 0;
+	// 		weights[i].second = floatToMyType(temp[i]);
+	// 	}
+	// }
+		
+	// fill(biases.begin(), biases.end(), make_pair(0,0));
+
+	/**
+	 * Updates from https://github.com/HuangPZ/falcon-public/blob/master/src/FCLayer.cpp
+	 * The problem seems to be the initialization to myType has bugs.
+	 * TODO: We shall look at this. Since we need both master weights and forward weights.
+	 * */
+	RSSVectorMyType temp(size);
+	srand(10);
+	if(partyNum==PARTY_A){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].first = floatToMyType((float)(rand() % (higher - lower) + lower)/decimation);
 			weights[i].second = 0;
 		}
-		
-		if (partyNum == PARTY_B){
-			weights[i].first = 0;
-			weights[i].second = 0;
-		}
-		
-		if (partyNum == PARTY_C){
-			weights[i].first = 0;
-			weights[i].second = floatToMyType(temp[i]);
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].first = floatToMyType((float)(rand() % (higher - lower) + lower)/decimation);
+			biases[i].second = 0;
 		}
 	}
-		
-	fill(biases.begin(), biases.end(), make_pair(0,0));
+	if(partyNum==PARTY_B){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].first = 0;
+			weights[i].second = 0;
+		}
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].first = 0;
+			biases[i].second = 0;
+		}
+	}
+	if(partyNum==PARTY_C){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].second = floatToMyType((float)(rand() % (higher - lower) + lower)/decimation);
+			weights[i].first = 0;
+		}
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].second = floatToMyType((float)(rand() % (higher - lower) + lower)/decimation);
+			biases[i].first = 0;
+		}
+	}
 }
 
 
