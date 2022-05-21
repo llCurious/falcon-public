@@ -218,11 +218,11 @@ void Precompute::getZeroShareRand(Vec &a, size_t size, int shareParty)
 /**
  * @brief a0+a1+a2 = 0
  * every party only have one share of zero
- * 
- * @tparam Vec 
- * @tparam T 
- * @param a 
- * @param size 
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param a
+ * @param size
  */
 template <typename Vec, typename T>
 void Precompute::getZeroShareRand(vector<T> &a, size_t size)
@@ -230,10 +230,11 @@ void Precompute::getZeroShareRand(vector<T> &a, size_t size)
 	assert(a.size() == size && "a.size is incorrect");
 	Vec paira(size);
 	getPairRand<Vec, T>(paira, size);
+	// printRssVector<Vec>(paira, "pair rand", size);
 
 	for (size_t i = 0; i < size; i++)
 	{
-		a = paira[i].first - paira[i].second;
+		a[i] = paira[i].first - paira[i].second;
 	}
 }
 

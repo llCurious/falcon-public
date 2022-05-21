@@ -54,7 +54,7 @@ void debugPairRandom()
 	RSSVectorHighType test_result1(size);
 	PrecomputeObject->getPairRand<RSSVectorHighType, highBit>(test_result1, size);
 
-	printRssVector<RSSVectorHighType>(test_result1, "UNSIGNED", "pair random", size);
+	printRssVector<RSSVectorHighType>(test_result1, "pair random", size);
 	// Precompute::getPairRand(Vec &a, size_t size)
 }
 
@@ -92,17 +92,47 @@ void debugReduction()
 	}
 }
 
+template <typename T>
+void checkRight(const vector<T> &a1)
+{
+	size_t size = a1.size();
+	// check right
+	if (partyNum == PARTY_A)
+	{
+		thread *threads = new thread[2];
+		vector<T> a2(size);
+		vector<T> a3(size);
+		threads[0] = thread(receiveVector<T>, ref(a2), nextParty(partyNum), size);
+		threads[1] = thread(receiveVector<T>, ref(a3), prevParty(partyNum), size);
+
+		for (int i = 0; i < 2; i++)
+			threads[i].join();
+
+		for (size_t i = 0; i < size; i++)
+		{
+			// cout << a1[i] << " " << a2[i] << " " << a3[i] << endl;
+			assert((a1[i] + a2[i] + a3[i]) == 0);
+		}
+	}
+	else
+	{
+		thread sendthread(sendVector<T>, ref(a1), PARTY_A, size);
+		sendthread.join();
+	}
+}
+
 void debugZeroRandom()
 {
 	size_t size = 4;
 	vector<highBit> a1(size);
 	PrecomputeObject->getZeroShareRand<RSSVectorHighType, highBit>(a1, size);
-	print_vector(a1, "UNSIGNED", "0 high bit", size);
+	// printVector(a1, "", size);
+	checkRight<highBit>(ref(a1));
 
-	vector<lowBit> a2(size);
-	PrecomputeObject->getZeroShareRand<RSSVectorLowType, lowBit>(a2, size);
-	print_vector(a2, "UNSIGNED", "0 low bit", size);
-
+	vector<lowBit> b1(size);
+	PrecomputeObject->getZeroShareRand<RSSVectorLowType, lowBit>(b1, size);
+	// printVector(b1, "", size);
+	checkRight<lowBit>(ref(b1));
 }
 
 void debugPosWrap()
@@ -197,7 +227,7 @@ void runTest(string str, string whichTest, string &network)
 			network = "WC-Extension";
 			debugWCExtension();
 		}
-		else if (whichTest.compare("ZeroRandom"))
+		else if (whichTest.compare("ZeroRandom") == 0)
 		{
 			network = "ZeroRandom";
 			debugZeroRandom();
