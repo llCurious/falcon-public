@@ -72,10 +72,17 @@ const int BIT_SIZE_HIGH = (sizeof(highBit) * CHAR_BIT);
 const int BIT_SIZE_LOW = (sizeof(lowBit) * CHAR_BIT);
 const lowBit BIT_RANG_LOW = 4294967295;
 
+// Mixed-Precision Setting. Currently, the precision is dependent on the bitwidth.
+#define HIGH_PRECISION 20
+#define LOW_PRECISION 12
+
 const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
 const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
 const myType MINUS_ONE = (myType)-1;                            // wrap computation in tools.h
 const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES 
+
+/********************* Additional Functions Parameter Setting *********************/
+#define EXP_PRECISION 9
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true

@@ -1914,6 +1914,40 @@ void debugMaxpool()
 #endif
 }
 
+void debugSquare()
+{
+	vector<myType> data_a {0, 2, 4, 5, 10, 7};
+	size_t size = data_a.size();
+	for (size_t i = 0; i < size; i++)
+		data_a[i] = data_a[i] << (FLOAT_PRECISION-1);
+	RSSVectorMyType a(size),b(size);
+
+	funcGetShares(a, data_a);
+	funcSquare(a, b, size);
+
+// #if (!LOG_DEBUG)
+	print_vector(a, "FLOAT", "a_data:", 8);
+	print_vector(b, "FLOAT", "b_data:", 8);
+// #endif
+}
+
+void debugExp()
+{
+	vector<myType> data_a {0, 2, 4, 5, 10, 7};
+	size_t size = data_a.size();
+	for (size_t i = 0; i< size; i++)
+		data_a[i] = data_a[i] << (FLOAT_PRECISION-1);
+	RSSVectorMyType a(size),b(size);
+
+	funcGetShares(a, data_a);
+	funcExp(a, b, size);
+
+// #if (!LOG_DEBUG)
+	print_vector(a, "FLOAT", "a_data:", 8);
+	print_vector(b, "FLOAT", "b_data:", 8);
+// #endif
+}
+
 /******************************** Test ********************************/
 
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter)

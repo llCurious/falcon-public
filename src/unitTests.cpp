@@ -202,6 +202,16 @@ void runTest(string str, string whichTest, string &network)
 			network = "ZeroRandom";
 			debugZeroRandom();
 		}
+		else if (whichTest.compare("Square"))
+		{
+			network = "Square";
+			debugSquare();
+		}
+		else if (whichTest.compare("Exp"))
+		{
+			network = "Exp";
+			debugExp();
+		}
 		else
 			assert(false && "Unknown debug mode selected");
 	}

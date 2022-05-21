@@ -1349,8 +1349,11 @@ void debugBN();
 void debugSSBits();
 void debugSS();
 void debugMaxpool();
+/******     Additional Functionalities      *******/
 // void debugReduction();
 // void debugPartySS();
+void debugSquare();
+void debugExp();
 
 // Test
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter);
@@ -1419,3 +1422,151 @@ void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);
 
 /********************* Mixed-Precision Activations Functionalites *********************/
 void funcMReLU();
+
+/**
+ * Functionality for Softmax computation
+ * */
+
+// Compute b*b
+template <typename Vec>
+void funcSquare(const Vec &a, Vec &b, size_t size)
+{
+	log_print("funcSquare");
+
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value) {
+		float_precision = HIGH_PRECISION;
+	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+		float_precision = LOW_PRECISION;
+	} else {
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
+
+	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	vector<elementType> temp3(size, 0), diffReconst(size, 0);
+
+	for (size_t i = 0; i < size; i++) {
+		temp3[i] += a[i].first * a[i].first +
+					a[i].first * a[i].second +
+					a[i].second * a[i].first;
+	}
+
+	Vec r(size), rPrime(size);
+	PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
+
+	for (size_t i = 0; i < size; i++) {
+		temp3[i] -= rPrime[i].first;
+	}
+
+	funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
+	cout << "Reconstrut Exp Diff." << endl;
+	for (size_t i = 0; i < size; i++) {
+		print_linear(diffReconst[i], "FLOAT");
+	}
+
+	// Reshare 2-3 RSS
+	if (partyNum == PARTY_A)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first + diffReconst[i];
+			b[i].second = r[i].second;
+		}
+	}
+
+	if (partyNum == PARTY_B)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first;
+			b[i].second = r[i].second;
+		}
+	}
+
+	if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first;
+			b[i].second = r[i].second + diffReconst[i];
+		}
+	}	
+}
+
+// Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
+template <typename Vec>
+void funcExp(const Vec &a, Vec &b, size_t size)
+{
+	log_print("funcExp");
+
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value) {
+		float_precision = HIGH_PRECISION;
+	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+		float_precision = LOW_PRECISION;
+	} else {
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
+	
+	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	vector<elementType> temp3(size, 0), diffReconst(size, 0);
+
+	// compute FXP(x/m)
+	// for (size_t i = 0; i < size; i++) {
+	// 	temp3[i] = a[i].first << (float_precision - EXP_PRECISION);
+	// }
+
+	// Vec r(size), rPrime(size);
+	// PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
+
+	Vec r(size), rPrime(size);
+	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
+
+	for (size_t i = 0; i < size; i++) {
+		temp3[i] -= rPrime[i].first;
+	}
+
+	funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
+	cout << "Reconstrut Exp Diff." << endl;
+	for (size_t i = 0; i < size; i++) {
+		print_linear(diffReconst[i], "FLOAT");
+	}
+
+	if (partyNum == PARTY_A)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first + diffReconst[i] + (1 << float_precision);
+			b[i].second = r[i].second;
+		}
+	}
+
+	if (partyNum == PARTY_B)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first;
+			b[i].second = r[i].second;
+		}
+	}
+
+	if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			b[i].first = r[i].first;
+			b[i].second = r[i].second + diffReconst[i]+(1 << float_precision);
+		}
+	}
+
+	// compute (1+x/m)^m. using m invocations of square
+	for(size_t i = 0; i < EXP_PRECISION; i++){
+		funcSquare(b, b, size);
+	}
+}
+
+template <typename Vec>
+void funcSoftmax(const Vec &a, const Vec &b, size_t rows, size_t cols, bool masked)
+{
+	log_print("funcSoftmax");
+}
