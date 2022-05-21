@@ -247,18 +247,17 @@ void print_linear(T var, string type)
 		if (type == "BITS")
 			cout << bitset<BIT_SIZE>(var) << " ";
 		else if (type == "FLOAT")
-			cout << (static_cast<int64_t>(var)) / (float)(1 << FLOAT_PRECISION) << " ";
+			cout << (static_cast<int64_t>(var)) / (float)(1 << HIGH_PRECISION) << " ";
 		else if (type == "SIGNED")
 			cout << static_cast<int64_t>(var) << " ";
 		else if (type == "UNSIGNED")
 			cout << var << " ";
-	}
-	if (std::is_same<T, lowBit>::value)
+	} else if (std::is_same<T, lowBit>::value)
 	{
 		if (type == "BITS")
 			cout << bitset<BIT_SIZE>(var) << " ";
 		else if (type == "FLOAT")
-			cout << (static_cast<int32_t>(var)) / (float)(1 << FLOAT_PRECISION) << " ";
+			cout << (static_cast<int32_t>(var)) / (float)(1 << LOW_PRECISION) << " ";
 		else if (type == "SIGNED")
 			cout << static_cast<int32_t>(var) << " ";
 		else if (type == "UNSIGNED")

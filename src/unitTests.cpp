@@ -232,12 +232,12 @@ void runTest(string str, string whichTest, string &network)
 			network = "ZeroRandom";
 			debugZeroRandom();
 		}
-		else if (whichTest.compare("Square"))
+		else if (whichTest.compare("Square") == 0)
 		{
 			network = "Square";
 			debugSquare();
 		}
-		else if (whichTest.compare("Exp"))
+		else if (whichTest.compare("Exp") == 0)
 		{
 			network = "Exp";
 			debugExp();

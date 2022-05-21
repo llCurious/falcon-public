@@ -1369,45 +1369,45 @@ void testReduction(size_t size);
 // template void funcReconstruct<RSSVectorHighType, highBit>(const RSSVectorHighType &a, vector<highBit> &b, size_t size, string str, bool print);
 // template void funcReconstruct<RSSVectorSmallType, smallType>(const RSSVectorSmallType &a, vector<smallType> &b, size_t size, string str, bool print);
 // Move here from tools.cpp
-template <typename Vec>
-void print_vector(Vec &var, string type, string pre_text, int print_nos);
-template <typename Vec>
-void print_vector(Vec &var, string type, string pre_text, int print_nos)
-{
-	if (std::is_same<Vec, RSSVectorSmallType>::value)
-	{
-		size_t temp_size = var.size();
-		vector<smallType> b(temp_size);
-		funcReconstruct(var, b, temp_size, "anything", false);
-		cout << pre_text << endl;
-		for (int i = 0; i < print_nos; ++i)
-		{
-			cout << b[i] << " ";
-			// if (i % 10 == 9)
-			// std::cout << std::endl;
-		}
-		cout << endl;
-	}
-	else
-	{
-		size_t temp_size = var.size();
-		typedef lowBit T;
-		if (std::is_same<Vec, RSSVectorHighType>::value)
-			typedef highBit T;
-		vector<T> b(temp_size);
-		funcReconstruct(var, b, temp_size, "anything", false);
-		cout << pre_text << endl;
-		for (int i = 0; i < print_nos; ++i)
-		{
-			print_linear(b[i], type);
-			// if (i % 10 == 9)
-			// std::cout << std::endl;
-		}
-		cout << endl;
-	}
-}
-// void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos);
-// void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
+// template <typename Vec>
+// void print_vector(Vec &var, string type, string pre_text, int print_nos);
+// template <typename Vec>
+// void print_vector(Vec &var, string type, string pre_text, int print_nos)
+// {
+// 	if (std::is_same<Vec, RSSVectorSmallType>::value)
+// 	{
+// 		size_t temp_size = var.size();
+// 		vector<smallType> b(temp_size);
+// 		funcReconstruct(var, b, temp_size, "anything", false);
+// 		cout << pre_text << endl;
+// 		for (int i = 0; i < print_nos; ++i)
+// 		{
+// 			cout << b[i] << " ";
+// 			// if (i % 10 == 9)
+// 			// std::cout << std::endl;
+// 		}
+// 		cout << endl;
+// 	}
+// 	else
+// 	{
+// 		size_t temp_size = var.size();
+// 		typedef lowBit T;
+// 		if (std::is_same<Vec, RSSVectorHighType>::value)
+// 			typedef highBit T;
+// 		vector<T> b(temp_size);
+// 		funcReconstruct(var, b, temp_size, "anything", false);
+// 		cout << pre_text << endl;
+// 		for (int i = 0; i < print_nos; ++i)
+// 		{
+// 			print_linear(b[i], type);
+// 			// if (i % 10 == 9)
+// 			// std::cout << std::endl;
+// 		}
+// 		cout << endl;
+// 	}
+// }
+void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos);
+void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
 
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
@@ -1451,6 +1451,7 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 					a[i].second * a[i].first;
 	}
 
+	// TODO: perform truncation
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
 
@@ -1459,10 +1460,13 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	}
 
 	funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
-	cout << "Reconstrut Exp Diff." << endl;
+	dividePlain(diffReconst, (1 << float_precision));
+
+	cout << "Reconstrut Square Diff." << endl;
 	for (size_t i = 0; i < size; i++) {
 		print_linear(diffReconst[i], "FLOAT");
 	}
+	cout << endl;
 
 	// Reshare 2-3 RSS
 	if (partyNum == PARTY_A)
@@ -1512,13 +1516,11 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	vector<elementType> temp3(size, 0), diffReconst(size, 0);
 
 	// compute FXP(x/m)
-	// for (size_t i = 0; i < size; i++) {
-	// 	temp3[i] = a[i].first << (float_precision - EXP_PRECISION);
-	// }
+	for (size_t i = 0; i < size; i++) {
+		temp3[i] = a[i].first;
+	}
 
-	// Vec r(size), rPrime(size);
-	// PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
-
+	// TODO: perform truncation
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
 
@@ -1527,10 +1529,13 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
+	dividePlain(diffReconst, (1 << EXP_PRECISION));
+
 	cout << "Reconstrut Exp Diff." << endl;
 	for (size_t i = 0; i < size; i++) {
 		print_linear(diffReconst[i], "FLOAT");
 	}
+	cout << endl;
 
 	if (partyNum == PARTY_A)
 	{
