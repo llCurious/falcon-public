@@ -250,18 +250,17 @@ void print_linear(T var, string type)
 		if (type == "BITS")
 			cout << bitset<BIT_SIZE>(var) << " ";
 		else if (type == "FLOAT")
-			cout << (static_cast<int64_t>(var)) / (float)(1 << FLOAT_PRECISION) << " ";
+			cout << (static_cast<int64_t>(var)) / (float)(1 << HIGH_PRECISION) << " ";
 		else if (type == "SIGNED")
 			cout << static_cast<int64_t>(var) << " ";
 		else if (type == "UNSIGNED")
 			cout << var << " ";
-	}
-	if (std::is_same<T, lowBit>::value)
+	} else if (std::is_same<T, lowBit>::value)
 	{
 		if (type == "BITS")
 			cout << bitset<BIT_SIZE>(var) << " ";
 		else if (type == "FLOAT")
-			cout << (static_cast<int32_t>(var)) / (float)(1 << FLOAT_PRECISION) << " ";
+			cout << (static_cast<int32_t>(var)) / (float)(1 << LOW_PRECISION) << " ";
 		else if (type == "SIGNED")
 			cout << static_cast<int32_t>(var) << " ";
 		else if (type == "UNSIGNED")
@@ -432,12 +431,12 @@ void Merge2Vec(Vec &a, const vector<T> v1, const vector<T> v2, size_t size)
 
 inline smallType getMSB(lowBit a)
 {
-	return ((smallType)((a >> (BIT_SIZE - 1)) & 1));
+	return ((smallType)((a >> (BIT_SIZE_LOW - 1)) & 1));
 }
 
 inline smallType getMSB(highBit a)
 {
-	return ((smallType)((a >> (BIT_SIZE - 1)) & 1));
+	return ((smallType)((a >> (BIT_SIZE_HIGH - 1)) & 1));
 }
 
 inline RSSSmallType addModPrime(RSSSmallType a, RSSSmallType b)
@@ -496,12 +495,12 @@ inline RSSSmallType XORPublicModPrime(RSSSmallType a, bool r)
 
 inline smallType wrapAround(lowBit a, lowBit b)
 {
-	return (a > MINUS_ONE - b);
+	return (a > ((lowBit)-1) - b);
 }
 
 inline smallType wrapAround(highBit a, highBit b)
 {
-	return (a > MINUS_ONE - b);
+	return (a > ((highBit)-1) - b);
 }
 
 inline smallType wrap3(lowBit a, lowBit b, lowBit c)

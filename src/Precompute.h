@@ -44,7 +44,15 @@ public:
 	void getShareConvertObjects(T &r, RSSVectorSmallType &shares_r,
 								RSSVectorSmallType &alpha, size_t size)
 	{
-		assert(shares_r.size() == size * BIT_SIZE && "getShareConvertObjects size mismatch");
+		size_t bit_size = BIT_SIZE;
+		if (std::is_same<T, RSSVectorHighType>::value) {
+			bit_size = BIT_SIZE_HIGH;
+		} else if (std::is_same<T, RSSVectorLowType>::value) {
+			bit_size = BIT_SIZE_LOW;
+		} else {
+			cout << "Not supported type" << typeid(r).name() << endl;
+		}
+		assert(shares_r.size() == size * bit_size && "getShareConvertObjects size mismatch");
 		for (auto &it : r)
 			it = std::make_pair(0, 0);
 

@@ -1914,6 +1914,64 @@ void debugMaxpool()
 #endif
 }
 
+void debugSquare()
+{
+	vector<lowBit> data_a {0, 2, 4, -5, 10, 7};
+	size_t size = data_a.size();
+	for (size_t i = 0; i < size; i++)
+		data_a[i] = data_a[i] * (1 << LOW_PRECISION);
+	RSSVectorLowType a(size),b(size);
+
+	funcGetShares(a, data_a);
+	funcSquare(a, b, size);
+
+// #if (!LOG_DEBUG)
+	print_vector(a, "FLOAT", "a_data:", size);
+	print_vector(b, "FLOAT", "b_data:", size);
+// #endif
+}
+
+void debugExp()
+{
+	vector<highBit> data_a {0, -2, -4, 5, 3, 7};
+	size_t size = data_a.size();
+	for (size_t i = 0; i< size; i++)
+		data_a[i] = data_a[i] * (1 << HIGH_PRECISION);
+	RSSVectorHighType a(size),b(size);
+
+	funcGetShares(a, data_a);
+	funcExp(a, b, size);
+
+// #if (!LOG_DEBUG)
+	print_vector(a, "FLOAT", "a_data:", size);
+	print_vector(b, "FLOAT", "b_data:", size);
+// #endif
+}
+
+void debugSoftmax() {
+	size_t rows = 3, cols = 5;
+	size_t size = rows * cols;
+
+	vector<highBit> data = {
+		1, 2, 3, 4, 5,
+		2, 1, 2, 7, 0,
+		8, 4, 4, 2, 1,
+	};
+
+	for (size_t i = 0; i< size; i++)
+		data[i] = data[i] * (1 << HIGH_PRECISION);
+
+	RSSVectorHighType a(size), b(size);
+
+	funcGetShares(a, data);
+	funcSoftmax(a, b, rows, cols, false);
+
+// #if (!LOG_DEBUG)
+	print_vector(a, "FLOAT", "a_data:", size);
+	print_vector(b, "FLOAT", "b_data:", size);
+// #endif
+}
+
 /******************************** Test ********************************/
 
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter)
@@ -2053,8 +2111,6 @@ void print_vector(RSSVectorHighType &var, string type, string pre_text, int prin
 	}
 	cout << endl;
 }
-// template void funcReconstruct<RSSVectorHighType, highBit>(const RSSVectorHighType &a, vector<highBit> &b, size_t size, string str, bool print);
-// template void funcReconstruct<RSSVectorLowType, lowBit>(const RSSVectorLowType &a, vector<lowBit> &b, size_t size, string str, bool print);
 
 // void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos)
 // {

@@ -286,6 +286,21 @@ void runTest(string str, string whichTest, string &network)
 			network = "BoolAnd";
 			debugBoolAnd();
 		}
+		else if (whichTest.compare("Square") == 0)
+		{
+			network = "Square";
+			debugSquare();
+		}
+		else if (whichTest.compare("Exp") == 0)
+		{
+			network = "Exp";
+			debugExp();
+		}
+		else if (whichTest.compare("Softmax") == 0)
+		{
+			network = "Softmax";
+			debugSoftmax();
+		}
 		else
 			assert(false && "Unknown debug mode selected");
 	}
