@@ -186,6 +186,9 @@ bool equalRssVector(const V &v1, const V &v2, size_t size)
 // 		cout << "(" << var.first << ", " << var.second << ") ";
 // }
 
+void printBoolVec(vector<bool> &data, string str, size_t size);
+void printBoolRssVec(const RSSVectorBoolType &data, string str, size_t size);
+
 template <typename Vec>
 void printRssVector(Vec &var, string pre_text, int print_nos)
 {

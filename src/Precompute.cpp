@@ -7,7 +7,7 @@ Precompute::~Precompute() {}
 
 Precompute::Precompute(int partyNum, std::string basedir)
 {
-	this->partyNum = partyNum; 
+	this->partyNum = partyNum;
 	string filestr = basedir;
 	string nextstr = basedir;
 	string prevstr = basedir;
@@ -141,12 +141,50 @@ void Precompute::getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVe
 		it = std::make_pair(0, 0);
 }
 
-void Precompute::getZeroBoolRand(vector<bool> &a, size_t size)
+void Precompute::getZeroBRand(vector<bool> &a, size_t size)
 {
-	assert(a.size()==size && "zero bool share random");
+	assert(a.size() == size && "zero bool share random");
 
 	for (size_t i = 0; i < size; i++)
 	{
 		a[i] = aes_prev->getBoolRand() ^ aes_next->getBoolRand();
+	}
+}
+
+void Precompute::getZeroBShareSender(vector<RSSBoolType> &a, size_t size)
+{
+	vector<bool> a3(size);
+	thread receiver(receiveBoolVector, ref(a3), prevParty(partyNum), size); // receive a3
+
+	vector<bool> a2(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		a2[i] = aes_next->getBoolRand();
+	}
+
+	receiver.join();
+
+	for (size_t i = 0; i < size; i++)
+	{
+		bool temp = a3[i] ^ a2[i];
+		a[i] = make_pair(temp, a2[i]);
+	}
+}
+
+void Precompute::getZeroBSharePrev(vector<bool> &a, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = aes_prev->getBoolRand();
+	}
+	thread sender(sendBoolVector, ref(a), nextParty(partyNum), size);
+	sender.join();
+}
+
+void Precompute::getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
 	}
 }

@@ -1,4 +1,4 @@
-#include "Functionalities.h"
+#include "unitTests.h"
 
 void debugPartySS()
 {
@@ -135,6 +135,55 @@ void debugZeroRandom()
 	checkRight<lowBit>(ref(b1));
 }
 
+void debugBoolAnd()
+{
+	size_t size = 10;
+	vector<bool> data1 = {true, false, true, true, false, false, false, false, true, true};	 // false, false, false, true, true
+	vector<bool> data2 = {true, false, false, false, true, true, false, true, false, false}; // true, false, true, false, false
+
+	RSSVectorBoolType data_ss1(size);
+	RSSVectorBoolType data_ss2(size);
+	if (partyNum == PARTY_A)
+	{
+		funcBoolShareSender(data_ss1, data1, size);
+		funcBoolShareSender(data_ss2, data2, size);
+	}
+	else
+	{
+		funcBoolShareReceiver(data_ss1, PARTY_A, size);
+		funcBoolShareReceiver(data_ss2, PARTY_A, size);
+	}
+
+	// printBoolRssVec(data_ss1, "data_ss1", size);
+	// printBoolRssVec(data_ss2, "data_ss2", size);
+
+	RSSVectorBoolType data_ss(size);
+	funcBoolAnd(data_ss, data_ss1, data_ss2, size);
+
+	printBoolRssVec(data_ss, "and rss vec", size);
+
+	RSSVectorHighType result_h_rss(size);
+	funcB2A<RSSVectorHighType, highBit>(result_h_rss, data_ss, 1, size, 1, 0, 0, size);
+
+	RSSVectorLowType result_l_rss(size);
+	funcB2A<RSSVectorLowType, lowBit>(result_l_rss, data_ss, 1, size, 1, 0, 0, size);
+
+#if (!LOG_DEBUG)
+	// check right
+	vector<highBit> plain1(size);
+	vector<lowBit> plain2(size);
+	funcReconstruct<RSSVectorHighType, highBit>(result_h_rss, plain1, size, "high output", false);
+	funcReconstruct<RSSVectorLowType, lowBit>(result_l_rss, plain2, size, "low output", false);
+	for (size_t i = 0; i < size; i++)
+	{
+		highBit temp1 = data1[i] & data2[i];
+		lowBit temp2 = data1[i] & data2[i];
+		assert(plain1[i] == temp1);
+		assert(plain2[i] == temp2);
+	}
+#endif
+}
+
 void debugPosWrap()
 {
 }
@@ -231,6 +280,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "ZeroRandom";
 			debugZeroRandom();
+		}
+		else if (whichTest.compare("BoolAnd") == 0)
+		{
+			network = "BoolAnd";
+			debugBoolAnd();
 		}
 		else
 			assert(false && "Unknown debug mode selected");

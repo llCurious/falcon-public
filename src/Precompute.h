@@ -62,7 +62,10 @@ public:
 	void getTriplets(Vec &a, Vec &b, Vec &c, size_t size);
 	void getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVectorSmallType &c, size_t size);
 
-	void getZeroBoolRand(vector<bool> &a, size_t size);
+	void getZeroBRand(vector<bool> &a, size_t size);
+	void getZeroBShareSender(vector<RSSBoolType> &a, size_t size);
+	void getZeroBSharePrev(vector<bool> &a, size_t size);
+	void getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size);
 
 	template <typename T>
 	void getNextRand(vector<T> &a, size_t size);

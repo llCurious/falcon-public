@@ -38,13 +38,15 @@ bool AESObject::getBoolRand()
 
 	if (boolCnt == 0)
 	{
-		__m128i boolRandomNumber = newRandomNumber();
-		boolRandomArray = (bool *)&boolRandomNumber;
+		__m128i rand128 = newRandomNumber();
+		long long *temp = (long long *)&rand128;
+		boolRandomNumber = temp[0];
 	}
 
-	ret = (bool)boolRandomArray[boolCnt];
+	ret = (boolRandomNumber & 1) ? true : false;
+	boolRandomNumber = boolRandomNumber >> 1;
 
-	boolCnt++;
+	++boolCnt;
 	if (boolCnt == boolNum)
 		boolCnt = 0;
 

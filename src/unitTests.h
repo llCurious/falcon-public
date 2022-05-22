@@ -3,6 +3,8 @@
 #pragma once
 
 #include <thread>
+#include "Functionalities.h"
+#include "BooleanFunc.h"
 
 /************Debug****************/
 
@@ -13,6 +15,7 @@ void debugZeroRandom(); // void Precompute::getZeroShareRand(vector<T> &a, size_
 void debugReduction();
 void debugPosWrap();
 void debugWCExtension();
+void debugBoolAnd();
 
 void runTest(string str, string whichTest, string &network);
 
