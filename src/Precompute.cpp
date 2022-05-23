@@ -188,3 +188,16 @@ void Precompute::getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size)
 		a[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
 	}
 }
+
+
+void Precompute::getB2ARand(RSSVectorBoolType &dataB, size_t size)
+{
+	// assert(dataA.size() == dataB.size() && dataB.size() == size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		dataB[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
+	}
+
+	// funcB2AbyXOR<Vec, T>(dataA, dataB, size);
+}

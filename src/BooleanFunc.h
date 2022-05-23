@@ -19,20 +19,26 @@ void funcBoolShareReceiver(RSSVectorBoolType &result, int shareParty, size_t siz
 
 // void funcBoolShare(RSSVectorBoolType &result, const vector<bool> &a, size_t size);
 
-void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size);
+void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size, string title, bool isprint);
 
 void funcBoolAnd(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size);
 
+void funcBoolXor(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size);
+
+void funcBoolRev(vector<bool> &result, const RSSVectorBoolType &data, size_t size, string title, bool isprint);
+
 template <typename Vec, typename T>
-void funcB2A(Vec &result, RSSVectorBoolType &data, size_t rows, size_t common_dim, size_t columns,
-             size_t transpose_a, size_t transpose_b, size_t size);
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size);
+
+template <typename Vec, typename T>
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size);
 
 // [b]^B = (b_0, b_1, b_2)
 // P_A: (b_2, 0) (0, b_0)  (0, 0)
 // P_B: (0, 0)   (b_0, 0)  (0, b_1)
 // P_C: (0, b_2) (0, 0)    (b_1, 0)
 template <typename Vec, typename T>
-void funcB2A(Vec &result, RSSVectorBoolType &data, size_t size)
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size)
 {
     Vec aRss(size);
     Vec bRss(size);
@@ -98,4 +104,54 @@ void funcB2A(Vec &result, RSSVectorBoolType &data, size_t size)
         result[i] = make_pair(aRss[i].first + bRss[i].first - 2 * amulb[i].first,
                               aRss[i].second + bRss[i].second - 2 * amulb[i].second);
     }
+}
+
+template <typename Vec, typename T>
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size)
+{
+    RSSVectorBoolType randB(size);
+    Vec randA(size);
+    PrecomputeObject->getB2ARand(randB, size);
+    funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size);
+    // OFFLINE
+
+    // vector<bool> rB(size);
+    // funcBoolRev(rB, randB, size, "rand plain Bool", true);
+    // vector<T> rA(size);
+    // funcReconstruct<Vec, T>(randA, rA, size, "rand plain", true);
+    // vector<bool> d(size);
+    // funcBoolRev(d, data, size, "data plain Bool", true);
+
+    RSSVectorBoolType cRss(size);
+    funcBoolXor(cRss, data, randB, size); // mask data using rand
+    vector<bool> c(size);
+    funcBoolRev(c, cRss, size, "c plain", false);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        if (c[i])
+        { // x1 = 1-c
+            if (partyNum == PARTY_B)
+            {
+                result[i] = make_pair(-randA[i].first, 1 - randA[i].second);
+            }
+            else if (partyNum == PARTY_C)
+            {
+                result[i] = make_pair(1 - randA[i].first, -randA[i].second);
+            }
+            else
+            {
+                result[i] = make_pair(-randA[i].first, -randA[i].second);
+            }
+        }
+        else
+        {
+            result[i] = make_pair(randA[i].first, randA[i].second);
+        }
+    }
+
+    // vector<T> outputA(size);
+    // funcReconstruct<Vec, T>(result, outputA, size, "output plain", true);
+
+    // printRssVector(result, "b2a", size);
 }

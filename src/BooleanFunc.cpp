@@ -77,3 +77,51 @@ void funcBoolAnd(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const R
 
     mergeBoolVec(result, result1, result2, size);
 }
+
+void funcBoolXor(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size)
+{
+    for (size_t i = 0; i < size; i++)
+    {
+        result[i].first = a1[i].first ^ a2[i].first;
+        result[i].second = a1[i].second ^ a2[i].second;
+    }
+}
+
+void funcBoolRev(vector<bool> &result, const RSSVectorBoolType &data, size_t size, string title, bool isprint)
+{
+    assert(result.size() == size && "a.size mismatch for reconstruct function");
+
+    if (SECURITY_TYPE.compare("Semi-honest") == 0)
+    {
+        vector<bool> data_next(size);
+        vector<bool> data_extra(size);
+
+        for (size_t i = 0; i < size; i++)
+        {
+            data_next[i] = data[i].second;
+            result[i] = data[i].first ^ data[i].second;
+        }
+
+        thread *threads = new thread[2];
+        threads[0] = thread(sendBoolVector, ref(data_next), prevParty(partyNum), size);
+        threads[1] = thread(receiveBoolVector, ref(data_extra), nextParty(partyNum), size);
+
+        for (int i = 0; i < 2; i++)
+            threads[i].join();
+
+        for (size_t i = 0; i < size; i++)
+        {
+            result[i] = result[i] ^ data_extra[i];
+        }
+    }
+
+    if (isprint)
+    {
+        cout << title << endl;
+        for (size_t i = 0; i < size; i++)
+        {
+            cout << result[i] << " ";
+        }
+        cout << endl;
+    }
+}

@@ -137,7 +137,7 @@ void debugZeroRandom()
 
 void debugBoolAnd()
 {
-
+	int checkParty = PARTY_C;
 	size_t size = 20;
 	vector<bool> data1(size);
 	vector<bool> data2(size);
@@ -159,15 +159,15 @@ void debugBoolAnd()
 
 	RSSVectorBoolType data_ss1(size);
 	RSSVectorBoolType data_ss2(size);
-	if (partyNum == PARTY_A)
+	if (partyNum == checkParty)
 	{
 		funcBoolShareSender(data_ss1, data1, size);
 		funcBoolShareSender(data_ss2, data2, size);
 	}
 	else
 	{
-		funcBoolShareReceiver(data_ss1, PARTY_A, size);
-		funcBoolShareReceiver(data_ss2, PARTY_A, size);
+		funcBoolShareReceiver(data_ss1, checkParty, size);
+		funcBoolShareReceiver(data_ss2, checkParty, size);
 	}
 
 	// printBoolRssVec(data_ss1, "data_ss1", size);
@@ -183,23 +183,32 @@ void debugBoolAnd()
 
 #if (!LOG_DEBUG)
 	// check right
+
 	vector<highBit> plain1(size);
 	funcReconstruct<RSSVectorHighType, highBit>(result_h_rss, plain1, size, "high output", false);
-	for (size_t i = 0; i < size; i++)
+	if (partyNum == checkParty)
 	{
-		highBit temp1 = data1[i] & data2[i];
-		assert(plain1[i] == temp1);
-		// assert(plain2[i] == temp2);
+		for (size_t i = 0; i < size; i++)
+		{
+			highBit temp1 = data1[i] & data2[i];
+			assert(plain1[i] == temp1);
+			// assert(plain2[i] == temp2);
+		}
 	}
 
 	vector<lowBit> plain2(size);
 	funcReconstruct<RSSVectorLowType, lowBit>(result_l_rss, plain2, size, "low output", false);
-	for (size_t i = 0; i < size; i++)
+
+	if (partyNum == checkParty)
 	{
-		lowBit temp2 = data1[i] & data2[i];
-		// assert(plain1[i] == temp1);
-		// assert(plain2[i] == temp2);
+		for (size_t i = 0; i < size; i++)
+		{
+			lowBit temp2 = data1[i] & data2[i];
+			// assert(plain1[i] == temp1);
+			assert(plain2[i] == temp2);
+		}
 	}
+
 #endif
 }
 

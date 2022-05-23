@@ -45,11 +45,16 @@ public:
 								RSSVectorSmallType &alpha, size_t size)
 	{
 		size_t bit_size = BIT_SIZE;
-		if (std::is_same<T, RSSVectorHighType>::value) {
+		if (std::is_same<T, RSSVectorHighType>::value)
+		{
 			bit_size = BIT_SIZE_HIGH;
-		} else if (std::is_same<T, RSSVectorLowType>::value) {
+		}
+		else if (std::is_same<T, RSSVectorLowType>::value)
+		{
 			bit_size = BIT_SIZE_LOW;
-		} else {
+		}
+		else
+		{
 			cout << "Not supported type" << typeid(r).name() << endl;
 		}
 		assert(shares_r.size() == size * bit_size && "getShareConvertObjects size mismatch");
@@ -102,6 +107,8 @@ public:
 
 	template <typename Vec, typename T>
 	void getZeroShareRand(vector<T> &a, size_t size);
+
+	void getB2ARand(RSSVectorBoolType &dataB, size_t size);
 };
 
 template <typename T>

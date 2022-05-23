@@ -159,7 +159,7 @@ void funcReconstruct(const VEC &a, vector<T> &b, size_t size, string str, bool p
 
 		if (print)
 		{
-			std::cout << str << ": \t\t";
+			std::cout << str << endl;
 			for (int i = 0; i < size; ++i)
 				print_linear(b[i], "SIGNED");
 			std::cout << std::endl;
