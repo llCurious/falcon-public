@@ -107,7 +107,6 @@ void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
 		receiver.join();
 
 		Merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
-
 	}
 	else
 	{
@@ -1227,7 +1226,7 @@ void funcDotProduct(const T &a, const T &b,
 			c[i].second = recv[i];
 		}
 	}
-	else
+	else // TODO-trunction
 	{
 		vector<computeType> diffReconst(size, 0);
 		T r(size), rPrime(size);
@@ -1435,18 +1434,24 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	log_print("funcSquare");
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<Vec, RSSVectorHighType>::value) {
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
 	vector<elementType> temp3(size, 0), diffReconst(size, 0);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] += a[i].first * a[i].first +
 					a[i].first * a[i].second +
 					a[i].second * a[i].first;
@@ -1456,7 +1461,8 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] -= rPrime[i].first;
 	}
 
@@ -1495,7 +1501,7 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 			b[i].first = r[i].first;
 			b[i].second = r[i].second + diffReconst[i];
 		}
-	}	
+	}
 }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
@@ -1505,19 +1511,25 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	log_print("funcExp");
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<Vec, RSSVectorHighType>::value) {
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
-	
+
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
 	vector<elementType> temp3(size, 0), diffReconst(size, 0);
 
 	// compute FXP(x/m)
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] = a[i].first;
 	}
 
@@ -1525,7 +1537,8 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] -= rPrime[i].first;
 	}
 
@@ -1561,12 +1574,13 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		for (int i = 0; i < size; ++i)
 		{
 			b[i].first = r[i].first;
-			b[i].second = r[i].second + diffReconst[i]+(1 << float_precision);
+			b[i].second = r[i].second + diffReconst[i] + (1 << float_precision);
 		}
 	}
 
 	// compute (1+x/m)^m. using m invocations of square
-	for(size_t i = 0; i < EXP_PRECISION; i++){
+	for (size_t i = 0; i < EXP_PRECISION; i++)
+	{
 		funcSquare(b, b, size);
 	}
 }
@@ -1593,8 +1607,10 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	vector<smallType> reconst_maxPrime(maxPrime.size());
 	funcReconstructBit(maxPrime, reconst_maxPrime, rows * cols, "maxP", true);
 
-	for (size_t i = 0; i < rows; i++) {
-		for (size_t j = 0; j < cols; j++) {
+	for (size_t i = 0; i < rows; i++)
+	{
+		for (size_t j = 0; j < cols; j++)
+		{
 			temp[i * cols + j].first -= max[i].first;
 			temp[i * cols + j].second -= max[i].second;
 		}
@@ -1609,13 +1625,16 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 
 	// compute the dividend, i.e., the sum of the exps
 	Vec dividend(size);
-	for (size_t i = 0; i < rows; i++) {
+	for (size_t i = 0; i < rows; i++)
+	{
 		elementType tmp_sum_first = 0, tmp_sum_second = 0;
-		for (size_t j = 0; j < cols; j++) {
+		for (size_t j = 0; j < cols; j++)
+		{
 			tmp_sum_first += exp_elements[i * cols + j].first;
 			tmp_sum_second += exp_elements[i * cols + j].second;
 		}
-		for (size_t j = 0; j < cols; j++) {
+		for (size_t j = 0; j < cols; j++)
+		{
 			dividend[i * cols + j].first = tmp_sum_first;
 			dividend[i * cols + j].second = tmp_sum_second;
 		}

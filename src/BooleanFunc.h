@@ -32,8 +32,7 @@ void funcB2A(Vec &result, RSSVectorBoolType &data, size_t rows, size_t common_di
 // P_B: (0, 0)   (b_0, 0)  (0, b_1)
 // P_C: (0, b_2) (0, 0)    (b_1, 0)
 template <typename Vec, typename T>
-void funcB2A(Vec &result, RSSVectorBoolType &data, size_t rows, size_t common_dim, size_t columns,
-             size_t transpose_a, size_t transpose_b, size_t size)
+void funcB2A(Vec &result, RSSVectorBoolType &data, size_t size)
 {
     Vec aRss(size);
     Vec bRss(size);
@@ -56,7 +55,7 @@ void funcB2A(Vec &result, RSSVectorBoolType &data, size_t rows, size_t common_di
     }
     else
     {
-        funcShareReceiver<Vec, T>(aRss, PARTY_A, size); // get ss of a
+        funcShareReceiver<Vec, T>(aRss, size, PARTY_A); // get ss of a
 
         if (partyNum == PARTY_B)
         {
@@ -74,16 +73,25 @@ void funcB2A(Vec &result, RSSVectorBoolType &data, size_t rows, size_t common_di
         }
     }
 
-    printRssVector<Vec>(aRss, "a", size);
-    printRssVector<Vec>(bRss, "b", size);
+    // printRssVector<Vec>(aRss, "a_rss", size);
+    // printRssVector<Vec>(bRss, "b_rss", size);
+
+    // vector<T> a_plain(size);
+    // vector<T> b_plain(size);
+
+    // funcReconstruct<Vec, T>(aRss, a_plain, size, "a_plain", true);
+    // funcReconstruct<Vec, T>(bRss, b_plain, size, "b_plain", true);
 
     // P_A: (a_2, a_0) (0,   0  )
     // P_B: (a_0, a_1) (0,   b_1)
     // P_C: (a_1, a_2) (b_1, 0  )
 
     // a ^ b1 = a + b1 - 2*a*b1
-    funcMatMul<Vec>(aRss, bRss, amulb, rows, common_dim, columns, 0, 0, FLOAT_PRECISION); // a * b1
-    printRssVector<Vec>(amulb, "a*b", size);
+    funcDotProduct(aRss, bRss, amulb, size, false, FLOAT_PRECISION); // a * b1
+    // printRssVector<Vec>(amulb, "a*b", size);
+
+    // vector<T> amulb_plain(size);
+    // funcReconstruct<Vec, T>(amulb, amulb_plain, size, "a*b_plain", true);
 
     for (size_t i = 0; i < size; i++)
     {

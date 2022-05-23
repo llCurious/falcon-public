@@ -198,7 +198,6 @@ void printRssVector(Vec &var, string pre_text, int print_nos)
 		cout << "(" << var[i].first << ", " << var[i].second << ")" << endl;
 		// printOneRss<T, B>(var[i], type);
 	}
-	cout << endl;
 }
 
 

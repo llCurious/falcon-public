@@ -60,20 +60,20 @@ void funcBoolAnd(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const R
     vector<bool> zero_rand(size);
     PrecomputeObject->getZeroBRand(zero_rand, size);
 
-    vector<bool> a(size);
+    vector<bool> result1(size);
     vector<bool> result2(size);
 
     for (size_t i = 0; i < size; i++)
     {
-        a[i] = (a1[i].first & a2[i].first) ^ (a1[i].first & a2[i].second) ^ (a1[i].first & a2[i].second) ^ zero_rand[i];
+        result1[i] = (a1[i].first & a2[i].first) ^ (a1[i].first & a2[i].second) ^ (a1[i].second & a2[i].first) ^ zero_rand[i];
     }
 
     thread *threads = new thread[2];
-    threads[0] = thread(sendBoolVector, ref(a), prevParty(partyNum), size);
+    threads[0] = thread(sendBoolVector, ref(result1), prevParty(partyNum), size);
     threads[1] = thread(receiveBoolVector, ref(result2), nextParty(partyNum), size);
 
     for (int i = 0; i < 2; i++)
         threads[i].join();
 
-    mergeBoolVec(result, zero_rand, result2, size);
+    mergeBoolVec(result, result1, result2, size);
 }

@@ -137,9 +137,25 @@ void debugZeroRandom()
 
 void debugBoolAnd()
 {
-	size_t size = 10;
-	vector<bool> data1 = {true, false, true, true, false, false, false, false, true, true};	 // false, false, false, true, true
-	vector<bool> data2 = {true, false, false, false, true, true, false, true, false, false}; // true, false, true, false, false
+
+	size_t size = 20;
+	vector<bool> data1(size);
+	vector<bool> data2(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data1[i] = rand() % 2;
+		data2[i] = rand() % 2;
+	}
+
+	// vector<bool> data1 = {true, false, true, true, false, true, false, false, true, true};	// false, false, false, true, true
+	// vector<bool> data2 = {true, false, false, false, true, true, false, true, false, true}; // true, false, true, false, false
+
+	/**
+	size_t size = 4;
+	vector<bool> data1 = {true, false, true, true};	  // false, false, false, true, true
+	vector<bool> data2 = {true, false, false, false}; // true, false, true, false, false
+	// and: 1,0,0,0
+	**/
 
 	RSSVectorBoolType data_ss1(size);
 	RSSVectorBoolType data_ss2(size);
@@ -160,26 +176,29 @@ void debugBoolAnd()
 	RSSVectorBoolType data_ss(size);
 	funcBoolAnd(data_ss, data_ss1, data_ss2, size);
 
-	printBoolRssVec(data_ss, "and rss vec", size);
-
 	RSSVectorHighType result_h_rss(size);
-	funcB2A<RSSVectorHighType, highBit>(result_h_rss, data_ss, 1, size, 1, 0, 0, size);
-
 	RSSVectorLowType result_l_rss(size);
-	funcB2A<RSSVectorLowType, lowBit>(result_l_rss, data_ss, 1, size, 1, 0, 0, size);
+	funcB2A<RSSVectorHighType, highBit>(result_h_rss, data_ss, size);
+	funcB2A<RSSVectorLowType, lowBit>(result_l_rss, data_ss, size);
 
 #if (!LOG_DEBUG)
 	// check right
 	vector<highBit> plain1(size);
-	vector<lowBit> plain2(size);
 	funcReconstruct<RSSVectorHighType, highBit>(result_h_rss, plain1, size, "high output", false);
-	funcReconstruct<RSSVectorLowType, lowBit>(result_l_rss, plain2, size, "low output", false);
 	for (size_t i = 0; i < size; i++)
 	{
 		highBit temp1 = data1[i] & data2[i];
-		lowBit temp2 = data1[i] & data2[i];
 		assert(plain1[i] == temp1);
-		assert(plain2[i] == temp2);
+		// assert(plain2[i] == temp2);
+	}
+
+	vector<lowBit> plain2(size);
+	funcReconstruct<RSSVectorLowType, lowBit>(result_l_rss, plain2, size, "low output", false);
+	for (size_t i = 0; i < size; i++)
+	{
+		lowBit temp2 = data1[i] & data2[i];
+		// assert(plain1[i] == temp1);
+		// assert(plain2[i] == temp2);
 	}
 #endif
 }

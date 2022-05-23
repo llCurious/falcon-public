@@ -434,8 +434,15 @@ void printBoolRssVec(const RSSVectorBoolType &data, string str, size_t size)
 	cout << str << endl;
 	for (size_t i = 0; i < size; i++)
 	{
-		cout << data[i].first << " " << data[i].second << endl;
+		cout << data[i].first << " ";
 	}
+	cout << endl;
+
+	for (size_t i = 0; i < size; i++)
+	{
+		cout << data[i].second << " ";
+	}
+	cout << endl;
 }
 
 extern void funcReconstruct(const RSSVectorSmallType &a, vector<smallType> &b, size_t size, string str, bool print);
