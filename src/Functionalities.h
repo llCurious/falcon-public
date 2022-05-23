@@ -965,6 +965,15 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value) {
+		float_precision = HIGH_PRECISION;
+	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+		float_precision = LOW_PRECISION;
+	} else {
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
+
 	vector<computeType> data_twoPointNine(size, constTwoPointNine), data_one(size, constOne), reconst(size);
 	VEC ones(size), twoPointNine(size), twoX(size), w0(size), xw0(size),
 		epsilon0(size), epsilon1(size), termOne(size), termTwo(size), answer(size);
@@ -986,7 +995,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
-	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - FLOAT_PRECISION)));
+	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
 }
 
 template <typename VEC>
@@ -1010,6 +1019,15 @@ void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 	size_t precision = alpha + 1;
 	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
+
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value) {
+		float_precision = HIGH_PRECISION;
+	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+		float_precision = LOW_PRECISION;
+	} else {
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
 
 	vector<computeType> data_twoPointNine(B, constTwoPointNine), data_one(B, constOne), reconst(B);
 	VEC ones(B), twoPointNine(B), twoX(B), w0(B), xw0(B),
@@ -1035,7 +1053,7 @@ void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 	for (int i = 0; i < B; ++i)
 		for (int j = 0; j < batchSize; ++j)
 			b_repeat[i * batchSize + j] = answer[i];
-	funcDotProduct(b_repeat, a, quotient, batchSize * B, true, (2 * precision - FLOAT_PRECISION)); // Convert to fixed precision
+	funcDotProduct(b_repeat, a, quotient, batchSize * B, true, (2 * precision - float_precision)); // Convert to fixed precision
 }
 
 template <typename VEC>
@@ -1409,7 +1427,6 @@ void testReduction(size_t size);
 // }
 void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos);
 void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
-
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
 /********************* Share Conversion Functionalites *********************/
@@ -1418,7 +1435,12 @@ void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
 void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
 void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGeneration();
-void funcTruncation(const RSSVectorHighType &a, const RSSVectorLowType &b, int trunc_bits);
+
+template <typename Vec>
+void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size) {
+	log_print("probabilistic truncation");
+}
+
 void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);
 
 /********************* Mixed-Precision Activations Functionalites *********************/
