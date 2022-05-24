@@ -348,4 +348,88 @@ void receiveSixVectors(vector<T> &vec1, vector<T> &vec2, vector<T> &vec3,
 		vec6[i] = temp[i + offset];
 }
 
+template <typename T>
+void appendBool2u8(vector<T> &data, const vector<T> &adata, const vector<bool> &booldata, size_t size1, size_t size2)
+{
+	size_t i = 0; // point to data
+	while (i < size1)
+	{
+		data[i] = adata[i];
+		++i;
+	}
+	// size_t j = 0; // point to res
+	int bit_num = sizeof(T) * 8;
+	int j = 0;
+	while (j < size2)
+	{
+		T temp = 0;
+		for (size_t k = 0; (k < bit_num) && (j < size2); ++k)
+		{
+			temp = (temp << 1) + booldata[j];
+			++j;
+		}
+		data[i] = temp;
+		++i;
+	}
+}
+
+/**
+ * @brief split data to boold and adata respectively
+ *
+ * @tparam T
+ * @param data
+ * @param boold
+ * @param adata
+ * @param size1 size of boold
+ * @param size2 size of adata
+ */
+template <typename T>
+void splitu82Bool(const vector<T> &data, vector<T> &adata, vector<bool> &booldata, size_t size1, size_t size2)
+{
+	assert(booldata.size() == size1 && adata.size() == size2);
+	size_t i = 0; // point to data
+	while (i < size1)
+	{
+		adata[i] = data[i];
+		++i;
+	}
+
+	size_t j = 0; // point to booldata
+	int bit_num = sizeof(T) * 8;
+	T temp;
+	T msb = (1l << (bit_num - 1));
+
+	bitset<64> msbbit(msb);
+	// cout << "bit num " << bit_num << " msb " << msbbit << " ";
+	while (j < size2 && size2 - j >= bit_num)
+	{
+		temp = data[i];
+		cout << temp;
+		for (int k = bit_num; k > 0; --k)
+		{
+			booldata[j] = (temp & msb) ? true : false;
+			// cout << booldata[j] << "hh ";
+			temp = temp << 1;
+			// res[j] = temp[k];
+			++j;
+		}
+		++i;
+	}
+
+	size_t d = size2 - j;
+	if (d > 0)
+	{
+		msb = (msb >> (bit_num - d));
+		temp = data[i];
+		// cout << data[i] << " " << msb << "hh ";
+		// bitset<bit_num> temp(data[i]);
+		for (int k = d; k > 0; --k)
+		{
+			booldata[j] = (temp & msb) ? true : false;
+			temp = temp << 1;
+			++j;
+		}
+	}
+}
+
 #endif

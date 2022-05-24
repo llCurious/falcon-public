@@ -73,8 +73,8 @@ int main(int argc, char **argv)
 	// runTest("Debug", "PairRandom", network);
 	// runTest("Debug", "PartyShare", network);
 	// runTest("Debug","ZeroRandom",network);
-	runTest("Debug", "BoolAnd", network);
-	// runTest("Debug", "PosWrap", network);
+	// runTest("Debug", "BoolAnd", network);
+	runTest("Debug", "PosWrap", network);
 	// runTest("Debug", "WC-Extension", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);

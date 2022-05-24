@@ -4,7 +4,6 @@
 
 #include <thread>
 #include "Functionalities.h"
-#include "BooleanFunc.h"
 
 /************Debug****************/
 

@@ -137,8 +137,8 @@ void debugZeroRandom()
 
 void debugBoolAnd()
 {
-	int checkParty = PARTY_C;
-	size_t size = 20;
+	int checkParty = PARTY_B;
+	size_t size = 5;
 	vector<bool> data1(size);
 	vector<bool> data2(size);
 	for (size_t i = 0; i < size; i++)
@@ -190,9 +190,9 @@ void debugBoolAnd()
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			highBit temp1 = data1[i] & data2[i];
+			highBit temp1 = data1[i] & data2[i] ? FLOAT_BIAS : 0;
+			// cout << temp1 << "hh" << plain1[i];
 			assert(plain1[i] == temp1);
-			// assert(plain2[i] == temp2);
 		}
 	}
 
@@ -203,8 +203,8 @@ void debugBoolAnd()
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			lowBit temp2 = data1[i] & data2[i];
-			// assert(plain1[i] == temp1);
+			lowBit temp2 = data1[i] & data2[i] ? FLOAT_BIAS : 0;
+			// cout << temp2 << "hh" << plain2[i];
 			assert(plain2[i] == temp2);
 		}
 	}
@@ -214,6 +214,62 @@ void debugBoolAnd()
 
 void debugPosWrap()
 {
+	size_t size = 200;
+	vector<lowBit> data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data[i] = rand();
+	}
+
+	// printVector<lowBit>(data, "input", size);
+
+	int checkParty = PARTY_B;
+
+	RSSVectorLowType dataRSS(size);
+	RSSVectorHighType wRSS(size);
+	if (partyNum == checkParty)
+	{
+		funcShareSender<RSSVectorLowType, lowBit>(dataRSS, data, size);
+	}
+	else
+	{
+		funcShareReceiver<RSSVectorLowType, lowBit>(dataRSS, size, checkParty);
+	}
+
+	funcPosWrap(wRSS, dataRSS, size); // test function
+
+	// printRssVector<RSSVectorLowType>(dataRSS, "data rss", size);
+	vector<highBit> w(size);
+	funcReconstruct<RSSVectorHighType, highBit>(wRSS, w, size, "w", false);
+
+	if (partyNum == nextParty(checkParty))
+	{
+		vector<lowBit> extra(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			extra[i] = dataRSS[i].second;
+		}
+
+		thread sender(sendVector<lowBit>, ref(extra), prevParty(partyNum), size);
+		sender.join();
+	}
+	else if (partyNum == checkParty)
+	{
+		// cout << "check" << endl;
+		vector<lowBit> extra(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			lowBit temp = dataRSS[i].first + dataRSS[i].second;
+			highBit result = (temp < dataRSS[i].first || temp < dataRSS[i].second) ? FLOAT_BIAS : 0;
+			// cout << result << " ";
+			lowBit temp2 = temp + extra[i];
+			result = result + (temp2 < temp || temp2 < extra[i]) ? FLOAT_BIAS : 0;
+			// cout << result << " hhh " << w[i] << endl;
+			assert(result == w[i]);
+		}
+	}
+
+	// funcPosWrap
 }
 
 void debugWCExtension()

@@ -123,6 +123,7 @@ void bool2u8(vector<smallType> &res, const vector<bool> &data, size_t size)
 	}
 }
 
+
 void u82bool(vector<bool> &res, const vector<smallType> &data, size_t size)
 {
 	size_t i = 0; // point to data
@@ -130,7 +131,6 @@ void u82bool(vector<bool> &res, const vector<smallType> &data, size_t size)
 	while (j < size && size - j > 7)
 	{
 		bitset<8> temp(data[i]);
-		// smallType temp = data[i];
 		for (int k = 7; k >= 0; --k)
 		{
 			res[j] = temp[k];
@@ -143,7 +143,7 @@ void u82bool(vector<bool> &res, const vector<smallType> &data, size_t size)
 	if (d > 0)
 	{
 		bitset<8> temp(data[i]);
-		for (int k = d-1; k >= 0; --k)
+		for (int k = d - 1; k >= 0; --k)
 		{
 			res[j] = temp[k];
 			++j;
@@ -154,8 +154,10 @@ void u82bool(vector<bool> &res, const vector<smallType> &data, size_t size)
 void receiveBoolVector(vector<bool> &vec, size_t player, size_t size)
 {
 	vector<smallType> temp(size / 8 + 1);
+
 	if (!communicationReceivers[player]->receiveMsg(temp.data(), temp.size() * sizeof(smallType), 0))
 		cout << "Receive myType vector error" << endl;
+
 	u82bool(vec, ref(temp), size);
 }
 
@@ -164,6 +166,12 @@ void sendBoolVector(vector<bool> &vec, size_t player, size_t size)
 	// cout << "send bool vec" << endl;
 	vector<smallType> temp(size / 8 + 1);
 	bool2u8(ref(temp), vec, size);
+
+	// for (size_t i = 0; i < temp.size(); i++)
+	// {
+	// 	cout << static_cast<int>(temp[i]) << " ";
+	// }
+	// cout <<  temp.size() * sizeof(smallType) << endl;
 
 	if (!communicationSenders[player]->sendMsg(temp.data(), temp.size() * sizeof(smallType), 0))
 		cout << "Receive myType vector error" << endl;
