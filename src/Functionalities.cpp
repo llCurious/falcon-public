@@ -1570,8 +1570,37 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 }
 
 // convert data from 32-bit to 64-bit
-void funcExtension(RSSVectorHighType &output, const RSSVectorLowType &input)
+void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size)
 {
+	cout << "2^m-1 " << (1 << 30) << endl;
+	lowBit bias1 = (1l << 30);
+	funcAddOneConst(input, bias1, size);
+
+	RSSVectorHighType w(size);
+	funcPosWrap(w, input, size);
+	for (size_t i = 0; i < size; i++)
+	{
+		output[i] = make_pair((highBit)input[i].first - (w[i].first << 31), (highBit)input[i].second - (w[i].second << 31));
+	}
+
+	highBit bias2 = (1l << 30);
+	highBit c = -bias2;
+
+	if (partyNum == PARTY_B)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i].second += c;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i].first += c;
+		}
+	}
+	// funcAddOneConst(output, bias2, size);
 }
 
 /****************************************************************/

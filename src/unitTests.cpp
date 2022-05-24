@@ -274,6 +274,42 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
+	size_t size = 3;
+	vector<lowBit> data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data[i] = rand();
+	}
+
+	// printVector<lowBit>(data, "input", size);
+
+	int checkParty = PARTY_B;
+
+	RSSVectorLowType datalow(size);
+	if (partyNum == checkParty)
+	{
+		funcShareSender<RSSVectorLowType, lowBit>(datalow, data, size);
+	}
+	else
+	{
+		funcShareReceiver<RSSVectorLowType, lowBit>(datalow, size, checkParty);
+	}
+
+	printRssVector<RSSVectorLowType>(datalow, "lowbit ss", size);
+	funcReconstruct<RSSVectorLowType, lowBit>(datalow, data, size, "low bit plain", true);
+
+	RSSVectorHighType datahigh(size);
+	funcWCExtension(datahigh, datalow, size); // test function
+
+	printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
+	vector<highBit> plain_high(size);
+	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", true);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		cout << plain_high[i] << " " << data[i] << endl;
+		// assert(plain_high[i] == (highBit)data[i]);
+	}
 }
 
 void runTest(string str, string whichTest, string &network)

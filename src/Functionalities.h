@@ -1412,10 +1412,67 @@ void print_vector(RSSVectorHighType &var, string type, string pre_text, int prin
 
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
+template <typename vec, typename T>
+void funcAddOneConst(vec &result, T c, size_t size)
+{
+	// if (partyNum == PARTY_B)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		result[i].second += c;
+	// 	}
+	// }
+	// else if (partyNum == PARTY_C)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		result[i].first += c;
+	// 	}
+	// }
+}
+
+template <typename vec, typename T>
+void funcAddConst(vec &result, vector<T> c, size_t size)
+{
+	if (partyNum == PARTY_B)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].second += c[i];
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].fisrt += c[i];
+		}
+	}
+}
+
+template <typename vec>
+void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
+{
+	if (minus)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(data1[i].first - data2[i].first, data1[i].second - data2[i].second);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(data1[i].first + data2[i].first, data1[i].second + data2[i].second);
+		}
+	}
+}
+
 /********************* Share Conversion Functionalites *********************/
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
-void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
-void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
+void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
+void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGeneration();
 void funcTruncation(const RSSVectorHighType &a, const RSSVectorLowType &b, int trunc_bits);
