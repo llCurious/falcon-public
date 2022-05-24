@@ -1609,11 +1609,11 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	temp = a;
 	funcMaxpool(temp, max, maxPrime, rows, cols);
 
-	vector<elementType> temp_reconst(rows);
-	funcReconstruct(max, temp_reconst, rows, "Softmax Log", true);
+	// vector<elementType> temp_reconst(rows);
+	// funcReconstruct(max, temp_reconst, rows, "Softmax Log", true);
 
-	vector<smallType> reconst_maxPrime(maxPrime.size());
-	funcReconstructBit(maxPrime, reconst_maxPrime, rows * cols, "maxP", true);
+	// vector<smallType> reconst_maxPrime(maxPrime.size());
+	// funcReconstructBit(maxPrime, reconst_maxPrime, rows * cols, "maxP", true);
 
 	for (size_t i = 0; i < rows; i++) {
 		for (size_t j = 0; j < cols; j++) {
@@ -1626,8 +1626,8 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	Vec exp_elements(size);
 	funcExp(temp, exp_elements, size);
 
-	vector<elementType> reconst_exp_elements(size);
-	funcReconstruct(exp_elements, reconst_exp_elements, size, "exp", true);
+	// vector<elementType> reconst_exp_elements(size);
+	// funcReconstruct(exp_elements, reconst_exp_elements, size, "exp", true);
 
 	// compute the dividend, i.e., the sum of the exps
 	Vec dividend(size);
@@ -1643,8 +1643,8 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 		}
 	}
 
-	vector<elementType> reconst_dividend(size);
-	funcReconstruct(dividend, reconst_dividend, size, "dividend", true);
+	// vector<elementType> reconst_dividend(size);
+	// funcReconstruct(dividend, reconst_dividend, size, "dividend", true);
 
 	// compute the division
 	funcDivision(exp_elements, dividend, b, size);
