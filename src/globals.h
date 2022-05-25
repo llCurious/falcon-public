@@ -15,8 +15,8 @@
 #define _aligned_free free
 #define getrandom(min, max) ((rand()%(int)(((max) + 1)-(min)))+ (min))
 #define floatToMyType(a) ((myType)(int)floor(a * (1 << FLOAT_PRECISION)))
-#define floatToLowType(a) ((lowBit)(int)floor(a * (1 << FLOAT_PRECISION)))
-#define floatToHighType(a) ((highBit)(int)floor(a * (1 << FLOAT_PRECISION)))
+#define floatToLowType(a) ((lowBit)(int)floor(a * (1 << LOW_PRECISION)))
+#define floatToHighType(a) ((highBit)(long)floor(a * (1 << HIGH_PRECISION)))
 
 
 /********************* AES and other globals *********************/
@@ -37,24 +37,24 @@
 #define PARTY_C 2
 #define USING_EIGEN false
 #define PRIME_NUMBER 67
-#define FLOAT_PRECISION 13
+#define FLOAT_PRECISION 20
 #define FLOAT_BIAS (1 << FLOAT_PRECISION)
 #define PRECISE_DIVISION false
 
 /********************* Neural Network globals *********************/
 //Batch size has to be a power of two
-#define LOG_MINI_BATCH 7
+#define LOG_MINI_BATCH 2
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
-#define LOG_LEARNING_RATE 5
+#define LOG_LEARNING_RATE 3
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 1
+#define NUM_ITERATIONS 3
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 
 
 /********************* Typedefs and others *********************/
-typedef uint32_t myType;
+typedef uint64_t myType;
 typedef uint8_t smallType;
 typedef std::pair<myType, myType> RSSMyType;
 typedef std::pair<smallType, smallType> RSSSmallType;
@@ -85,6 +85,6 @@ const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES
 #define EXP_PRECISION 9
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY true
+#define DEBUG_ONLY false
 
 #endif

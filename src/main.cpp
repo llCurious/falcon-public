@@ -72,12 +72,12 @@ int main(int argc, char **argv)
 	// runTest("Debug", "Reduction", network);
 	// runTest("Debug", "PairRandom", network);
 	// runTest("Debug", "PartyShare", network);
-	runTest("Debug","ZeroRandom",network);
+	// runTest("Debug","ZeroRandom",network);
 	// runTest("Debug", "PosWrap", network);
 	// runTest("Debug", "WC-Extension", network);
-	runTest("Debug", "Square", network);
-	runTest("Debug", "Exp", network);
-	runTest("Debug", "Softmax", network);
+	// runTest("Debug", "Square", network);
+	// runTest("Debug", "Exp", network);
+	// runTest("Debug", "Softmax", network);
 	// runTest("Test", "ReLUPrime1", network);
 
 	// runTest("Test", "BN", network);
@@ -95,6 +95,8 @@ int main(int argc, char **argv)
 
 #if (!DEBUG_ONLY)
 	// Run training
+	cout << "----------------------------------------------" << endl;
+	cout << "-------------------Run Training---------------" << endl;
 	network += " train";
 	train(net);
 
