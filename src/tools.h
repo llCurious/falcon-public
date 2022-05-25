@@ -390,9 +390,9 @@ void matrixMultRSS(const Vec &a, const Vec &b, vector<T> &temp3,
 }
 
 template <typename T>
-T dividePlain(T a, int b);
+T dividePlain(T a, long b);
 template <typename T>
-T dividePlain(T a, int b)
+T dividePlain(T a, long b)
 {
 	assert((b != 0) && "Cannot divide by 0");
 
@@ -402,10 +402,11 @@ T dividePlain(T a, int b)
 		return static_cast<myType>(static_cast<int64_t>(a) / static_cast<int64_t>(b));
 }
 
+// TODO: the `int` divisor has bugs. Since 1 << 32 equals 0.
 template <typename T>
-void dividePlain(vector<T> &vec, int divisor);
+void dividePlain(vector<T> &vec, long divisor);
 template <typename T>
-void dividePlain(vector<T> &vec, int divisor)
+void dividePlain(vector<T> &vec, long divisor)
 {
 	assert((divisor != 0) && "Cannot divide by 0");
 

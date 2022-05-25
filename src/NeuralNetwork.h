@@ -20,4 +20,5 @@ public:
 	void updateEquations();
 	void predict(RSSVectorMyType &maxIndex);
 	void getAccuracy();
+	void getLoss();
 };

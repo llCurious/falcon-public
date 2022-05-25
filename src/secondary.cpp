@@ -66,12 +66,13 @@ void train(NeuralNetwork* net)
 
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
-		// cout << "----------------------------------" << endl;  
-		// cout << "Iteration " << i << endl;
+		cout << "----------------------------------" << endl;  
+		cout << "Iteration " << i << endl;
 		readMiniBatch(net, "TRAINING");
 		net->forward();
 		net->backward();
 		net->getAccuracy();
+		net->getLoss();
 		// cout << "----------------------------------" << endl;  
 	}
 }
@@ -875,7 +876,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TRAINING_DATA_SIZE * INPUT_SIZE; ++i)
 	{
 		f_next >> temp_next; f_prev >> temp_prev;
-		trainData.push_back(std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev)));
+		trainData.push_back(std::make_pair(floatToMyType(temp_next/255.0), floatToMyType(temp_prev/255.0)));
 	}
 	f_next.close(); f_prev.close();
 
@@ -893,7 +894,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TEST_DATA_SIZE * INPUT_SIZE; ++i)
 	{
 		h_next >> temp_next; h_prev >> temp_prev;
-		testData.push_back(std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev)));
+		testData.push_back(std::make_pair(floatToMyType(temp_next/255.0), floatToMyType(temp_prev/255.0)));
 	}
 	h_next.close(); h_prev.close();
 
@@ -923,8 +924,8 @@ void readMiniBatch(NeuralNetwork* net, string phase)
 		for (int i = 0; i < LAST_LAYER_SIZE * MINI_BATCH_SIZE; ++i)
 			net->outputData[i] = trainLabels[(trainLabelsBatchCounter + i)%t];
 
-		trainDataBatchCounter += INPUT_SIZE * MINI_BATCH_SIZE;
-		trainLabelsBatchCounter += LAST_LAYER_SIZE * MINI_BATCH_SIZE;
+		// trainDataBatchCounter += INPUT_SIZE * MINI_BATCH_SIZE;
+		// trainLabelsBatchCounter += LAST_LAYER_SIZE * MINI_BATCH_SIZE;
 	}
 
 	if (trainDataBatchCounter > s)
@@ -975,21 +976,21 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 	if (network.compare("SecureML") == 0)
 	{
 		assert((dataset.compare("MNIST") == 0) && "SecureML only over MNIST");
-		NUM_LAYERS = 6;
-		WITH_NORMALIZATION = true;
+		NUM_LAYERS = 5;
+		WITH_NORMALIZATION = false;
 		FCConfig* l0 = new FCConfig(784, MINI_BATCH_SIZE, 128); 
 		ReLUConfig* l1 = new ReLUConfig(128, MINI_BATCH_SIZE);
 		FCConfig* l2 = new FCConfig(128, MINI_BATCH_SIZE, 128); 
 		ReLUConfig* l3 = new ReLUConfig(128, MINI_BATCH_SIZE);
 		FCConfig* l4 = new FCConfig(128, MINI_BATCH_SIZE, 10); 
-		ReLUConfig* l5 = new ReLUConfig(10, MINI_BATCH_SIZE);
+		// ReLUConfig* l5 = new ReLUConfig(10, MINI_BATCH_SIZE);
 		// BNConfig* l6 = new BNConfig(10, MINI_BATCH_SIZE);
 		config->addLayer(l0);
 		config->addLayer(l1);
 		config->addLayer(l2);
 		config->addLayer(l3);
 		config->addLayer(l4);
-		config->addLayer(l5);
+		// config->addLayer(l5);
 		// config->addLayer(l6);
 	}
 	else if (network.compare("Sarda") == 0)
