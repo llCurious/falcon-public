@@ -40,7 +40,7 @@ private:
 	smallType AES_random(int i);
 
 	// bool random
-	bool * boolRandomArray;
+	long long boolRandomNumber;
 	int boolNum = 128;
 	int boolCnt = 0;
 
@@ -78,7 +78,7 @@ T AESObject::getRand()
 
 	if (randomTCounter == 0)
 		randomTNum = 16 / sizeof(T);
-		randomTNumber = newRandomNumber();
+	randomTNumber = newRandomNumber();
 
 	T *temp = (T *)&randomTNumber;
 	ret = (T)temp[randomTCounter];

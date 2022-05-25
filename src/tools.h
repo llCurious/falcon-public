@@ -186,18 +186,19 @@ bool equalRssVector(const V &v1, const V &v2, size_t size)
 // 		cout << "(" << var.first << ", " << var.second << ") ";
 // }
 
+void printBoolVec(vector<bool> &data, string str, size_t size);
+void printBoolRssVec(const RSSVectorBoolType &data, string str, size_t size);
+
 template <typename Vec>
 void printRssVector(Vec &var, string pre_text, int print_nos)
 {
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << "(" << var[i].first << ", " << var[i].second << ")" << endl;
+		cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
 		// printOneRss<T, B>(var[i], type);
 	}
-	cout << endl;
 }
-
 
 template <typename T>
 void printVector(const vector<T> &var, string pre_text, int print_nos)
@@ -205,7 +206,7 @@ void printVector(const vector<T> &var, string pre_text, int print_nos)
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << var[i] << endl;
+		cout << (static_cast<int64_t>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
 	}
 	cout << endl;
 }
@@ -252,7 +253,8 @@ void print_linear(T var, string type)
 			cout << static_cast<int64_t>(var) << " ";
 		else if (type == "UNSIGNED")
 			cout << var << " ";
-	} else if (std::is_same<T, lowBit>::value)
+	}
+	else if (std::is_same<T, lowBit>::value)
 	{
 		if (type == "BITS")
 			cout << bitset<BIT_SIZE>(var) << " ";
@@ -283,7 +285,6 @@ void print_linear(T var, string type)
 // 	}
 // 	cout << endl;
 // }
-
 
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 template <typename Vec, typename T>
@@ -417,7 +418,7 @@ size_t nextParty(size_t party);
 size_t prevParty(size_t party);
 
 template <typename Vec, typename T>
-void Merge2Vec(Vec &a, const vector<T> v1, const vector<T> v2, size_t size)
+void merge2Vec(Vec &a, const vector<T> v1, const vector<T> v2, size_t size)
 {
 	assert(a.size() == v1.size() && v1.size() == v2.size() && v2.size() == size);
 

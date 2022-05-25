@@ -1,4 +1,4 @@
-#include "Functionalities.h"
+#include "unitTests.h"
 
 void debugPartySS()
 {
@@ -135,12 +135,181 @@ void debugZeroRandom()
 	checkRight<lowBit>(ref(b1));
 }
 
+void debugBoolAnd()
+{
+	int checkParty = PARTY_B;
+	size_t size = 5;
+	vector<bool> data1(size);
+	vector<bool> data2(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data1[i] = rand() % 2;
+		data2[i] = rand() % 2;
+	}
+
+	// vector<bool> data1 = {true, false, true, true, false, true, false, false, true, true};	// false, false, false, true, true
+	// vector<bool> data2 = {true, false, false, false, true, true, false, true, false, true}; // true, false, true, false, false
+
+	/**
+	size_t size = 4;
+	vector<bool> data1 = {true, false, true, true};	  // false, false, false, true, true
+	vector<bool> data2 = {true, false, false, false}; // true, false, true, false, false
+	// and: 1,0,0,0
+	**/
+
+	RSSVectorBoolType data_ss1(size);
+	RSSVectorBoolType data_ss2(size);
+	if (partyNum == checkParty)
+	{
+		funcBoolShareSender(data_ss1, data1, size);
+		funcBoolShareSender(data_ss2, data2, size);
+	}
+	else
+	{
+		funcBoolShareReceiver(data_ss1, checkParty, size);
+		funcBoolShareReceiver(data_ss2, checkParty, size);
+	}
+
+	// printBoolRssVec(data_ss1, "data_ss1", size);
+	// printBoolRssVec(data_ss2, "data_ss2", size);
+
+	RSSVectorBoolType data_ss(size);
+	funcBoolAnd(data_ss, data_ss1, data_ss2, size);
+
+	RSSVectorHighType result_h_rss(size);
+	RSSVectorLowType result_l_rss(size);
+	funcB2A<RSSVectorHighType, highBit>(result_h_rss, data_ss, size);
+	funcB2A<RSSVectorLowType, lowBit>(result_l_rss, data_ss, size);
+
+#if (!LOG_DEBUG)
+	// check right
+
+	vector<highBit> plain1(size);
+	funcReconstruct<RSSVectorHighType, highBit>(result_h_rss, plain1, size, "high output", false);
+	if (partyNum == checkParty)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			highBit temp1 = data1[i] & data2[i] ? FLOAT_BIAS : 0;
+			// cout << temp1 << "hh" << plain1[i];
+			assert(plain1[i] == temp1);
+		}
+	}
+
+	vector<lowBit> plain2(size);
+	funcReconstruct<RSSVectorLowType, lowBit>(result_l_rss, plain2, size, "low output", false);
+
+	if (partyNum == checkParty)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			lowBit temp2 = data1[i] & data2[i] ? FLOAT_BIAS : 0;
+			// cout << temp2 << "hh" << plain2[i];
+			assert(plain2[i] == temp2);
+		}
+	}
+
+#endif
+}
+
 void debugPosWrap()
 {
+	size_t size = 200;
+	vector<lowBit> data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data[i] = rand();
+	}
+
+	// printVector<lowBit>(data, "input", size);
+
+	int checkParty = PARTY_B;
+
+	RSSVectorLowType dataRSS(size);
+	RSSVectorHighType wRSS(size);
+	if (partyNum == checkParty)
+	{
+		funcShareSender<RSSVectorLowType, lowBit>(dataRSS, data, size);
+	}
+	else
+	{
+		funcShareReceiver<RSSVectorLowType, lowBit>(dataRSS, size, checkParty);
+	}
+
+	funcPosWrap(wRSS, dataRSS, size); // test function
+
+	// printRssVector<RSSVectorLowType>(dataRSS, "data rss", size);
+	vector<highBit> w(size);
+	funcReconstruct<RSSVectorHighType, highBit>(wRSS, w, size, "w", false);
+
+	if (partyNum == nextParty(checkParty))
+	{
+		vector<lowBit> extra(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			extra[i] = dataRSS[i].second;
+		}
+
+		thread sender(sendVector<lowBit>, ref(extra), prevParty(partyNum), size);
+		sender.join();
+	}
+	else if (partyNum == checkParty)
+	{
+		// cout << "check" << endl;
+		vector<lowBit> extra(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			lowBit temp = dataRSS[i].first + dataRSS[i].second;
+			highBit result = (temp < dataRSS[i].first || temp < dataRSS[i].second) ? FLOAT_BIAS : 0;
+			// cout << result << " ";
+			lowBit temp2 = temp + extra[i];
+			result = result + (temp2 < temp || temp2 < extra[i]) ? FLOAT_BIAS : 0;
+			// cout << result << " hhh " << w[i] << endl;
+			assert(result == w[i]);
+		}
+	}
+
+	// funcPosWrap
 }
 
 void debugWCExtension()
 {
+	size_t size = 3;
+	vector<lowBit> data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		data[i] = rand();
+	}
+
+	// printVector<lowBit>(data, "input", size);
+
+	int checkParty = PARTY_B;
+
+	RSSVectorLowType datalow(size);
+	if (partyNum == checkParty)
+	{
+		funcShareSender<RSSVectorLowType, lowBit>(datalow, data, size);
+	}
+	else
+	{
+		funcShareReceiver<RSSVectorLowType, lowBit>(datalow, size, checkParty);
+	}
+
+	printRssVector<RSSVectorLowType>(datalow, "lowbit ss", size);
+	funcReconstruct<RSSVectorLowType, lowBit>(datalow, data, size, "low bit plain", true);
+
+	RSSVectorHighType datahigh(size);
+	funcWCExtension(datahigh, datalow, size); // test function
+
+	printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
+	vector<highBit> plain_high(size);
+	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", true);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		cout << plain_high[i] << " " << data[i] << endl;
+		// assert(plain_high[i] == (highBit)data[i]);
+	}
 }
 
 void runTest(string str, string whichTest, string &network)
@@ -231,6 +400,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "ZeroRandom";
 			debugZeroRandom();
+		}
+		else if (whichTest.compare("BoolAnd") == 0)
+		{
+			network = "BoolAnd";
+			debugBoolAnd();
 		}
 		else if (whichTest.compare("Square") == 0)
 		{
