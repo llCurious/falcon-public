@@ -268,7 +268,7 @@ void funcTruncate(VEC &a, size_t power, size_t size)
 		a[i] = a[i] - rPrime[i];
 
 	funcReconstruct(a, reconst, size, "Truncate reconst", false);
-	dividePlain(reconst, (1 << power));
+	dividePlain(reconst, (1l << power));
 	if (partyNum == PARTY_A)
 	{
 		for (int i = 0; i < size; ++i)
@@ -1260,7 +1260,7 @@ void funcDotProduct(const T &a, const T &b,
 		}
 
 		funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
-		dividePlain(diffReconst, (1 << precision));
+		dividePlain(diffReconst, (1l << precision));
 		if (partyNum == PARTY_A)
 		{
 			for (int i = 0; i < size; ++i)
@@ -1321,7 +1321,7 @@ void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 	if (SECURITY_TYPE.compare("Malicious") == 0)
 		funcCheckMaliciousMatMul(a, b, c, temp3, rows, common_dim, columns, transpose_a, transpose_b);
 
-	dividePlain(diffReconst, (1 << truncation));
+	dividePlain(diffReconst, (1l << truncation));
 
 	// for (int i = 0; i < 128; ++i)
 	// 	print_linear(diffReconst[i], "FLOAT");
@@ -1483,7 +1483,7 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	}
 
 	funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
-	dividePlain(diffReconst, (1 << float_precision));
+	dividePlain(diffReconst, (1l << float_precision));
 
 	// cout << "Reconstrut Square Diff." << endl;
 	// for (size_t i = 0; i < size; i++) {
@@ -1552,7 +1552,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
-	dividePlain(diffReconst, (1 << EXP_PRECISION));
+	dividePlain(diffReconst, (1l << EXP_PRECISION));
 
 	// cout << "Reconstrut Exp Diff." << endl;
 	// for (size_t i = 0; i < size; i++) {
