@@ -71,7 +71,7 @@ void NeuralNetwork::forward()
 
 	for (size_t i = 1; i < NUM_LAYERS; ++i)
 	{
-		// cout << "Layer" << i << endl;
+		cout << "Layer" << i << endl;
 		layers[i]->forward(*(layers[i-1]->getActivation()));
 		if (LARGE_NETWORK)
 			cout << "Forward \t" << layers[i]->layerNum << " completed..." << endl;
@@ -126,13 +126,36 @@ void NeuralNetwork::computeDelta()
 	}
 	else
 	{
-		for (size_t i = 0; i < rows; ++i)
-			for (size_t j = 0; j < columns; ++j)
-			{
-				index = i * columns + j;
-				(*(layers[NUM_LAYERS-1]->getDelta()))[index] = 
-				(*(layers[NUM_LAYERS-1]->getActivation()))[index] - outputData[index];
-			}
+		/**
+		 * Updated Softmax + CE gradients computation
+		*/
+		RSSVectorMyType softmax_output(size);
+		funcSoftmax(*(layers[NUM_LAYERS-1]->getActivation()), softmax_output, rows, columns, false);
+		subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS-1]->getDelta()), size);
+		print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "predict", size);
+		print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
+		
+		/**
+		 * Updated MSE
+		 * **/
+		// RSSVectorMyType diff(size);
+		// subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
+		// print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "getActivation", layers[NUM_LAYERS-1]->getActivation()->size());
+		// print_vector(outputData, "FLOAT", "outputData", outputData.size());
+		// print_vector(diff, "FLOAT", "diff", diff.size());
+		// // funcTruncate(diff, LOG_MINI_BATCH, size);
+		// *(layers[NUM_LAYERS-1]->getDelta()) = diff;
+
+		/**
+		 * Raw implementation
+		 * **/
+		// for (size_t i = 0; i < rows; ++i)
+		// 	for (size_t j = 0; j < columns; ++j)
+		// 	{
+		// 		index = i * columns + j;
+		// 		(*(layers[NUM_LAYERS-1]->getDelta()))[index] = 
+		// 		(*(layers[NUM_LAYERS-1]->getActivation()))[index] - outputData[index];
+		// 	}
 	}
 
 	if (LARGE_NETWORK)		
@@ -197,7 +220,7 @@ void NeuralNetwork::getAccuracy()
 	
 	// reconstruct prediction from neural network
 	funcMaxpool((*(layers[NUM_LAYERS-1])->getActivation()), temp_max, temp_maxPrime, rows, columns);
-	funcReconstructBit(temp_maxPrime, prediction, rows*columns, "prediction", false);
+	funcReconstructBit(temp_maxPrime, prediction, rows*columns, "prediction", true);
 	
 	for (int i = 0, index = 0; i < rows; ++i){
 		counter[1]++;
@@ -223,6 +246,28 @@ void NeuralNetwork::getAccuracy()
 
 	cout << "Rolling accuracy: " << counter[0] << " out of " 
 		 << counter[1] << " (" << (counter[0]*100/counter[1]) << " %)" << endl;
+}
+
+void NeuralNetwork::getLoss() {
+	log_print("NN.getLoss");
+
+	size_t rows = MINI_BATCH_SIZE;
+	size_t columns = LAST_LAYER_SIZE;
+	size_t size = rows * columns;
+	size_t index = 0;
+
+	RSSVectorMyType diff(size), square(size);
+	subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
+	funcSquare(diff, square, size);
+
+	print_vector(diff, "FLOAT", "loss_diff", size);
+
+	RSSVectorMyType loss_sum(1);
+	for (index = 0; index < size; index++) {
+		loss_sum[0] = loss_sum[0] + square[index];
+	}
+
+	print_vector(loss_sum, "FLOAT", "loss", 1);
 }
 
 // original implmentation of NeuralNetwork::getAccuracy(.)
