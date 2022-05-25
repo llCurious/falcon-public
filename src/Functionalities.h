@@ -933,9 +933,10 @@ void funcPow(const VEC &b, vector<smallType> &alpha, size_t size)
 	// TODO vecrorize this, right now only accepts the first argument
 	for (int j = ell - 1; j > -1; --j)
 	{
-		vector<computeType> temp_1(size, (1 << ((1 << j) + (int)alpha[0])));
+		// This is a potential bug for computing over 64-bit ring. 1 << 32+ = 0
+		vector<computeType> temp_1(size, (1l << ((1 << j) + (int)alpha[0])));
 		funcGetShares(temp, temp_1);
-		subtractVectors<RSScomputeType>(x, temp, d, size);
+		subtractVectors(x, temp, d, size);
 		funcRELUPrime(d, c, size);
 		funcReconstructBit(c, r_c, size, "null", false);
 		if (r_c[0] == 0)
