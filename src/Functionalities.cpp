@@ -21,7 +21,7 @@ void funcTruncate(RSSVectorMyType &a, size_t power, size_t size)
 		a[i] = a[i] - rPrime[i];
 
 	funcReconstruct(a, reconst, size, "Truncate reconst", false);
-	dividePlain(reconst, (1 << power));
+	dividePlain(reconst, (1l << power));
 	if (partyNum == PARTY_A)
 	{
 		for (int i = 0; i < size; ++i)
@@ -178,7 +178,7 @@ void funcReconstructBit(const RSSVectorSmallType &a, vector<smallType> &b, size_
 
 		if (print)
 		{
-			std::cout << str << ": \t\t";
+			std::cout << str << "\n";
 			for (int i = 0; i < size; ++i)
 				cout << (int)(b[i]) << " ";
 			std::cout << std::endl;
