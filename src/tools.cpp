@@ -418,6 +418,29 @@ void print_myType(myType var, string message, string type)
 // 	}
 // 	cout << endl;
 // }
+void printHighBitVec(vector<highBit> &var, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		bitset<64> temp(var[i]);
+		// cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		cout << temp << endl;
+		// printOneRss<T, B>(var[i], type);
+	}
+}
+
+void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		bitset<32> s(var[i]);
+		// cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		cout << s << endl;
+		// printOneRss<T, B>(var[i], type);
+	}
+}
 
 void printBoolVec(vector<bool> &data, string str, size_t size)
 {

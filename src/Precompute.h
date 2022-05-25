@@ -76,6 +76,7 @@ public:
 	void getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVectorSmallType &c, size_t size);
 
 	void getZeroBRand(vector<bool> &a, size_t size);
+	void getZeroBShare(vector<RSSBoolType> &a, size_t size, int shareParty);
 	void getZeroBShareSender(vector<RSSBoolType> &a, size_t size);
 	void getZeroBSharePrev(vector<bool> &a, size_t size);
 	void getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size);
@@ -105,6 +106,7 @@ public:
 	template <typename Vec, typename T>
 	void getZeroShareRand(Vec &a, size_t size, int shareParty);
 
+	// every party only know one share of 0
 	template <typename Vec, typename T>
 	void getZeroShareRand(vector<T> &a, size_t size);
 
@@ -205,34 +207,37 @@ void Precompute::getZeroShareReceiver(Vec &a, size_t size)
 template <typename Vec, typename T>
 void Precompute::getZeroShareRand(Vec &a, size_t size, int shareParty)
 {
-	// assert(a.size() == size && "a.size is incorrect");
+	assert(a.size() == size && "a.size is incorrect");
 
-	// if (shareParty == partyNum)
-	// {
-	// 	vector<T> a3(size);
-	// 	thread receiver(receiveVector<T>, ref(a3), nextParty(partyNum), size); // receive a3
+	if (shareParty == partyNum)
+	{
+		vector<T> a2(size);
+		getNextRand<T>(a2, size);
 
-	// 	vector<T> a2(size);
-	// 	getNextRand<T>(a2, size);
+		vector<T> a3(size);
+		receiveVector<T>(a3, prevParty(partyNum), size); // receive a3
 
-	// 	receiver.join();
+		for (size_t i = 0; i < size; i++)
+		{
+			T temp = 0 - a3[i] - a2[i];
+			a[i] = make_pair(temp, a2[i]);
+		}
+	}
+	else if (nextParty(shareParty) == partyNum)
+	{
+		getPairRand<Vec, T>(a, size);
+	}
+	else
+	{
+		vector<T> prevr(size);
+		getPrevRand<T>(prevr, size);
+		sendVector<T>(ref(prevr), nextParty(partyNum), size);
 
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		T temp = 0 - a3[i] - a2[i];
-	// 		a[i] = make_pair(temp, a2[i]);
-	// 	}
-	// }
-	// else if (nextParty(shareParty) == partyNum)
-	// {
-	// 	getPairRand<Vec, T>(a, size);
-	// }
-	// else
-	// {
-	// 	getPrevRand<T>(a, size);
-	// 	thread sender(sendVector<T>, ref(a), prevParty(partyNum), size);
-	// 	sender.join();
-	// }
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = prevr[i];
+		}
+	}
 }
 
 /**

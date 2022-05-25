@@ -195,10 +195,14 @@ void printRssVector(Vec &var, string pre_text, int print_nos)
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		// cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		cout << var[i].first << " " << var[i].second << endl;
 		// printOneRss<T, B>(var[i], type);
 	}
 }
+
+void printHighBitVec(vector<highBit> &var, string pre_text, int print_nos);
+void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos);
 
 template <typename T>
 void printVector(const vector<T> &var, string pre_text, int print_nos)
@@ -206,7 +210,8 @@ void printVector(const vector<T> &var, string pre_text, int print_nos)
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << (static_cast<int64_t>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
+		// cout << (static_cast<int64_t>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
+		cout << var[i] << " ";
 	}
 	cout << endl;
 }

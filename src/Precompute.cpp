@@ -151,6 +151,45 @@ void Precompute::getZeroBRand(vector<bool> &a, size_t size)
 	}
 }
 
+void Precompute::getZeroBShare(vector<RSSBoolType> &a, size_t size, int shareParty)
+{
+	if (partyNum == shareParty)
+	{
+		vector<bool> a2(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			a2[i] = aes_next->getBoolRand();
+		}
+
+		vector<bool> a3(size);
+		receiveBoolVector(a3, prevParty(partyNum), size); // receive a3
+
+		for (size_t i = 0; i < size; i++)
+		{
+			bool temp = a3[i] ^ a2[i];
+			a[i] = make_pair(temp, a2[i]);
+		}
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+		vector<bool> a3(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			bool temp = aes_prev->getBoolRand();
+			a3[i] = temp;
+			a[i].first = temp;
+		}
+		sendBoolVector(a3, nextParty(partyNum), size);
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
+		}
+	}
+}
+
 void Precompute::getZeroBShareSender(vector<RSSBoolType> &a, size_t size)
 {
 	vector<bool> a3(size);
@@ -188,7 +227,6 @@ void Precompute::getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size)
 		a[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
 	}
 }
-
 
 void Precompute::getB2ARand(RSSVectorBoolType &dataB, size_t size)
 {

@@ -71,11 +71,14 @@ int main(int argc, char **argv)
 	// runTest("Debug", "DotProd", network);
 	// runTest("Debug", "Reduction", network);
 	// runTest("Debug", "PairRandom", network);
-	// runTest("Debug", "PartyShare", network);
+	runTest("Debug", "PartyShare", network);
 	// runTest("Debug","ZeroRandom",network);
 	// runTest("Debug", "BoolAnd", network);
-	// runTest("Debug", "PosWrap", network);
-	runTest("Debug", "WC-Extension", network);
+	// cout << "POWWRAP" << endl;
+	runTest("Debug", "PosWrap", network);
+	runTest("Debug", "PosWrap", network);
+	// cout << "EXTENSION" << endl;
+	// runTest("Debug", "WC-Extension", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);

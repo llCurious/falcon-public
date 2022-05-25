@@ -55,8 +55,55 @@ void funcGetShares(Vec &a, const vector<T> &data)
 	}
 }
 
+void funcBoolPartySS(RSSVectorBoolType &result, const vector<bool> &data, size_t size, int shareParty);
+
 /**
- * @brief generate ss of data and send to other party
+ * @brief only shareParty know the plain of data
+ * shareParty generate ss of data and send to other parties
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param a
+ * @param data
+ * @param size
+ */
+template <typename Vec, typename T>
+void funcPartySS(Vec &a, const vector<T> &data, const size_t size, const int shareParty)
+{
+	assert(a.size() == size && a.size() == data.size() && "a.size mismatch for PartyShare function");
+	PrecomputeObject->getZeroShareRand<Vec, T>(a, size, shareParty);
+	// cout << "share party " << shareParty << " partyNum" << partyNum << endl;
+	if (partyNum == shareParty)
+	{
+		vector<T> a1_plus_data(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			T temp = data[i] + a[i].first;
+			a[i].first = temp;
+			a1_plus_data[i] = temp;
+		}
+
+		// send a1+x to prevparty
+		sendVector<T>(a1_plus_data, prevParty(partyNum), size);
+		// thread sender(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size);
+		// sender.join();
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+
+		vector<T> a1_plus_data(size);
+		receiveVector<T>(a1_plus_data, shareParty, size); // receive a1+x
+
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].second = a1_plus_data[i];
+		}
+		// merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
+	}
+}
+
+/**
+ * @brief generate ss of data and send to other parties
  *
  * @tparam Vec
  * @tparam T
@@ -67,7 +114,7 @@ void funcGetShares(Vec &a, const vector<T> &data)
 template <typename Vec, typename T>
 void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 {
-	assert(a.size() == size && "a.size mismatch for reconstruct function");
+	assert(a.size() == size && "a.size mismatch for share function");
 
 	PrecomputeObject->getZeroShareSender<Vec, T>(a, size);
 
@@ -96,7 +143,7 @@ void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 template <typename Vec, typename T>
 void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
 {
-	assert(a.size() == size && "a.size mismatch for reconstruct function");
+	assert(a.size() == size && "a.size mismatch for share function");
 
 	if (partyNum == prevParty(shareParty))
 	{
@@ -1412,23 +1459,23 @@ void print_vector(RSSVectorHighType &var, string type, string pre_text, int prin
 
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
-template <typename vec, typename T>
-void funcAddOneConst(vec &result, T c, size_t size)
+template <typename Vec, typename T>
+void funcAddOneConst(Vec &result, T c, size_t size)
 {
-	// if (partyNum == PARTY_B)
-	// {
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		result[i].second += c;
-	// 	}
-	// }
-	// else if (partyNum == PARTY_C)
-	// {
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		result[i].first += c;
-	// 	}
-	// }
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].first += c;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].second += c;
+		}
+	}
 }
 
 template <typename vec, typename T>
@@ -1471,7 +1518,7 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 
 /********************* Share Conversion Functionalites *********************/
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
-void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
+void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGeneration();
@@ -1722,30 +1769,33 @@ void funcBoolXor(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const R
 void funcBoolRev(vector<bool> &result, const RSSVectorBoolType &data, size_t size, string title, bool isprint);
 
 template <typename Vec, typename T>
-void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size);
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias);
 
 template <typename Vec, typename T>
-void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size);
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbias);
 
 // [b]^B = (b_0, b_1, b_2)
 // P_A: (b_2, 0) (0, b_0)  (0, 0)
 // P_B: (0, 0)   (b_0, 0)  (0, b_1)
 // P_C: (0, b_2) (0, 0)    (b_1, 0)
 template <typename Vec, typename T>
-void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size)
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias)
 {
 	Vec aRss(size);
 	Vec bRss(size);
 	Vec amulb(size);
+	T val = isbias ? FLOAT_BIAS : 1;
+	vector<T> a(size);
 	if (partyNum == PARTY_A)
 	{
-		vector<T> a(size);
+		
 		for (size_t i = 0; i < size; i++)
 		{
-			a[i] = (data[i].first ^ data[i].second) ? FLOAT_BIAS : 0;
+			a[i] = (data[i].first ^ data[i].second) ? val : 0;
 		}
 
-		funcShareSender<Vec, T>(aRss, a, size); // share a
+		funcPartySS<Vec, T>(aRss, a, size, PARTY_A);
+		// funcShareSender<Vec, T>(aRss, a, size); // share a
 
 		// TODO: precomute
 		for (size_t i = 0; i < size; i++)
@@ -1755,20 +1805,21 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size)
 	}
 	else
 	{
-		funcShareReceiver<Vec, T>(aRss, size, PARTY_A); // get ss of a
+		funcPartySS<Vec,T>(aRss, a, size, PARTY_A);
+		// funcShareReceiver<Vec, T>(aRss, size, PARTY_A); // get ss of a
 
 		if (partyNum == PARTY_B)
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				bRss[i] = make_pair(0, data[i].second ? FLOAT_BIAS : 0);
+				bRss[i] = make_pair(0, data[i].second ? val : 0);
 			}
 		}
 		else
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				bRss[i] = make_pair(data[i].first ? FLOAT_BIAS : 0, 0);
+				bRss[i] = make_pair(data[i].first ? val : 0, 0);
 			}
 		}
 	}
@@ -1787,7 +1838,14 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size)
 	// P_C: (a_1, a_2) (b_1, 0  )
 
 	// a ^ b1 = a + b1 - 2*a*b1
-	funcDotProduct(aRss, bRss, amulb, size, true, FLOAT_PRECISION); // a * b1
+	if (isbias)
+	{
+		funcDotProduct(aRss, bRss, amulb, size, true, FLOAT_PRECISION); // a * b1
+	}
+	else
+	{
+		funcDotProduct(aRss, bRss, amulb, size, false, FLOAT_PRECISION); // a * b1
+	}
 	// printRssVector<Vec>(amulb, "a*b", size);
 
 	// vector<T> amulb_plain(size);
@@ -1801,12 +1859,12 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size)
 }
 
 template <typename Vec, typename T>
-void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size)
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbias)
 {
 	RSSVectorBoolType randB(size);
 	Vec randA(size);
 	PrecomputeObject->getB2ARand(randB, size);
-	funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size);
+	funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size, isbias);
 	// OFFLINE
 
 	// vector<bool> rB(size);
@@ -1821,17 +1879,19 @@ void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size)
 	vector<bool> c(size);
 	funcBoolRev(c, cRss, size, "c plain", false);
 
+	T val = isbias ? FLOAT_BIAS : 1;
+
 	for (size_t i = 0; i < size; i++)
 	{
 		if (c[i])
 		{ // x1 = 1-c
 			if (partyNum == PARTY_B)
 			{
-				result[i] = make_pair(-randA[i].first, FLOAT_BIAS - randA[i].second);
+				result[i] = make_pair(-randA[i].first, val - randA[i].second);
 			}
 			else if (partyNum == PARTY_C)
 			{
-				result[i] = make_pair(FLOAT_BIAS - randA[i].first, -randA[i].second);
+				result[i] = make_pair(val - randA[i].first, -randA[i].second);
 			}
 			else
 			{

@@ -123,7 +123,6 @@ void bool2u8(vector<smallType> &res, const vector<bool> &data, size_t size)
 	}
 }
 
-
 void u82bool(vector<bool> &res, const vector<smallType> &data, size_t size)
 {
 	size_t i = 0; // point to data
@@ -158,6 +157,10 @@ void receiveBoolVector(vector<bool> &vec, size_t player, size_t size)
 	if (!communicationReceivers[player]->receiveMsg(temp.data(), temp.size() * sizeof(smallType), 0))
 		cout << "Receive myType vector error" << endl;
 
+	// for (size_t i = 0; i < temp.size(); i++)
+	// {
+	// 	cout << static_cast<int>(temp[i]) << " ";
+	// }
 	u82bool(vec, ref(temp), size);
 }
 

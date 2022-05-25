@@ -371,6 +371,7 @@ bool BmrNet::receiveMsg(void *buff, int size, int conn)
 		left -= n;
 	}
 	commObject.incrementRecv(size);
+	// cout << "receive finish" << endl;
 
 	return true;
 }
