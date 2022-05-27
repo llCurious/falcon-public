@@ -1595,25 +1595,23 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 // convert data from 32-bit to 64-bit
 void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
 {
-	cout << "WC Extension" << endl;
+	// cout << "WC Extension" << endl;
 	lowBit bias1 = (1l << 30);
-	bitset<32> bias1bit(bias1);
-	cout << "bias" << bias1bit << endl;
 
 	funcAddOneConst(input, bias1, size);
 
 	// log
-	vector<lowBit> input2(size);
-	funcReconstruct<RSSVectorLowType, lowBit>(input, input2, size, "input bias", false);
-	printLowBitVec(input2, "input bias", size);
+	// vector<lowBit> input2(size);
+	// funcReconstruct<RSSVectorLowType, lowBit>(input, input2, size, "input bias", false);
+	// printLowBitVec(input2, "input bias", size);
 
 	RSSVectorHighType w(size);
 	funcPosWrap(w, input, size);
 
 	// log
-	vector<highBit> w_plain(size);
-	funcReconstruct<RSSVectorHighType, highBit>(w, w_plain, size, "w", true);
-	printHighBitVec(w_plain, "w", size);
+	// vector<highBit> w_plain(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(w, w_plain, size, "w", true);
+	// printRSSLowBitVec(input, "input", size);
 
 	for (size_t i = 0; i < size; i++)
 	{
@@ -1621,14 +1619,12 @@ void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	}
 
 	// log
-	vector<highBit> output2(size);
-	funcReconstruct<RSSVectorHighType, highBit>(output, output2, size, "output2", true);
-	printHighBitVec(output2, "", size);
+	// printRSSHighBitVec(output, "output", size);
+	// vector<highBit> output2(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(output, output2, size, "output2", true);
+	// printHighBitVec(output2, "", size);
 
-	highBit bias2 = (1l << 30);
-	highBit c = -bias2;
-	bitset<64> bias2bit(c);
-	cout << "bias" << bias2bit << endl;
+	highBit bias2 = -(1l << 30);
 	funcAddOneConst(output, bias2, size);
 }
 

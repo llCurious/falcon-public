@@ -442,7 +442,7 @@ void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos)
 	}
 }
 
-void printHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos)
+void printRSSHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos)
 {
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)

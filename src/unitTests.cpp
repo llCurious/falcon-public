@@ -230,11 +230,18 @@ void debugPosWrap()
 {
 	size_t size = 100;
 	vector<lowBit> data(size);
-	for (size_t i = 0; i < size; i++)
+	size_t i = 0;
+	data[i] = -(1 << 30);
+	// cout << bitset<32>(data[i]) << endl;
+	i++;
+	for (; i < size / 2; i++)
 	{
-		data[i] = (i + 1) << FLOAT_PRECISION;
+		data[i] = data[i - 1] + 1;
 	}
-	// printLowBitVec(data, "data", size);
+	for (; i < size; i++)
+	{
+		data[i] = -((i) << FLOAT_PRECISION);
+	}
 	// printVector<lowBit>(data, "input", size);
 
 	int checkParty = PARTY_B;
@@ -242,10 +249,10 @@ void debugPosWrap()
 	RSSVectorLowType dataRSS(size);
 	RSSVectorHighType wRSS(size);
 
+	funcPartySS<RSSVectorLowType, lowBit>(dataRSS, data, size, checkParty);
+
 	lowBit bias1 = (1l << 30);
 	funcAddOneConst(dataRSS, bias1, size);
-
-	funcPartySS<RSSVectorLowType, lowBit>(dataRSS, data, size, checkParty);
 
 	// log
 	// vector<lowBit> input2(size);
@@ -294,37 +301,34 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
-	size_t size = 3;
+	size_t size = 4;
 	vector<lowBit> data(size);
-	for (size_t i = 0; i < size; i++)
+	size_t i = 0;
+	data[i] = -(1 << 30);
+	// cout << bitset<32>(data[i]) << endl;
+	i++;
+	for (; i < size / 2; i++)
 	{
-		data[i] = (i + 1) << FLOAT_PRECISION;
+		data[i] = data[i - 1] + 1;
 	}
-
-	printVector<lowBit>(data, "input", size);
+	for (; i < size; i++)
+	{
+		data[i] = -((i) << FLOAT_PRECISION);
+	}
+	// printVector<lowBit>(data, "input", size);
 
 	int checkParty = PARTY_B;
 
 	RSSVectorLowType datalow(size);
 	funcPartySS<RSSVectorLowType, lowBit>(datalow, data, size, checkParty);
-	// if (partyNum == checkParty)
-	// {
-	// 	funcShareSender<RSSVectorLowType, lowBit>(datalow, data, size);
-	// }
-	// else
-	// {
-	// 	funcShareReceiver<RSSVectorLowType, lowBit>(datalow, size, checkParty);
-	// }
-
-	printRssVector<RSSVectorLowType>(datalow, "lowbit ss", size);
-	funcReconstruct<RSSVectorLowType, lowBit>(datalow, data, size, "low bit plain", true);
 
 	RSSVectorHighType datahigh(size);
 	funcWCExtension(datahigh, datalow, size); // test function
 
-	printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
+	// printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
 	vector<highBit> plain_high(size);
-	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", true);
+	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", false);
+	// printHighBitVec(plain_high, "", size);
 
 	for (size_t i = 0; i < size; i++)
 	{

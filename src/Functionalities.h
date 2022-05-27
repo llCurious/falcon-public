@@ -1013,11 +1013,16 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<VEC, RSSVectorHighType>::value) {
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
@@ -1068,11 +1073,16 @@ void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<VEC, RSSVectorHighType>::value) {
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
@@ -1541,7 +1551,8 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 void funcMixedShareGeneration();
 
 template <typename Vec>
-void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size) {
+void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size)
+{
 	log_print("probabilistic truncation");
 }
 
@@ -1810,7 +1821,7 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias
 	vector<T> a(size);
 	if (partyNum == PARTY_A)
 	{
-		
+
 		for (size_t i = 0; i < size; i++)
 		{
 			a[i] = (data[i].first ^ data[i].second) ? val : 0;
@@ -1827,7 +1838,7 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias
 	}
 	else
 	{
-		funcPartySS<Vec,T>(aRss, a, size, PARTY_A);
+		funcPartySS<Vec, T>(aRss, a, size, PARTY_A);
 		// funcShareReceiver<Vec, T>(aRss, size, PARTY_A); // get ss of a
 
 		if (partyNum == PARTY_B)
@@ -1930,6 +1941,88 @@ void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbia
 	// funcReconstruct<Vec, T>(result, outputA, size, "output plain", true);
 
 	// printRssVector(result, "b2a", size);
+}
+
+template <typename Vec, typename T>
+void funcShareAB(Vec &result1, const vector<T> &data1, const size_t size1, RSSVectorBoolType &result2, const vector<bool> &data2, size_t size2, const int shareParty)
+{
+	PrecomputeObject->getZeroShareRand<Vec, T>(result1, size1, shareParty);
+	PrecomputeObject->getZeroBShare(result2, size2, shareParty);
+	if (partyNum == shareParty)
+	{
+		vector<T> a1_plus_data(size1);
+		for (size_t i = 0; i < size1; i++)
+		{
+			T temp = data1[i] + result1[i].first;
+			result1[i].first = temp;
+			a1_plus_data[i] = temp;
+		}
+
+		// printBoolRssVec(result2, "result2", size2);
+		vector<bool> a1_xor_data(size2);
+		for (size_t i = 0; i < size2; i++)
+		{
+			bool temp = data2[i] ^ result2[i].first;
+			result2[i].first = temp;
+			a1_xor_data[i] = temp;
+		}
+		// printVector<T>(a1_plus_data, "a1+x", size1);
+		// printBoolVec(a1_xor_data, "a1^x", size2);
+
+		int plussize = ((size2 - 1) / sizeof(T)) + 1;
+		vector<T> senddata(size1 + plussize);
+		appendBool2u8(senddata, a1_plus_data, a1_xor_data, size1, size2); // a1_plus_data += a1_xor_data
+
+		// printVector<T>(senddata, "send data", senddata.size());
+
+		// bool2u8<T>(a1_xor_data, size2);
+		// thread *threads = new thread[2];
+		// send a1+x to prevparty
+		// threads[0] = thread(sendBoolVector, ref(a1_xor_data), prevParty(partyNum), size2);
+		// threads[1] = thread(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size1);
+		sendVector<T>(senddata, prevParty(partyNum), size1 + plussize);
+		// send a1^x to prevparty
+		// cout << "send a1 xor data" << endl;
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+		// vector<T> a3A(size1);
+		// PrecomputeObject->getZeroSharePrev<T>(a3A, size1);
+
+		// vector<bool> a3B(size2);
+		// PrecomputeObject->getZeroBSharePrev(a3B, size2);
+
+		int plussize = ((size2 - 1) / sizeof(T)) + 1;
+		vector<T> a1_plus_data(size1);
+		vector<bool> a1_xor_data(size2);
+		vector<T> receivedata(size1 + plussize);
+
+		// thread *threads = new thread[2];
+		// threads[0] = thread(receiveBoolVector, ref(a1_xor_data), shareParty, size2); // receive a1+x
+		receiveVector<T>(receivedata, shareParty, size1 + plussize); // receive a1+x
+		// cout << "receive a1 xor data" << endl;
+
+		// printVector<T>(receivedata, "receive data", receivedata.size());
+		// threads[0].join();
+		// for (int i = 0; i < 2; ++i)
+		// 	threads[i].join();
+		splitu82Bool(receivedata, a1_plus_data, a1_xor_data, size1, size2);
+
+		// printVector<T>(a1_plus_data, "a1+x", size1);
+		// printBoolVec(a1_xor_data, "a1^x", size2);
+		for (size_t i = 0; i < size1; i++)
+		{
+			result1[i].second = a1_plus_data[i];
+		}
+
+		for (size_t i = 0; i < size2; i++)
+		{
+			result2[i].second = a1_xor_data[i];
+		}
+
+		// merge2Vec<Vec, T>(result1, a3A, a1_plus_data, size1);
+		// mergeBoolVec(result2, a3B, a1_xor_data, size2);
+	}
 }
 
 // send data1(A share) and data2(B share)

@@ -204,7 +204,7 @@ void printRssVector(Vec &var, string pre_text, int print_nos)
 void printHighBitVec(vector<highBit> &var, string pre_text, int print_nos);
 void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos);
 
-void printHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos);
+void printRSSHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos);
 void printRSSLowBitVec(RSSVectorLowType &var, string pre_text, int print_nos);
 
 
