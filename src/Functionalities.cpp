@@ -1502,10 +1502,10 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 
 	RSSVectorHighType w0RSS(size);
 
+	vector<bool> m1(size);
+	vector<highBit> w0(size);
 	if (partyNum == PARTY_B)
 	{
-		vector<bool> m1(size);
-		vector<highBit> w0(size);
 		// cout << "a1+a2" << endl;
 		for (size_t i = 0; i < size; i++)
 		{
@@ -1520,7 +1520,6 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 		// cout << endl;
 
 		// printBoolVec(m1, "m1: ", size);
-		funcShareABSender<RSSVectorHighType, highBit>(w0RSS, w0, size, m1RSS, m1, size);
 
 		for (size_t i = 0; i < size; i++)
 		{
@@ -1532,7 +1531,7 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 	}
 	else
 	{
-		funcShareABReceiver<RSSVectorHighType, highBit>(w0RSS, size, m1RSS, size, PARTY_B);
+		// funcShareABReceiver<RSSVectorHighType, highBit>(w0RSS, size, m1RSS, size, PARTY_B);
 		if (partyNum == PARTY_A)
 		{
 			for (size_t i = 0; i < size; i++)
@@ -1548,6 +1547,7 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 			}
 		}
 	}
+	funcShareAB<RSSVectorHighType, highBit>(w0RSS, w0, size, m1RSS, m1, size, PARTY_B);
 	// printRssVector<RSSVectorHighType>(w0RSS, "a1+x", size);
 	// vector<highBit> wtemp(size);
 	// funcReconstruct<RSSVectorHighType, highBit>(w0RSS, wtemp, size, "w0", true);
