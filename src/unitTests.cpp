@@ -240,7 +240,7 @@ void debugPosWrap()
 	}
 	for (; i < size; i++)
 	{
-		data[i] = -((i) << FLOAT_PRECISION);
+		data[i] = ((i) << FLOAT_PRECISION);
 	}
 	// printVector<lowBit>(data, "input", size);
 
@@ -301,7 +301,7 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
-	size_t size = 4;
+	size_t size = 100;
 	vector<lowBit> data(size);
 	size_t i = 0;
 	data[i] = -(1 << 30);
@@ -311,10 +311,12 @@ void debugWCExtension()
 	{
 		data[i] = data[i - 1] + 1;
 	}
+	data[i] = (1 << 30);
 	for (; i < size; i++)
 	{
-		data[i] = -((i) << FLOAT_PRECISION);
+		data[i] = data[i - 1] - 1;
 	}
+	// printLowBitVec(data, "input", size);
 	// printVector<lowBit>(data, "input", size);
 
 	int checkParty = PARTY_B;
@@ -332,8 +334,8 @@ void debugWCExtension()
 
 	for (size_t i = 0; i < size; i++)
 	{
-		cout << plain_high[i] << " " << data[i] << endl;
-		// assert(plain_high[i] == (highBit)data[i]);
+		// cout << (int)plain_high[i] << " " << (int)data[i] << endl;
+		assert((int)plain_high[i] == (int)(highBit)data[i]);
 	}
 }
 
