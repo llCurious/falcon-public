@@ -228,7 +228,7 @@ void debugBoolAnd()
 
 void debugPosWrap()
 {
-	size_t size = 3;
+	size_t size = 100;
 	vector<lowBit> data(size);
 	for (size_t i = 0; i < size; i++)
 	{
@@ -242,22 +242,22 @@ void debugPosWrap()
 	RSSVectorLowType dataRSS(size);
 	RSSVectorHighType wRSS(size);
 
-	funcPartySS<RSSVectorLowType, lowBit>(dataRSS, data, size, checkParty);
-
 	lowBit bias1 = (1l << 30);
 	funcAddOneConst(dataRSS, bias1, size);
 
+	funcPartySS<RSSVectorLowType, lowBit>(dataRSS, data, size, checkParty);
+
 	// log
-	vector<lowBit> input2(size);
-	funcReconstruct<RSSVectorLowType, lowBit>(dataRSS, input2, size, "input bias", false);
-	printLowBitVec(input2, "input bias", size);
+	// vector<lowBit> input2(size);
+	// funcReconstruct<RSSVectorLowType, lowBit>(dataRSS, input2, size, "input bias", false);
+	// printLowBitVec(input2, "input bias", size);
 
 	funcPosWrap(wRSS, dataRSS, size); // test function
 
-	printRssVector<RSSVectorLowType>(dataRSS, "data rss", size);
+	// printRssVector<RSSVectorLowType>(dataRSS, "data rss", size);
 	vector<highBit> w(size);
 	funcReconstruct<RSSVectorHighType, highBit>(wRSS, w, size, "w", false);
-	printHighBitVec(w, "w", size);
+	// printHighBitVec(w, "w", size);
 
 	if (partyNum == nextParty(checkParty))
 	{
@@ -274,15 +274,18 @@ void debugPosWrap()
 		// cout << "check" << endl;
 		vector<lowBit> extra(size);
 		receiveVector<lowBit>(extra, nextParty(partyNum), size);
+
+		// printRSSLowBitVec(dataRSS, "data rss", size);
+		// printLowBitVec(extra, "extra", size);
 		for (size_t i = 0; i < size; i++)
 		{
 			lowBit temp = dataRSS[i].first + dataRSS[i].second;
 			highBit result = (temp < dataRSS[i].first || temp < dataRSS[i].second);
-			cout << result << " ";
+			// cout << result << " ";
 			lowBit temp2 = temp + extra[i];
 			result = result + (temp2 < temp || temp2 < extra[i]);
-			cout << result << " hhh " << w[i] << endl;
-			// assert(result == w[i]);
+			// cout << result << " hhh " << w[i] << endl;
+			assert(result == w[i]);
 		}
 	}
 

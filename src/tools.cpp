@@ -442,6 +442,36 @@ void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos)
 	}
 }
 
+void printHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		bitset<64> f(var[i].first);
+		bitset<64> s(var[i].second);
+		// cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		cout << i << endl
+			 << s << endl
+			 << f << endl;
+		// printOneRss<T, B>(var[i], type);
+	}
+}
+
+void printRSSLowBitVec(RSSVectorLowType &var, string pre_text, int print_nos)
+{
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		bitset<32> f(var[i].first);
+		bitset<32> s(var[i].second);
+		// cout << "(" << (static_cast<int64_t>(var[i].first)) / (float)(1 << FLOAT_PRECISION) << ", " << (static_cast<int64_t>(var[i].second)) / (float)(1 << FLOAT_PRECISION) << ")" << endl;
+		cout << i << endl
+			 << s << endl
+			 << f << endl;
+		// printOneRss<T, B>(var[i], type);
+	}
+}
+
 void printBoolVec(vector<bool> &data, string str, size_t size)
 {
 	cout << str << endl;
