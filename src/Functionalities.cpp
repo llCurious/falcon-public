@@ -1475,10 +1475,9 @@ void funcSelectBitShares(const RSSVectorSmallType &a0, const RSSVectorSmallType 
 
 // convert data from ring 2^n to ring 2^m
 // convert data from 64-bit to 32-bit
-void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data)
+void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data, size_t size)
 {
-	size_t size = data.size();
-	cout << BIT_RANG_LOW << endl;
+	// cout << BIT_RANG_LOW << endl;
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1626,6 +1625,36 @@ void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 
 	highBit bias2 = -(1l << 30);
 	funcAddOneConst(output, bias2, size);
+}
+
+// template <typename Vecn, typename Vecm>
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, size_t size)
+{
+	size_t lowsize = 32;
+	size_t bitsize = size * lowsize;
+	RSSVectorHighType anBit(bitsize);
+	funcRandBitByXor<RSSVectorHighType, highBit>(anBit, bitsize);
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		highBit temp1 = 0;
+		highBit temp2 = 0;
+		for (size_t j = 0; j < lowsize; ++j)
+		{
+			RSSHighType bitrss = anBit[i * lowsize + j];
+			temp1 = (temp1 << 1) + bitrss.first;
+			temp2 = (temp2 << 1) + bitrss.second;
+		}
+		an[i] = make_pair(temp1, temp2);
+	}
+
+	funcReduction(am, an, size);
+}
+
+void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size)
+{
+	RSSVectorHighType rn(size);
+	RSSVectorLowType rm(size);
 }
 
 /****************************************************************/

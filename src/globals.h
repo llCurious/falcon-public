@@ -69,7 +69,7 @@ typedef std::vector<RSSLowType> RSSVectorLowType;
 typedef std::vector<RSSHighType> RSSVectorHighType;
 const int BIT_SIZE_HIGH = (sizeof(highBit) * CHAR_BIT);
 const int BIT_SIZE_LOW = (sizeof(lowBit) * CHAR_BIT);
-const lowBit BIT_RANG_LOW = 4294967295;
+const highBit BIT_RANG_LOW = 1l << 32;
 
 // Mixed-Precision Setting. Currently, the precision is dependent on the bitwidth.
 #define HIGH_PRECISION 20
@@ -85,5 +85,5 @@ const smallType BOUNDARY = (256 / PRIME_NUMBER) * PRIME_NUMBER; // AES
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-
+#define OFFLINE_ON true
 #endif

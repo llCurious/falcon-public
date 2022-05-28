@@ -160,6 +160,20 @@ void log_print(string str);
 void error(string str);
 string which_network(string network);
 
+template <typename T>
+T sqrRoot(T a, int K)
+{
+	T msb = 1l << 1;
+	T res = 1;
+	for (int i = 0; i < K - 1; i++)
+	{
+		res += (((a - res * res) & msb) ? 1 : 0) << i;
+		msb = msb << 1;
+		cout << "sqr " << i << " " << res << " " << res * res << " " << (a - res * res) << endl;
+	}
+	return res;
+}
+
 /************Debug Tools****************/
 template <typename V>
 bool equalRssVector(const V &v1, const V &v2, size_t size)
@@ -206,7 +220,6 @@ void printLowBitVec(vector<lowBit> &var, string pre_text, int print_nos);
 
 void printRSSHighBitVec(RSSVectorHighType &var, string pre_text, int print_nos);
 void printRSSLowBitVec(RSSVectorLowType &var, string pre_text, int print_nos);
-
 
 template <typename T>
 void printVector(const vector<T> &var, string pre_text, int print_nos)

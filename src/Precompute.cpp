@@ -228,6 +228,15 @@ void Precompute::getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size)
 	}
 }
 
+// bool rand rss
+void Precompute::getBPairRand(RSSVectorBoolType &a, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		a[i] = make_pair(aes_prev->getBoolRand(), aes_next->getBoolRand());
+	}
+}
+
 void Precompute::getB2ARand(RSSVectorBoolType &dataB, size_t size)
 {
 	// assert(dataA.size() == dataB.size() && dataB.size() == size);

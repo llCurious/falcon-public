@@ -1544,11 +1544,11 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 }
 
 /********************* Share Conversion Functionalites *********************/
-void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
+void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
 void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
-void funcMixedShareGeneration();
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, size_t size);
 
 template <typename Vec>
 void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size)
@@ -1785,6 +1785,43 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	funcDivision(exp_elements, dividend, b, size);
 }
 
+// Random shared bit [b] over ring of Vec, and b is 0/1;
+// in fact, this is supposed to be offline op
+template <typename Vec, typename T>
+void funcRandBit(Vec &b, size_t size)
+{
+	bool isFailure = false;
+	// do
+	// {
+	// 	getPairRand(Vec b, size_t size);
+	// 	for (size_t i = 0; i < size; i++) // a = 2b + 1
+	// 	{
+	// 		b[i].first = (b[i].first << 1) + 1;
+	// 		b[i].second = (b[i].second << 1) + 1;
+	// 	}
+	// 	funcDotProduct<Vec>(b, b, b, size); // a^2 = a*a
+
+	// 	vector<T> apow(size);
+	// 	funcReconstruct(apow, b, size, "a*a", true);
+
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		if (apow[i] % 2 == 0)
+	// 		{
+	// 			isFailure = true;
+	// 			break;
+	// 		}
+	// 	}
+
+	// } while (isFailure);
+
+	// int K = sizeof(T) << 3;
+	// for (int i = 0; i < size; i++)
+	// {
+	// 	apow[i] = sqrRoot<T>(apow[i], K);
+	// }
+}
+
 /******************** Boolean share op ******************/
 void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size);
 void mergeRSSVectorBool(vector<bool> &result, RSSVectorBoolType &data, size_t size);
@@ -1896,8 +1933,11 @@ void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbia
 {
 	RSSVectorBoolType randB(size);
 	Vec randA(size);
-	PrecomputeObject->getB2ARand(randB, size);
-	funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size, isbias);
+	if (OFFLINE_ON)
+	{
+		PrecomputeObject->getB2ARand(randB, size);
+		funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size, isbias);
+	}
 	// OFFLINE
 
 	// vector<bool> rB(size);
@@ -2115,4 +2155,14 @@ void funcShareABReceiver(Vec &result1, const size_t size1, RSSVectorBoolType &re
 		PrecomputeObject->getZeroShareReceiver<Vec, T>(result1, size1);
 		PrecomputeObject->getZeroBShareReceiver(result2, size2);
 	}
+}
+
+// offline
+template <typename Vec, typename T>
+void funcRandBitByXor(Vec &b, size_t size)
+{
+	RSSVectorBoolType bRSS(size);
+	PrecomputeObject->getBPairRand(bRSS, size);
+
+	funcB2AbyXOR<Vec, T>(b, bRSS, size, false);
 }

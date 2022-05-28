@@ -69,15 +69,21 @@ void debugPairRandom()
 
 void debugReduction()
 {
-	size_t size = 5;
+	size_t size = 100;
+	vector<highBit> a(size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		lowBit temp = rand();
+		a[i] = temp;
+	}
+
 	RSSVectorHighType test_data(size);
 	RSSVectorLowType test_result(size);
 
-	vector<highBit> a = {-5, 25, 0, 976, -916};
-
 	funcGetShares(test_data, a);
 
-	funcReduction(test_result, test_data);
+	funcReduction(test_result, test_data, size);
 
 	// cout << "begin print ss" << endl;
 
@@ -87,11 +93,11 @@ void debugReduction()
 	vector<highBit> data_plain(size);
 	vector<lowBit> result_plain(size);
 
-	cout << "Reconstruct" << endl;
+	// cout << "Reconstruct" << endl;
 
 #if (!LOG_DEBUG)
-	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", true);
-	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", true);
+	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", false);
+	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", false);
 #endif
 
 	for (size_t i = 0; i < size; i++)
@@ -339,6 +345,24 @@ void debugWCExtension()
 	}
 }
 
+void debugMixedShareGen()
+{
+	size_t size = 100;
+	RSSVectorHighType an(size);
+	RSSVectorLowType am(size);
+	funcMixedShareGen(an, am, size);
+
+	vector<highBit> high_plain(size);
+	vector<lowBit> low_plain(size);
+	funcReconstruct<RSSVectorHighType, highBit>(an, high_plain, size, "high plain", false);
+	funcReconstruct<RSSVectorLowType, lowBit>(am, low_plain, size, "low plain", false);
+	for (size_t i = 0; i < size; i++)
+	{
+		// cout << (int)high_plain[i] << " " << (int)low_plain[i] << endl;
+		assert((lowBit)high_plain[i] == low_plain[i]);
+	}
+}
+
 void runTest(string str, string whichTest, string &network)
 {
 	if (str.compare("Debug") == 0)
@@ -433,6 +457,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "BoolAnd";
 			debugBoolAnd();
+		}
+		else if (whichTest.compare("MixedShareGen") == 0)
+		{
+			network = "MixedShareGen";
+			debugMixedShareGen();
 		}
 		else if (whichTest.compare("Square") == 0)
 		{

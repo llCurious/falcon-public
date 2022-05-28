@@ -15,6 +15,7 @@ void debugReduction();
 void debugPosWrap();
 void debugWCExtension();
 void debugBoolAnd();
+void debugMixedShareGen();
 
 void runTest(string str, string whichTest, string &network);
 
