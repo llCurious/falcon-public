@@ -318,6 +318,7 @@ void debugWCExtension()
 		data[i] = data[i - 1] + 1;
 	}
 	data[i] = (1 << 30);
+	i++;
 	for (; i < size; i++)
 	{
 		data[i] = data[i - 1] - 1;
@@ -347,19 +348,67 @@ void debugWCExtension()
 
 void debugMixedShareGen()
 {
-	size_t size = 100;
+	size_t size = 1000;
 	RSSVectorHighType an(size);
 	RSSVectorLowType am(size);
-	funcMixedShareGen(an, am, size);
+	RSSVectorHighType rmsb(size);
+	funcMixedShareGen(an, am, rmsb, size);
 
 	vector<highBit> high_plain(size);
 	vector<lowBit> low_plain(size);
+	vector<highBit> msb_plain(size);
 	funcReconstruct<RSSVectorHighType, highBit>(an, high_plain, size, "high plain", false);
 	funcReconstruct<RSSVectorLowType, lowBit>(am, low_plain, size, "low plain", false);
+	funcReconstruct<RSSVectorHighType, highBit>(rmsb, msb_plain, size, "msb plain", false);
 	for (size_t i = 0; i < size; i++)
 	{
 		// cout << (int)high_plain[i] << " " << (int)low_plain[i] << endl;
+		int temp = int(low_plain[i]);
+		highBit msb = temp < 0 ? 1 : 0;
+		assert(msb == msb_plain[i]);
+		// cout << msb << " " << msb_plain[i] << endl;
 		assert((lowBit)high_plain[i] == low_plain[i]);
+	}
+}
+
+void debugMSExtension()
+{
+	size_t size = 100;
+	vector<lowBit> data(size);
+	size_t i = 0;
+	data[i] = -(1 << 30);
+	// cout << bitset<32>(data[i]) << endl;
+	i++;
+	for (; i < size / 2; i++)
+	{
+		data[i] = data[i - 1] + 1;
+	}
+	data[i] = (1 << 30);
+	i++;
+	for (; i < size; i++)
+	{
+		data[i] = data[i - 1] - 1;
+	}
+	// printLowBitVec(data, "input", size);
+	// printVector<lowBit>(data, "input", size);
+
+	int checkParty = PARTY_B;
+
+	RSSVectorLowType datalow(size);
+	funcPartySS<RSSVectorLowType, lowBit>(datalow, data, size, checkParty);
+
+	RSSVectorHighType datahigh(size);
+	funcMSExtension(datahigh, datalow, size); // test function
+
+	// printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
+	vector<highBit> plain_high(size);
+	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", false);
+	// printHighBitVec(plain_high, "", size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		// cout << (int)plain_high[i] << " " << (int)data[i] << endl;
+		assert((int)plain_high[i] == (int)(highBit)data[i]);
 	}
 }
 
@@ -443,10 +492,15 @@ void runTest(string str, string whichTest, string &network)
 			debugPosWrap();
 			// debugPosWrap();
 		}
-		else if (whichTest.compare("WC-Extension") == 0)
+		else if (whichTest.compare("WCExtension") == 0)
 		{
-			network = "WC-Extension";
+			network = "WCExtension";
 			debugWCExtension();
+		}
+		else if (whichTest.compare("MSExtension") == 0)
+		{
+			network = "MSExtension";
+			debugMSExtension();
 		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{

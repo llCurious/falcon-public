@@ -16,6 +16,7 @@ void debugPosWrap();
 void debugWCExtension();
 void debugBoolAnd();
 void debugMixedShareGen();
+void debugMSExtension(); // funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
 
 void runTest(string str, string whichTest, string &network);
 

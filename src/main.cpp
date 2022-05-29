@@ -76,8 +76,9 @@ int main(int argc, char **argv)
 	// runTest("Debug", "BoolAnd", network);
 	// cout << "POWWRAP" << endl;
 	runTest("Debug", "PosWrap", network);
-	runTest("Debug", "WC-Extension", network);
+	runTest("Debug", "WCExtension", network);
 	runTest("Debug", "MixedShareGen", network);
+	runTest("Debug", "MSExtension", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);

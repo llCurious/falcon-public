@@ -1543,12 +1543,22 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 	}
 }
 
+template <typename vec, typename T>
+void funcMulPlain(vec &result, vector<T> c, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = result[i].first * c[i];
+		result[i].second = result[i].second * c[i];
+	}
+}
+
 /********************* Share Conversion Functionalites *********************/
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
 void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
-void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
+void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
-void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, size_t size);
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
 
 template <typename Vec>
 void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size)
