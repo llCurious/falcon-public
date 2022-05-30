@@ -1554,16 +1554,195 @@ void funcMulPlain(vec &result, vector<T> c, size_t size)
 }
 
 /********************* Share Conversion Functionalites *********************/
+template <typename Vec, typename T>
+void funcRandBitByXor(Vec &b, size_t size);
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
 void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
 
-template <typename Vec>
-void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size)
+template <typename Vec, typename T>
+void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 {
-	log_print("probabilistic truncation");
+	size_t k = sizeof(T) << 3;
+	// size_t l = k - 2; // l = l - 1 (l=k-1)
+	assert(k - 2 > trunc_bits);
+	size_t reall = k - trunc_bits;
+	// size_t wrapl = k - trunc_bits;
+	T bias1 = (1l << (k - 2));
+	T bias2 = -(1l << (k - 2 - trunc_bits));
+	T msb = (1l << (k - 1));
+	// cout << bitset<64>(bias1) << endl;
+
+	Vec rbits(size * k);
+	Vec r(size);
+	Vec rtrunc(size);
+	Vec rmsb(size);
+	vector<T> z(size);
+	// Vec w(size);
+
+	if (OFFLINE_ON) // get r and rtrunc
+	{
+		funcRandBitByXor<Vec, T>(rbits, rbits.size());
+		T temp1;
+		T temp2;
+		// T temp_trunc1;
+		// T temp_trunc2;
+		// T msb1;
+		// T msb2;
+		for (size_t i = 0; i < size; ++i)
+		{
+			rmsb[i] = rbits[i * k];
+			temp1 = 0;
+			temp2 = 0;
+			// msb1 = rmsb[i].first << reall;
+			// msb2 = rmsb[i].second << reall;
+			size_t j;
+			for (j = 0; j < reall; ++j)
+			{
+				temp1 = (temp1 << 1) + rbits[i * k + j].first;
+				temp2 = (temp2 << 1) + rbits[i * k + j].second;
+			}
+			// temp_trunc1 = temp1;
+			// temp_trunc2 = temp2;
+			rtrunc[i] = make_pair(temp1, temp2);
+			for (; j < k; ++j)
+			{
+				temp1 = (temp1 << 1) + rbits[i * k + j].first;
+				temp2 = (temp2 << 1) + rbits[i * k + j].second;
+				// r[i] = make_pair((r[i].first << 1) + rbits[i * k + j].first, (r[i].second << 1) + rbits[i * k + j].second);
+				// temp_trunc1 += msb1;
+				// temp_trunc2 += msb2;
+				// msb1 <<= 1;
+				// msb2 <<= 1;
+			}
+			r[i] = make_pair(temp1, temp2);
+		}
+	}
+
+	// log
+	// vector<T> r_p(size);
+	// vector<T> rtrunc_p(size);
+	// vector<T> rmsb_p(size);
+	// vector<T> rbits_p(rbits.size());
+	// funcReconstruct<Vec, T>(r, r_p, size, "r", false);
+	// funcReconstruct<Vec, T>(rtrunc, rtrunc_p, size, "rtrunc", false);
+	// funcReconstruct<Vec, T>(rmsb, rmsb_p, size, "rmsb", false);
+	// printVector<T>(r_p, "r", size);
+	// printHighBitVec(r_p, "r", size);
+	// printVector<T>(r_p, "r", size);
+	// printHighBitVec(rtrunc_p, "rtrunc", size);
+	// printVector<T>(rtrunc_p, "rtrunc", size);
+	// printVector<T>(rtrunc_p, "rtrunc", size);
+	//  printVector<T>(rmsb_p, "rmsb", size);
+
+	funcAddOneConst(input, bias1, size);
+
+	// log x
+	// vector<T> biasx(size);
+	// funcReconstruct(input, biasx, size, "bias x", false);
+	// printVector<T>(biasx, "x", size);
+	// printHighBitVec(biasx, "x", size);
+
+	// reveal x+r
+	funcAdd(input, input, r, size, false);
+	funcReconstruct(input, z, size, "x+r", false);
+
+	// log x+r
+	// printVector<T>(z, "x+r", size);
+	// printHighBitVec(z, "x+r", size);
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+		if ((z[i] & msb))
+		{
+			rmsb[i] = make_pair(0, 0); // w-->rmsb
+		}
+		else
+		{
+			rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+		}
+	}
+
+	// 	log func
+	// vector<T> w(size);
+	// funcReconstruct<Vec, T>(rmsb, w, size, "w", true);
+
+	//  [x] = z − [rtrunc] + [w]·2^(k−f)
+	// if (partyNum == PARTY_A)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair((z[i] >> trunc_bits), 0);
+	// 	}
+	// }
+	// else if (partyNum == PARTY_C)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair(0, (z[i] >> trunc_bits));
+	// 	}
+	// }
+	// else
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair(0, 0);
+	// 	}
+	// }
+
+	// log
+	// vector<T> xtrunc(size);
+	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc", false);
+	// // printHighBitVec(xtrunc, "", size);
+	// printVector(xtrunc, "ztrunc", size);
+
+	// funcAdd(output, output, rtrunc, size, true); // truncz-truncr
+
+	// log
+	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc-rtrunc", true);
+	// // printHighBitVec(xtrunc, "", size);
+	// printVector(xtrunc, "z-r", size);
+
+	// funcAdd(output, output, rmsb, size, false); // x' += wrap
+
+	// log
+	// vector<T> x(size);
+	// funcReconstruct<Vec, T>(output, x, size, "before bias", false);
+	// printVector(x, "before bias", size);
+	// printHighBitVec(x, "before bias", size);
+	// cout << bitset<64>(bias2) << endl;
+
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair((z[i] >> trunc_bits) + rmsb[i].first - rtrunc[i].first, rmsb[i].second - rtrunc[i].second);
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair(rmsb[i].first - rtrunc[i].first, (z[i] >> trunc_bits) + rmsb[i].second - rtrunc[i].second);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair(rmsb[i].first - rtrunc[i].first, rmsb[i].second - rtrunc[i].second);
+		}
+	}
+
+	funcAddOneConst(output, bias2, size);
+
+	// log
+	// funcReconstruct<Vec, T>(output, x, size, "after bias", true);
+	// printVector(x, "after bias", size);
+	// printHighBitVec(x, "after bias", size);
 }
 
 void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);

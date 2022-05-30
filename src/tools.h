@@ -228,7 +228,7 @@ void printVector(const vector<T> &var, string pre_text, int print_nos)
 	for (size_t i = 0; i < print_nos; i++)
 	{
 		// cout << (static_cast<int64_t>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
-		cout << var[i] << " ";
+		cout << T(var[i]) << " ";
 	}
 	cout << endl;
 }

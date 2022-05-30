@@ -1660,7 +1660,7 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	RSSVectorHighType rmsb(size);
 	vector<highBit> ymsb(size);
 	vector<lowBit> y(size);
-	highBit msb = 1l << 64;
+	highBit msb = 1l << 63;
 	highBit m = 32;
 
 	if (OFFLINE_ON)
@@ -1671,33 +1671,60 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	lowBit bias1 = (1l << 30);
 	funcAddOneConst(input, bias1, size);
 
-	funcAdd<RSSVectorLowType>(input, input, rm, size, false);				// x+r (m)
+	funcAdd<RSSVectorLowType>(input, input, rm, size, false);				 // x+r (m)
 	funcReconstruct<RSSVectorLowType, lowBit>(input, y, size, "x+r", false); // yrss = x+r
 
+	// [w]n = [rm−1]n·¬ym−1.
 	for (size_t i = 0; i < size; i++)
 	{
-		ymsb[i] = (y[i] & msb) ? 1 : 0;
+		if ((y[i] & msb))
+		{
+			rmsb[i] = make_pair(0, 0);
+		}
+		// ymsb[i] = (y[i] & msb) ? 1 : 0;
 	}
 
-	// [w]n = [rm−1]n·¬ym−1.
-	funcMulPlain<RSSVectorHighType, highBit>(rmsb, ymsb, size); // rmsb --> w
+	// funcMulPlain<RSSVectorHighType, highBit>(rmsb, ymsb, size); // rmsb --> w
 
 	// [x]n = y − [r]n + [w]n · 2m.
-	for (int i = 0; i < size; ++i)
+	if (partyNum == PARTY_A)
 	{
-		if (partyNum == PARTY_A)
+		for (int i = 0; i < size; ++i)
 		{
 			output[i] = make_pair(y[i] + (rmsb[i].first << m) - rn[i].first, +(rmsb[i].second << m) - rn[i].second);
 		}
-		else if (partyNum == PARTY_C)
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
 		{
 			output[i] = make_pair((rmsb[i].first << m) - rn[i].first, y[i] + (rmsb[i].second << m) - rn[i].second);
 		}
-		else
+	}
+	else
+	{
+		for (int i = 0; i < size; ++i)
 		{
 			output[i] = make_pair((rmsb[i].first << m) - rn[i].first, (rmsb[i].second << m) - rn[i].second);
 		}
 	}
+	
+
+	// for (int i = 0; i < size; ++i)
+	// {
+	// 	if (partyNum == PARTY_A)
+	// 	{
+	// 		output[i] = make_pair(y[i] + (rmsb[i].first << m) - rn[i].first, +(rmsb[i].second << m) - rn[i].second);
+	// 	}
+	// 	else if (partyNum == PARTY_C)
+	// 	{
+	// 		output[i] = make_pair((rmsb[i].first << m) - rn[i].first, y[i] + (rmsb[i].second << m) - rn[i].second);
+	// 	}
+	// 	else
+	// 	{
+	// 		output[i] = make_pair((rmsb[i].first << m) - rn[i].first, (rmsb[i].second << m) - rn[i].second);
+	// 	}
+	// }
 
 	highBit bias2 = -(1l << 30);
 	funcAddOneConst(output, bias2, size);

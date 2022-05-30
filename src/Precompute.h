@@ -75,8 +75,8 @@ public:
 	void getTriplets(Vec &a, Vec &b, Vec &c, size_t size);
 	void getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVectorSmallType &c, size_t size);
 
-	template <typename Vec>
-	void getRandBit(Vec &a, size_t size);
+	// template <typename Vec>
+	// void getRandBit(Vec &a, size_t size);
 
 	void getZeroBRand(vector<bool> &a, size_t size);
 

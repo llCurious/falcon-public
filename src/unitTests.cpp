@@ -98,13 +98,13 @@ void debugReduction()
 #if (!LOG_DEBUG)
 	funcReconstruct<RSSVectorHighType, highBit>(test_data, data_plain, size, "input", false);
 	funcReconstruct<RSSVectorLowType, lowBit>(test_result, result_plain, size, "output", false);
-#endif
 
 	for (size_t i = 0; i < size; i++)
 	{
 		// cout << data_plain[i] << " " << result_plain[i] << endl;
 		assert((lowBit)(data_plain[i]) == (lowBit)(result_plain[i]));
 	}
+#endif
 }
 
 template <typename T>
@@ -317,7 +317,7 @@ void debugWCExtension()
 	{
 		data[i] = data[i - 1] + 1;
 	}
-	data[i] = (1 << 30);
+	data[i] = (1 << 30) - 1;
 	i++;
 	for (; i < size; i++)
 	{
@@ -383,7 +383,7 @@ void debugMSExtension()
 	{
 		data[i] = data[i - 1] + 1;
 	}
-	data[i] = (1 << 30);
+	data[i] = (1 << 30) - 1;
 	i++;
 	for (; i < size; i++)
 	{
@@ -501,6 +501,14 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "MSExtension";
 			debugMSExtension();
+		}
+		else if (whichTest.compare("ProbTruncation") == 0)
+		{
+			network = "ProbTruncation";
+			debugProbTruncation<RSSVectorHighType, highBit>();
+			// debugProbTruncation<RSSVectorLowType, lowBit>();
+			// cout << "LOW" << endl;
+			debugProbTruncation<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{
