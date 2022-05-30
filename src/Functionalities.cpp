@@ -1662,13 +1662,14 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	vector<lowBit> y(size);
 	highBit msb = 1l << 63;
 	highBit m = 32;
+	lowBit bias1 = (1l << 30);
+	highBit bias2 = -(1l << 30);
 
 	if (OFFLINE_ON)
 	{
 		funcMixedShareGen(rn, rm, rmsb, size);
 	}
 
-	lowBit bias1 = (1l << 30);
 	funcAddOneConst(input, bias1, size);
 
 	funcAdd<RSSVectorLowType>(input, input, rm, size, false);				 // x+r (m)
@@ -1708,25 +1709,7 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 			output[i] = make_pair((rmsb[i].first << m) - rn[i].first, (rmsb[i].second << m) - rn[i].second);
 		}
 	}
-	
 
-	// for (int i = 0; i < size; ++i)
-	// {
-	// 	if (partyNum == PARTY_A)
-	// 	{
-	// 		output[i] = make_pair(y[i] + (rmsb[i].first << m) - rn[i].first, +(rmsb[i].second << m) - rn[i].second);
-	// 	}
-	// 	else if (partyNum == PARTY_C)
-	// 	{
-	// 		output[i] = make_pair((rmsb[i].first << m) - rn[i].first, y[i] + (rmsb[i].second << m) - rn[i].second);
-	// 	}
-	// 	else
-	// 	{
-	// 		output[i] = make_pair((rmsb[i].first << m) - rn[i].first, (rmsb[i].second << m) - rn[i].second);
-	// 	}
-	// }
-
-	highBit bias2 = -(1l << 30);
 	funcAddOneConst(output, bias2, size);
 }
 

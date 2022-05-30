@@ -1566,21 +1566,17 @@ template <typename Vec, typename T>
 void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 {
 	size_t k = sizeof(T) << 3;
-	// size_t l = k - 2; // l = l - 1 (l=k-1)
 	assert(k - 2 > trunc_bits);
 	size_t reall = k - trunc_bits;
-	// size_t wrapl = k - trunc_bits;
 	T bias1 = (1l << (k - 2));
 	T bias2 = -(1l << (k - 2 - trunc_bits));
 	T msb = (1l << (k - 1));
-	// cout << bitset<64>(bias1) << endl;
 
 	Vec rbits(size * k);
 	Vec r(size);
 	Vec rtrunc(size);
 	Vec rmsb(size);
 	vector<T> z(size);
-	// Vec w(size);
 
 	if (OFFLINE_ON) // get r and rtrunc
 	{
