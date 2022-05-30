@@ -19,6 +19,7 @@ void debugMixedShareGen();
 void debugMSExtension(); // funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
 template <typename Vec, typename T>
 void debugProbTruncation();
+void debugTruncAndReduce();
 
 void runTest(string str, string whichTest, string &network);
 

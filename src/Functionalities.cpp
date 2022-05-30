@@ -1713,6 +1713,14 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	funcAddOneConst(output, bias2, size);
 }
 
+void funcTruncAndReduce(RSSVectorLowType &a, const RSSVectorHighType &b, int trunc_bits, size_t size)
+{
+	for (int i = 0; i < size; ++i)
+	{
+		a[i] = make_pair((b[i].first >> trunc_bits) % BIT_RANG_LOW, (b[i].second >> trunc_bits) % BIT_RANG_LOW);
+	}
+}
+
 /****************************************************************/
 /* 							DEBUG 								*/
 /****************************************************************/

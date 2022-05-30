@@ -412,6 +412,49 @@ void debugMSExtension()
 	}
 }
 
+void debugTruncAndReduce()
+{
+	int checkParty = PARTY_B;
+
+	int trunc_bits = 10;
+	size_t size = 500;
+	vector<highBit> data(size);
+
+	RSSVectorHighType input(size);
+	RSSVectorLowType output(size);
+
+	// test data
+	int i;
+	for (i = 0; i < size / 2; ++i)
+	{
+		int temp = -random();
+		data[i] = temp;
+	}
+	for (; i < size; ++i)
+	{
+		int temp = random();
+		data[i] = temp;
+	}
+	funcPartySS<RSSVectorHighType, highBit>(input, data, size, checkParty);
+
+	funcTruncAndReduce(output, input, trunc_bits, size);
+
+	// check
+	vector<lowBit> output_p(size);
+	funcReconstruct<RSSVectorLowType, lowBit>(output, output_p, size, "output plain", false);
+
+	if (partyNum == checkParty)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			int t1 = (int(data[i]) >> trunc_bits);
+			int t2 = int(output_p[i]);
+			assert(t2 == t1 || t2 == t1 - 1 || t2 == t1 - 2);
+			// cout << (int(data[i]) >> trunc_bits) << " " << int(output_p[i]) << endl;
+		}
+	}
+}
+
 void runTest(string str, string whichTest, string &network)
 {
 	if (str.compare("Debug") == 0)
@@ -509,6 +552,11 @@ void runTest(string str, string whichTest, string &network)
 			// debugProbTruncation<RSSVectorLowType, lowBit>();
 			// cout << "LOW" << endl;
 			debugProbTruncation<RSSVectorLowType, lowBit>();
+		}
+		else if (whichTest.compare("TruncAndReduce") == 0)
+		{
+			network = "TruncAndReduce";
+			debugTruncAndReduce();
 		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{

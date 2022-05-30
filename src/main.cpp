@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 	runTest("Debug", "MixedShareGen", network);
 	runTest("Debug", "MSExtension", network);
 	runTest("Debug", "ProbTruncation", network);
+	runTest("Debug", "TruncAndReduce", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);

@@ -1741,7 +1741,8 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 	// printHighBitVec(x, "after bias", size);
 }
 
-void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);
+// void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
+void funcTruncAndReduce(RSSVectorLowType &a, const RSSVectorHighType &b, int trunc_bits, size_t size);
 
 /********************* Mixed-Precision Activations Functionalites *********************/
 void funcMReLU();
