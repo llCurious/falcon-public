@@ -114,10 +114,10 @@ void FCLayer::forward(const RSSVectorMyType &inputActivation)
 			activations[r*columns + c] = activations[r*columns + c] + biases[c];
 	
 	RSSVectorMyType a = inputActivation;
-	print_vector(a, "FLOAT", "input_act", 100);
-	print_vector(weights, "FLOAT", "weights", 100);
+	// print_vector(a, "FLOAT", "input_act", 100);
+	// print_vector(weights, "FLOAT", "weights", 100);
 	// print_vector(biases, "FLOAT", "biases", biases.size());
-	print_vector(activations, "FLOAT", "out_activations", 100);
+	// print_vector(activations, "FLOAT", "out_activations", 100);
 }
 
 
@@ -134,7 +134,7 @@ void FCLayer::computeDelta(RSSVectorMyType& prevDelta)
 		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, FLOAT_PRECISION) << endl;
 	else
 		funcMatMul(deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, FLOAT_PRECISION);
-	print_vector(deltas, "FLOAT", "deltas", deltas.size());
+	// print_vector(deltas, "FLOAT", "deltas-" + to_string(deltas.size()), deltas.size());
 	// print_vector(prevDelta, "FLOAT", "prevDelta", prevDelta.size());
 }
 
@@ -173,8 +173,8 @@ void FCLayer::updateEquations(const RSSVectorMyType& prevActivations)
 	subtractVectors(weights, deltaWeight, weights, size);
 	cout << "===============================" << endl;
 	RSSVectorMyType xx = prevActivations;
-	print_vector(xx, "FLOAT", "prevActivations", 100);
-	print_vector(deltas, "FLOAT", "deltas", 100);
-	print_vector(deltaWeight, "FLOAT", "deltaWeight", 100);
-	print_vector(temp, "FLOAT", "deltaBias", temp.size());
+	// print_vector(xx, "FLOAT", "prevActivations", 100);
+	// print_vector(deltas, "FLOAT", "deltas", 100);
+	// print_vector(deltaWeight, "FLOAT", "deltaWeight", 100);
+	// print_vector(temp, "FLOAT", "deltaBias", temp.size());
 }

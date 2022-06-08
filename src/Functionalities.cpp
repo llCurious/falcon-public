@@ -1949,17 +1949,21 @@ void debugExp()
 }
 
 void debugSoftmax() {
-	size_t rows = 3, cols = 5;
+	size_t rows = 2, cols = 10;
 	size_t size = rows * cols;
 
+	vector<float> data_raw = {
+		-0.12, 0.807, -0.534, -0.058, 0.046, -0.855, 0.116, 0.219, 0.010, 0.756, 
+		-0.12, 0.807, -0.534, -0.058, 0.046, -0.855, 0.116, 0.219, 0.010, 0.756, 
+	};
+
 	vector<highBit> data = {
-		1, 2, 3, 4, 5,
-		2, 1, 2, 7, 0,
-		8, 4, 4, 2, 1,
+		1, 2, 3, 4, 5, 2, 1, 2, 7, 0,
+		8, 4, 4, 2, 1, 2, 1, 2, 7, 0,
 	};
 
 	for (size_t i = 0; i< size; i++)
-		data[i] = data[i] * (1 << HIGH_PRECISION);
+		data[i] = data_raw[i] * (1 << HIGH_PRECISION);
 
 	RSSVectorHighType a(size), b(size);
 
