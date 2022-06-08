@@ -35,7 +35,7 @@
 #define PARTY_C 2
 #define USING_EIGEN false
 #define PRIME_NUMBER 67
-#define FLOAT_PRECISION 13
+#define FLOAT_PRECISION 20
 #define FLOAT_BIAS (1 << FLOAT_PRECISION)
 #define PRECISE_DIVISION false
 

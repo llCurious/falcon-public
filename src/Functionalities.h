@@ -2001,6 +2001,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 }
 
+const int rec_const = 0.003 * FLOAT_BIAS;
 /**
  * @brief get the reciprocal of b
  *  'NR' : Newton-Raphson method computes the reciprocal using iterations of :math:
@@ -2034,7 +2035,7 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			a[i].first = 8192 - 2 * b[i].first;
+			a[i].first = FLOAT_BIAS - 2 * b[i].first;
 			a[i].second = -2 * b[i].second;
 		}
 	}
@@ -2043,7 +2044,7 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 		for (size_t i = 0; i < size; i++)
 		{
 			a[i].first = -2 * b[i].first;
-			a[i].second = 8192 - 2 * b[i].second;
+			a[i].second = FLOAT_BIAS - 2 * b[i].second;
 		}
 	}
 	else
@@ -2055,14 +2056,7 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 		}
 	}
 
-	vector<highBit> r(size);
-	funcReconstruct(a, r, size, "1 - 2 * x", false);
-	printVectorReal(r, "1 - 2 * x", size);
-
-	funcExp(a, a, size); // b = exp(b)= exp(1 - 2 * b)
-
-	funcReconstruct(a, r, size, "exp(x)", false);
-	printVectorReal(r, "exp(x)", size);
+	funcExp(a, a, size); // a = exp(a)= exp(1 - 2 * b)
 
 	// a = 3 * (1 - 2 * b).exp() + 0.003
 	// 0.003 * (1<<13) = 24.576
@@ -2070,7 +2064,7 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			a[i].first = 3 * a[i].first + 25;
+			a[i].first = 3 * a[i].first + rec_const;
 			a[i].second = 3 * a[i].second;
 		}
 	}
@@ -2079,7 +2073,7 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 		for (size_t i = 0; i < size; i++)
 		{
 			a[i].first = 3 * a[i].first;
-			a[i].second = 3 * a[i].second + 25;
+			a[i].second = 3 * a[i].second + rec_const;
 		}
 	}
 	else
@@ -2091,21 +2085,23 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 		}
 	}
 
-	funcReconstruct(a, r, size, "3*x + 0.003", false);
-	printVectorReal(r, "3*x + 0.003", size);
+	// funcReconstruct(a, r, size, "3*x + 0.003", false);
+	// printVectorReal(r, "3*x + 0.003", size);
 
 	// x_{i+1} = (2x_i - self * x_i^2)
-	for (size_t i = 0; i < REC_ITE; i++)
+	for (size_t j = 0; j < REC_ITE; ++j)
 	{
 		funcSquare(a, temp, size);									// temp = a*a
 		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
-		a[i].first = 2 * a[i].first - temp[i].first;
-		a[i].second = 2 * a[i].second - temp[i].second;
-		// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
-		// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
-
-		funcReconstruct(a, r, size, "it", false);
-		printVectorReal(r, "it", size);
+		for (size_t i = 0; i < size; ++i)
+		{
+			a[i].first = 2 * a[i].first - temp[i].first;
+			a[i].second = 2 * a[i].second - temp[i].second;
+			// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
+			// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
+		}
+		// funcReconstruct(a, r, size, "it", false);
+		// printVectorReal(r, "it", size);
 	}
 }
 

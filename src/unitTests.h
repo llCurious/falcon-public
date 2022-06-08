@@ -128,7 +128,7 @@ void debugReciprocal()
     vector<T> data(size);
     for (size_t i = 0; i < size; i++)
     {
-        data[i] = (1 << (i + 14));
+        data[i] = (FLOAT_BIAS << (i + 1));
     }
     printVectorReal<T>(data, "input", size);
 
@@ -140,7 +140,7 @@ void debugReciprocal()
     funcReciprocal(output, input, false, size);
 
     vector<T> result(size);
-    funcReconstruct<Vec, T>(output, result, size, "out", true);
+    funcReconstruct<Vec, T>(output, result, size, "out", false);
     printVectorReal<T>(result, "output", size);
 }
 

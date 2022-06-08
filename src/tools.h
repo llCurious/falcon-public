@@ -253,7 +253,7 @@ void printVectorReal(const vector<T> &var, string pre_text, int print_nos)
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << (static_cast<computeType>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
+		cout << (static_cast<computeType>(var[i])) / (float)(1 << FLOAT_PRECISION) << " ";
 		// cout << var[i] << " ";
 	}
 	cout << endl;
