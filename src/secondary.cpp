@@ -924,8 +924,8 @@ void readMiniBatch(NeuralNetwork* net, string phase)
 		for (int i = 0; i < LAST_LAYER_SIZE * MINI_BATCH_SIZE; ++i)
 			net->outputData[i] = trainLabels[(trainLabelsBatchCounter + i)%t];
 
-		// trainDataBatchCounter += INPUT_SIZE * MINI_BATCH_SIZE;
-		// trainLabelsBatchCounter += LAST_LAYER_SIZE * MINI_BATCH_SIZE;
+		trainDataBatchCounter += INPUT_SIZE * MINI_BATCH_SIZE;
+		trainLabelsBatchCounter += LAST_LAYER_SIZE * MINI_BATCH_SIZE;
 	}
 
 	if (trainDataBatchCounter > s)
