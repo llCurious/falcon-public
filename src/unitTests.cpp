@@ -568,6 +568,11 @@ void runTest(string str, string whichTest, string &network)
 			network = "Reciprocal";
 			debugReciprocal<RSSVectorHighType, highBit>();
 		}
+		else if (whichTest.compare("funcDivisionByNR") == 0)
+		{
+			network = "funcDivisionByNR";
+			debugDivisionByNR<RSSVectorHighType, highBit>();
+		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{
 			network = "ZeroRandom";

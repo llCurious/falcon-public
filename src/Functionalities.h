@@ -1071,6 +1071,10 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 }
 
 template <typename VEC>
+void funcDivisionByNR(VEC &a, const VEC &b, VEC &quotient,
+					  size_t size);
+
+template <typename VEC>
 void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 				   size_t batchSize, size_t B)
 {
@@ -2017,15 +2021,15 @@ const int rec_const = 0.003 * FLOAT_BIAS;
  * @param size
  */
 template <typename VEC>
-void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
+void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 					size_t size)
 {
 	VEC temp(size);
 	if (input_in_01)
 	{
-		funcMulConst(b, b, 64, size);
-		funcReciprocal(a, b, false, size);
-		funcMulConst(a, a, 64, size);
+		// funcMulConst(b, b, 64, size);
+		// funcReciprocal(a, b, false, size);
+		// funcMulConst(a, a, 64, size);
 		return;
 	}
 
@@ -2103,6 +2107,16 @@ void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
 		// funcReconstruct(a, r, size, "it", false);
 		// printVectorReal(r, "it", size);
 	}
+}
+
+template <typename VEC>
+void funcDivisionByNR(VEC &result, const VEC &input, VEC &quotient,
+					  size_t size)
+{
+	VEC q_rec(size);
+	funcReciprocal(q_rec, quotient, false, size);
+
+	funcDotProduct(q_rec, input, result, size, true, FLOAT_PRECISION);
 }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf

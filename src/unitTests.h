@@ -24,6 +24,8 @@ template <typename Vec, typename T, typename RealVec>
 void debugRandBit();
 template <typename Vec, typename T>
 void debugReciprocal();
+template <typename VEC, typename T>
+void debugDivisionByNR();
 
 void runTest(string str, string whichTest, string &network);
 
@@ -141,6 +143,34 @@ void debugReciprocal()
 
     vector<T> result(size);
     funcReconstruct<Vec, T>(output, result, size, "out", false);
+    printVectorReal<T>(result, "output", size);
+}
+
+template <typename VEC, typename T>
+void debugDivisionByNR()
+{
+    size_t size = 5;
+    vector<T> data(size);
+    vector<T> que(size);
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = (FLOAT_BIAS << (i + 2));
+        que[i] = (FLOAT_BIAS << (i + 1));
+    }
+    printVectorReal<T>(data, "input", size);
+    printVectorReal<T>(que, "que", size);
+
+    VEC input(size);
+    VEC quess(size);
+    int checkParty = PARTY_B;
+    funcPartySS(input, data, size, checkParty);
+    funcPartySS(quess, que, size, checkParty);
+
+    VEC output(size);
+    funcDivisionByNR(output, input, quess, size);
+
+    vector<T> result(size);
+    funcReconstruct<VEC, T>(output, result, size, "out", false);
     printVectorReal<T>(result, "output", size);
 }
 
