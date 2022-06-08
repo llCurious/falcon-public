@@ -43,12 +43,12 @@
 
 /********************* Neural Network globals *********************/
 //Batch size has to be a power of two
-#define LOG_MINI_BATCH 2
+#define LOG_MINI_BATCH 7
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
-#define LOG_LEARNING_RATE 3
+#define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 3
+#define NUM_ITERATIONS 130
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 
@@ -74,7 +74,7 @@ const lowBit BIT_RANG_LOW = 4294967295;
 
 // Mixed-Precision Setting. Currently, the precision is dependent on the bitwidth.
 #define HIGH_PRECISION 20
-#define LOW_PRECISION 12
+#define LOW_PRECISION 13
 
 const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
 const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
@@ -83,6 +83,7 @@ const smallType BOUNDARY = (256/PRIME_NUMBER) * PRIME_NUMBER;   // AES
 
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
+#define USE_SOFTMAX_CE false
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY false

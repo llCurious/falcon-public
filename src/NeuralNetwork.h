@@ -10,6 +10,7 @@ class NeuralNetwork
 public:
 	RSSVectorMyType inputData;
 	RSSVectorMyType outputData;
+	RSSVectorMyType softmax_output;
 	vector<Layer*> layers;
 
 	NeuralNetwork(NeuralNetConfig* config);

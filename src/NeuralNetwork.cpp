@@ -17,7 +17,8 @@ extern bool LARGE_NETWORK;
 
 NeuralNetwork::NeuralNetwork(NeuralNetConfig* config)
 :inputData(INPUT_SIZE * MINI_BATCH_SIZE),
- outputData(LAST_LAYER_SIZE * MINI_BATCH_SIZE)
+ outputData(LAST_LAYER_SIZE * MINI_BATCH_SIZE),
+ softmax_output(LAST_LAYER_SIZE * MINI_BATCH_SIZE)
 {
 	for (size_t i = 0; i < NUM_LAYERS; ++i)
 	{
@@ -129,23 +130,25 @@ void NeuralNetwork::computeDelta()
 		/**
 		 * Updated Softmax + CE gradients computation
 		*/
-		RSSVectorMyType softmax_output(size);
-		funcSoftmax(*(layers[NUM_LAYERS-1]->getActivation()), softmax_output, rows, columns, false);
-		subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS-1]->getDelta()), size);
-		print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "predict", size);
-		print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
+		if (USE_SOFTMAX_CE) {
+			funcSoftmax(*(layers[NUM_LAYERS-1]->getActivation()), softmax_output, rows, columns, false);
+			subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS-1]->getDelta()), size);
+			print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "predict", 30);
+			print_vector(softmax_output, "FLOAT", "predict_softmax", 30);
+			// print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
+		} else {
+			/**
+			 * Updated MSE
+			 * **/
+			RSSVectorMyType diff(size);
+			subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
+			*(layers[NUM_LAYERS-1]->getDelta()) = diff;
+			// print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "getActivation", layers[NUM_LAYERS-1]->getActivation()->size());
+			// print_vector(outputData, "FLOAT", "outputData", outputData.size());
+			// print_vector(diff, "FLOAT", "diff", diff.size());
+			// funcTruncate(diff, LOG_MINI_BATCH, size);
+		}
 		
-		/**
-		 * Updated MSE
-		 * **/
-		// RSSVectorMyType diff(size);
-		// subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
-		// print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "getActivation", layers[NUM_LAYERS-1]->getActivation()->size());
-		// print_vector(outputData, "FLOAT", "outputData", outputData.size());
-		// print_vector(diff, "FLOAT", "diff", diff.size());
-		// // funcTruncate(diff, LOG_MINI_BATCH, size);
-		// *(layers[NUM_LAYERS-1]->getDelta()) = diff;
-
 		/**
 		 * Raw implementation
 		 * **/
@@ -220,7 +223,7 @@ void NeuralNetwork::getAccuracy()
 	
 	// reconstruct prediction from neural network
 	funcMaxpool((*(layers[NUM_LAYERS-1])->getActivation()), temp_max, temp_maxPrime, rows, columns);
-	funcReconstructBit(temp_maxPrime, prediction, rows*columns, "prediction", true);
+	funcReconstructBit(temp_maxPrime, prediction, rows*columns, "prediction", false);
 	
 	for (int i = 0, index = 0; i < rows; ++i){
 		counter[1]++;
@@ -256,18 +259,60 @@ void NeuralNetwork::getLoss() {
 	size_t size = rows * columns;
 	size_t index = 0;
 
-	RSSVectorMyType diff(size), square(size);
-	subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
-	funcSquare(diff, square, size);
+	// RSSVectorMyType diff(size), square(size);
+	// subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
+	// funcSquare(diff, square, size);
 
-	print_vector(diff, "FLOAT", "loss_diff", size);
+	// print_vector(diff, "FLOAT", "loss_diff", size);
 
-	RSSVectorMyType loss_sum(1);
-	for (index = 0; index < size; index++) {
-		loss_sum[0] = loss_sum[0] + square[index];
+	// RSSVectorMyType loss_sum(1);
+	// for (index = 0; index < size; index++) {
+	// 	loss_sum[0] = loss_sum[0] + square[index];
+	// }
+
+	// print_vector(loss_sum, "FLOAT", "loss", 1);
+
+	// Plain-text version
+	vector<myType> reconst_label(size);
+	vector<float> reconst_label_float(size);
+	funcReconstruct(outputData, reconst_label, size, "NN label", false);
+	for (size_t i = 0; i < size; i ++) {
+		if (sizeof(myType) == 4) { // int32
+			reconst_label_float[i] = (static_cast<int32_t>(reconst_label[i])) / (float)(1 << FLOAT_PRECISION);
+		} else if (sizeof(myType) == 8) { // int64
+			reconst_label_float[i] = (static_cast<int64_t>(reconst_label[i])) / (float)(1 << FLOAT_PRECISION);
+		}
 	}
 
-	print_vector(loss_sum, "FLOAT", "loss", 1);
+	float loss = 0;
+
+	if (USE_SOFTMAX_CE) {	// Cross Entropy
+		vector<myType> reconst_y_soft(size);
+		vector<float> reconst_y_soft_float(size);
+		funcReconstruct(softmax_output, reconst_y_soft, size, "NN output softmax", false);
+		for (size_t i = 0; i < size; i ++) {
+			if (sizeof(myType) == 4) { // int32
+				reconst_y_soft_float[i] = (static_cast<int32_t>(reconst_y_soft[i])) / (float)(1 << FLOAT_PRECISION);
+			} else if (sizeof(myType) == 8) { // int64
+				reconst_y_soft_float[i] = (static_cast<int64_t>(reconst_y_soft[i])) / (float)(1 << FLOAT_PRECISION);
+			}
+			loss += -(reconst_label_float[i] * log(reconst_y_soft_float[i]));
+		}
+	} else {	// MSE
+		vector<myType> reconst_y(size);
+		vector<float> reconst_y_float(size);
+		funcReconstruct(*(layers[NUM_LAYERS-1]->getActivation()), reconst_y, size, "NN output", false);
+		for (size_t i = 0; i < size; i ++) {
+			if (sizeof(myType) == 4) { // int32
+				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+			} else if (sizeof(myType) == 8) { // int64
+				reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+			}
+			loss += (reconst_y_float[i] - reconst_label_float[i]) * (reconst_y_float[i] - reconst_label_float[i]);
+		}
+	}
+	string loss_func = USE_SOFTMAX_CE ? "Softmax+CE" : "MSE";
+	cout << loss_func << " Loss: " << loss << endl;
 }
 
 // original implmentation of NeuralNetwork::getAccuracy(.)
