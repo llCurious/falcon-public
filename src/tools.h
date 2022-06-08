@@ -161,15 +161,28 @@ void error(string str);
 string which_network(string network);
 
 template <typename T>
-T sqrRoot(T a, int K)
+T invert(T a, int K)
 {
-	T msb = 1l << 1;
 	T res = 1;
-	for (int i = 0; i < K - 1; i++)
+	T one = 1;
+	T msb = longone;
+	for (int i = 0; i < K; i++)
 	{
-		res += (((a - res * res) & msb) ? 1 : 0) << i;
+		res += ((one - a * res) & msb);
 		msb = msb << 1;
-		cout << "sqr " << i << " " << res << " " << res * res << " " << (a - res * res) << endl;
+	}
+	return res;
+}
+
+template <typename T>
+T sqrRoot(T x, int K) // --K
+{
+	T msb = longone << 1;
+	T res = 1;
+	for (int i = 0; i < K; i++)
+	{
+		res += (((x - res * res) & msb)) >> 1;
+		msb = msb << 1;
 	}
 	return res;
 }
@@ -228,7 +241,20 @@ void printVector(const vector<T> &var, string pre_text, int print_nos)
 	for (size_t i = 0; i < print_nos; i++)
 	{
 		// cout << (static_cast<int64_t>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
-		cout << T(var[i]) << " ";
+		cout << var[i] << " ";
+	}
+	cout << endl;
+}
+
+template <typename T>
+void printVectorReal(const vector<T> &var, string pre_text, int print_nos)
+{
+	typedef typename std::conditional<std::is_same<T, highBit>::value, int64_t, int32_t>::type computeType;
+	cout << pre_text << " " << print_nos << endl;
+	for (size_t i = 0; i < print_nos; i++)
+	{
+		cout << (static_cast<computeType>(var[i])) / (float)(1 << FLOAT_PRECISION) << endl;
+		// cout << var[i] << " ";
 	}
 	cout << endl;
 }

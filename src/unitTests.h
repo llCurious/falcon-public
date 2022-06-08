@@ -20,8 +20,30 @@ void debugMSExtension(); // funcMSExtension(RSSVectorHighType &output, RSSVector
 template <typename Vec, typename T>
 void debugProbTruncation();
 void debugTruncAndReduce();
+template <typename Vec, typename T, typename RealVec>
+void debugRandBit();
+template <typename Vec, typename T>
+void debugReciprocal();
 
 void runTest(string str, string whichTest, string &network);
+
+template <typename Vec, typename T, typename RealVec>
+void debugRandBit()
+{
+    size_t size = 1000;
+
+    RealVec b(size);
+    vector<highBit> b_p(size);
+
+    funcRandBit<Vec, T, RealVec>(b, size);
+
+    // check
+    funcReconstruct(b, b_p, size, "b plain", false);
+    for (size_t i = 0; i < size; i++)
+    {
+        assert(b_p[i] == 0 || b_p[i] == 1);
+    }
+}
 
 template <typename Vec, typename T>
 void debugProbTruncation()
@@ -97,6 +119,29 @@ void debugProbTruncation()
         }
     }
 #endif
+}
+
+template <typename Vec, typename T>
+void debugReciprocal()
+{
+    size_t size = 5;
+    vector<T> data(size);
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = (1 << (i + 14));
+    }
+    printVectorReal<T>(data, "input", size);
+
+    Vec input(size);
+    int checkParty = PARTY_B;
+    funcPartySS(input, data, size, checkParty);
+
+    Vec output(size);
+    funcReciprocal(output, input, false, size);
+
+    vector<T> result(size);
+    funcReconstruct<Vec, T>(output, result, size, "out", true);
+    printVectorReal<T>(result, "output", size);
 }
 
 #endif

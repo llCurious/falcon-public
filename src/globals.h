@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <array>
 #include <bitset>
+#include <iostream>
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
@@ -40,6 +41,7 @@
 
 /********************* Neural Network globals *********************/
 // Batch size has to be a power of two
+#define REC_ITE 3
 #define LOG_MINI_BATCH 7
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
@@ -63,13 +65,21 @@ typedef std::vector<RSSBoolType> RSSVectorBoolType;
 /********************* Quantized Training Types *********************/
 typedef uint32_t lowBit;
 typedef uint64_t highBit;
+// typedef __int128_t longBit;
+typedef unsigned __int128 longBit;
 typedef std::pair<lowBit, lowBit> RSSLowType;
 typedef std::pair<highBit, highBit> RSSHighType;
+typedef std::pair<longBit, longBit> RSSLongType;
 typedef std::vector<RSSLowType> RSSVectorLowType;
 typedef std::vector<RSSHighType> RSSVectorHighType;
+typedef std::vector<RSSLongType> RSSVectorLongType;
 const int BIT_SIZE_HIGH = (sizeof(highBit) * CHAR_BIT);
 const int BIT_SIZE_LOW = (sizeof(lowBit) * CHAR_BIT);
 const highBit BIT_RANG_LOW = 1l << 32;
+const longBit longone = 1;
+
+std::ostream &
+operator<<(std::ostream &dest, longBit value);
 
 // Mixed-Precision Setting. Currently, the precision is dependent on the bitwidth.
 #define HIGH_PRECISION 20

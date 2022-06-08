@@ -558,6 +558,16 @@ void runTest(string str, string whichTest, string &network)
 			network = "TruncAndReduce";
 			debugTruncAndReduce();
 		}
+		else if (whichTest.compare("RandBit") == 0)
+		{
+			network = "RandBit";
+			debugRandBit<RSSVectorLongType, longBit, RSSVectorHighType>();
+		}
+		else if (whichTest.compare("Reciprocal") == 0)
+		{
+			network = "Reciprocal";
+			debugReciprocal<RSSVectorHighType, highBit>();
+		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{
 			network = "ZeroRandom";

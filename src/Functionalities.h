@@ -344,6 +344,26 @@ void funcTruncate(VEC &a, size_t power, size_t size)
 	}
 }
 
+template <typename vec, typename T>
+void funcMulPlain(vec &result, vec &input, vector<T> c, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = input[i].first * c[i];
+		result[i].second = input[i].second * c[i];
+	}
+}
+
+template <typename vec, typename T>
+void funcMulConst(vec &result, vec &input, T c, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = input[i].first * c;
+		result[i].second = input[i].second * c;
+	}
+}
+
 template <typename Vec>
 void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 				size_t rows, size_t common_dim, size_t columns,
@@ -1349,6 +1369,88 @@ void funcDotProduct(const T &a, const T &b,
 		funcCheckMaliciousDotProd(a, b, c, temp3, size);
 }
 
+template <typename Vec, typename T>
+void funcDotProduct(const Vec &a, const Vec &b,
+					Vec &c, size_t size, bool truncation, size_t precision)
+{
+	assert(a.size() == size && "Matrix a incorrect for Mat-Mul");
+	assert(b.size() == size && "Matrix b incorrect for Mat-Mul");
+	assert(c.size() == size && "Matrix c incorrect for Mat-Mul");
+
+	vector<T> temp3(size, 0);
+
+	if (truncation == false)
+	{
+		vector<T> recv(size, 0);
+		for (int i = 0; i < size; ++i)
+		{
+			temp3[i] += a[i].first * b[i].first +
+						a[i].first * b[i].second +
+						a[i].second * b[i].first;
+		}
+
+		thread *threads = new thread[2];
+
+		threads[0] = thread(sendVector<T>, ref(temp3), prevParty(partyNum), size);
+		threads[1] = thread(receiveVector<T>, ref(recv), nextParty(partyNum), size);
+
+		for (int i = 0; i < 2; i++)
+			threads[i].join();
+		delete[] threads;
+
+		for (int i = 0; i < size; ++i)
+		{
+			c[i].first = temp3[i];
+			c[i].second = recv[i];
+		}
+	}
+	else // TODO-trunction
+	{
+		vector<T> diffReconst(size, 0);
+		Vec r(size), rPrime(size);
+		PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
+
+		for (int i = 0; i < size; ++i)
+		{
+			temp3[i] += a[i].first * b[i].first +
+						a[i].first * b[i].second +
+						a[i].second * b[i].first -
+						rPrime[i].first;
+		}
+
+		funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+		dividePlain(diffReconst, (1l << precision));
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first + diffReconst[i];
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_B)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second + diffReconst[i];
+			}
+		}
+	}
+	if (SECURITY_TYPE.compare("Malicious") == 0)
+		funcCheckMaliciousDotProd(a, b, c, temp3, size);
+}
+
 template <typename Vec>
 void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 				size_t rows, size_t common_dim, size_t columns,
@@ -1540,16 +1642,6 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 		{
 			result[i] = make_pair(data1[i].first + data2[i].first, data1[i].second + data2[i].second);
 		}
-	}
-}
-
-template <typename vec, typename T>
-void funcMulPlain(vec &result, vector<T> c, size_t size)
-{
-	for (size_t i = 0; i < size; i++)
-	{
-		result[i].first = result[i].first * c[i];
-		result[i].second = result[i].second * c[i];
 	}
 }
 
@@ -1909,6 +2001,114 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 }
 
+/**
+ * @brief get the reciprocal of b
+ *  'NR' : Newton-Raphson method computes the reciprocal using iterations of :math:
+ *  x_{i+1} = (2x_i - self * x_i^2) and uses math:
+ *  3*exp(1 - 2x) + 0.003` as an initial guess by default
+ *
+ * @tparam VEC
+ * @param a result
+ * @param b input
+ * @param input_in_01 Allows a user to indicate that the input is in the range [0, 1],
+					causing the function optimize for this range. This is useful for improving
+					the accuracy of functions on probabilities (e.g. entropy functions).
+ * @param size
+ */
+template <typename VEC>
+void funcReciprocal(VEC &a, VEC &b, bool input_in_01,
+					size_t size)
+{
+	VEC temp(size);
+	if (input_in_01)
+	{
+		funcMulConst(b, b, 64, size);
+		funcReciprocal(a, b, false, size);
+		funcMulConst(a, a, 64, size);
+		return;
+	}
+
+	// result = 3 * (1 - 2 * b).exp() + 0.003
+	// b = (1 - 2 * b)
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 8192 - 2 * b[i].first;
+			a[i].second = -2 * b[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = -2 * b[i].first;
+			a[i].second = 8192 - 2 * b[i].second;
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = -2 * b[i].first;
+			a[i].second = -2 * b[i].second;
+		}
+	}
+
+	vector<highBit> r(size);
+	funcReconstruct(a, r, size, "1 - 2 * x", false);
+	printVectorReal(r, "1 - 2 * x", size);
+
+	funcExp(a, a, size); // b = exp(b)= exp(1 - 2 * b)
+
+	funcReconstruct(a, r, size, "exp(x)", false);
+	printVectorReal(r, "exp(x)", size);
+
+	// a = 3 * (1 - 2 * b).exp() + 0.003
+	// 0.003 * (1<<13) = 24.576
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first + 25;
+			a[i].second = 3 * a[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first;
+			a[i].second = 3 * a[i].second + 25;
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first;
+			a[i].second = 3 * a[i].second;
+		}
+	}
+
+	funcReconstruct(a, r, size, "3*x + 0.003", false);
+	printVectorReal(r, "3*x + 0.003", size);
+
+	// x_{i+1} = (2x_i - self * x_i^2)
+	for (size_t i = 0; i < REC_ITE; i++)
+	{
+		funcSquare(a, temp, size);									// temp = a*a
+		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
+		a[i].first = 2 * a[i].first - temp[i].first;
+		a[i].second = 2 * a[i].second - temp[i].second;
+		// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
+		// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
+
+		funcReconstruct(a, r, size, "it", false);
+		printVectorReal(r, "it", size);
+	}
+}
+
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
 template <typename Vec>
 void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
@@ -1973,39 +2173,92 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 
 // Random shared bit [b] over ring of Vec, and b is 0/1;
 // in fact, this is supposed to be offline op
-template <typename Vec, typename T>
-void funcRandBit(Vec &b, size_t size)
+template <typename Vec, typename T, typename RealVec>
+void funcRandBit(RealVec &b, size_t size)
 {
+	Vec a(size);
+	Vec btemp(size);
+	// Vec btemp(size);
+	vector<T> e(size);
+	int K = sizeof(T) << 3;
+	int k1 = K - 1;
 	bool isFailure = false;
-	// do
-	// {
-	// 	getPairRand(Vec b, size_t size);
-	// 	for (size_t i = 0; i < size; i++) // a = 2b + 1
-	// 	{
-	// 		b[i].first = (b[i].first << 1) + 1;
-	// 		b[i].second = (b[i].second << 1) + 1;
-	// 	}
-	// 	funcDotProduct<Vec>(b, b, b, size); // a^2 = a*a
 
-	// 	vector<T> apow(size);
-	// 	funcReconstruct(apow, b, size, "a*a", true);
+	// test data
+	// vector<T> a_p(size);
 
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		if (apow[i] % 2 == 0)
-	// 		{
-	// 			isFailure = true;
-	// 			break;
-	// 		}
-	// 	}
+	do
+	{
+		PrecomputeObject->getPairRand<Vec, T>(a, size);
 
-	// } while (isFailure);
+		for (size_t i = 0; i < size; i++) // a = 2u + 1
+		{
+			a[i].first = (a[i].first << 1) + 1;
+			a[i].second = (a[i].second << 1) + 1;
+		}
+		// test log
+		// funcReconstruct<Vec, T>(a, a_p, size, "a", false);
 
-	// int K = sizeof(T) << 3;
-	// for (int i = 0; i < size; i++)
-	// {
-	// 	apow[i] = sqrRoot<T>(apow[i], K);
-	// }
+		funcDotProduct<Vec, T>(a, a, btemp, size, false, FLOAT_PRECISION); // e = a*a
+		funcReconstruct<Vec, T>(btemp, e, size, "a*a", false);			   // reveal e
+
+		// test log
+		// printVector<T>(a_p, "a", size);
+		// printVector<T>(e, "e=a*a", size);
+
+		for (size_t i = 0; i < size; i++)
+		{
+			if ((e[i] & 1) == 0) // a is not odd
+			{
+				isFailure = true;
+				cout << "failure" << endl;
+				break;
+			}
+		}
+
+	} while (isFailure);
+
+	T temp;
+	for (int i = 0; i < size; i++)
+	{
+		temp = sqrRoot<T>(e[i], K); // c=e^(1/2)
+		e[i] = invert<T>(temp, k1); // c^(-1)
+	}
+
+	// e [d] ← c−1[a] + 1.
+	switch (partyNum)
+	{
+	case PARTY_A:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] + 1), (a[i].second * e[i] + 1));
+		}
+		break;
+	case PARTY_C:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] - 1), (a[i].second * e[i] + 1));
+		}
+		break;
+	default:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] + 1), (a[i].second * e[i] - 1));
+		}
+		break;
+	}
+
+	// logf
+	// vector<longBit> ac1(size);
+	// funcReconstruct<RSSVectorLongType, longBit>(btemp, ac1, size, "a*c+1", false);
+	// printVector<longBit>(ac1, "a*c+1", size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		b[i] = make_pair(btemp[i].first >> 1, btemp[i].second >> 1);
+	}
+	// funcReconstruct<RSSVectorLongType, longBit>(btemp, ac1, size, "a*c+1", false);
+	// printVector<longBit>(ac1, "after 1/2", size);
 }
 
 /******************** Boolean share op ******************/
