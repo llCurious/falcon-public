@@ -4,6 +4,7 @@
 #include "connect.h"
 #include "globals.h"
 #include <tuple>
+// #include "BooleanFunc.h"
 using namespace std;
 
 // From cpp. Since the template functions have to be implemented here
@@ -54,8 +55,55 @@ void funcGetShares(Vec &a, const vector<T> &data)
 	}
 }
 
+void funcBoolPartySS(RSSVectorBoolType &result, const vector<bool> &data, size_t size, int shareParty);
+
 /**
- * @brief generate ss of data and send to other party
+ * @brief only shareParty know the plain of data
+ * shareParty generate ss of data and send to other parties
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param a
+ * @param data
+ * @param size
+ */
+template <typename Vec, typename T>
+void funcPartySS(Vec &a, const vector<T> &data, const size_t size, const int shareParty)
+{
+	assert(a.size() == size && a.size() == data.size() && "a.size mismatch for PartyShare function");
+	PrecomputeObject->getZeroShareRand<Vec, T>(a, size, shareParty);
+	// cout << "share party " << shareParty << " partyNum" << partyNum << endl;
+	if (partyNum == shareParty)
+	{
+		vector<T> a1_plus_data(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			T temp = data[i] + a[i].first;
+			a[i].first = temp;
+			a1_plus_data[i] = temp;
+		}
+
+		// send a1+x to prevparty
+		sendVector<T>(a1_plus_data, prevParty(partyNum), size);
+		// thread sender(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size);
+		// sender.join();
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+
+		vector<T> a1_plus_data(size);
+		receiveVector<T>(a1_plus_data, shareParty, size); // receive a1+x
+
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].second = a1_plus_data[i];
+		}
+		// merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
+	}
+}
+
+/**
+ * @brief generate ss of data and send to other parties
  *
  * @tparam Vec
  * @tparam T
@@ -66,7 +114,7 @@ void funcGetShares(Vec &a, const vector<T> &data)
 template <typename Vec, typename T>
 void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 {
-	assert(a.size() == size && "a.size mismatch for reconstruct function");
+	assert(a.size() == size && "a.size mismatch for share function");
 
 	PrecomputeObject->getZeroShareSender<Vec, T>(a, size);
 
@@ -95,7 +143,7 @@ void funcShareSender(Vec &a, const vector<T> &data, const size_t size)
 template <typename Vec, typename T>
 void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
 {
-	assert(a.size() == size && "a.size mismatch for reconstruct function");
+	assert(a.size() == size && "a.size mismatch for share function");
 
 	if (partyNum == prevParty(shareParty))
 	{
@@ -106,8 +154,7 @@ void funcShareReceiver(Vec &a, const size_t size, const int shareParty)
 		thread receiver(receiveVector<T>, ref(a1_plus_data), shareParty, size); // receive a1+x
 		receiver.join();
 
-		Merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
-
+		merge2Vec<Vec, T>(a, a3, a1_plus_data, size);
 	}
 	else
 	{
@@ -160,7 +207,7 @@ void funcReconstruct(const VEC &a, vector<T> &b, size_t size, string str, bool p
 
 		if (print)
 		{
-			std::cout << str << ": \t\t";
+			std::cout << str << endl;
 			for (int i = 0; i < size; ++i)
 				print_linear(b[i], "SIGNED");
 			std::cout << std::endl;
@@ -294,6 +341,26 @@ void funcTruncate(VEC &a, size_t power, size_t size)
 			a[i].first = r[i].first;
 			a[i].second = r[i].second + reconst[i];
 		}
+	}
+}
+
+template <typename vec, typename T>
+void funcMulPlain(vec &result, vec &input, vector<T> c, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = input[i].first * c[i];
+		result[i].second = input[i].second * c[i];
+	}
+}
+
+template <typename vec, typename T>
+void funcMulConst(vec &result, vec &input, T c, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = input[i].first * c;
+		result[i].second = input[i].second * c;
 	}
 }
 
@@ -967,11 +1034,16 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<VEC, RSSVectorHighType>::value) {
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
@@ -1000,6 +1072,10 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 }
 
 template <typename VEC>
+void funcDivisionByNR(VEC &a, const VEC &b, VEC &quotient,
+					  size_t size);
+
+template <typename VEC>
 void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 				   size_t batchSize, size_t B)
 {
@@ -1022,11 +1098,16 @@ void funcBatchNorm(const VEC &a, const VEC &b, VEC &quotient,
 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<VEC, RSSVectorHighType>::value) {
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<VEC, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
@@ -1246,11 +1327,93 @@ void funcDotProduct(const T &a, const T &b,
 			c[i].second = recv[i];
 		}
 	}
-	else
+	else // TODO-trunction
 	{
 		vector<computeType> diffReconst(size, 0);
 		T r(size), rPrime(size);
 		PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
+
+		for (int i = 0; i < size; ++i)
+		{
+			temp3[i] += a[i].first * b[i].first +
+						a[i].first * b[i].second +
+						a[i].second * b[i].first -
+						rPrime[i].first;
+		}
+
+		funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+		dividePlain(diffReconst, (1l << precision));
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first + diffReconst[i];
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_B)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second + diffReconst[i];
+			}
+		}
+	}
+	if (SECURITY_TYPE.compare("Malicious") == 0)
+		funcCheckMaliciousDotProd(a, b, c, temp3, size);
+}
+
+template <typename Vec, typename T>
+void funcDotProduct(const Vec &a, const Vec &b,
+					Vec &c, size_t size, bool truncation, size_t precision)
+{
+	assert(a.size() == size && "Matrix a incorrect for Mat-Mul");
+	assert(b.size() == size && "Matrix b incorrect for Mat-Mul");
+	assert(c.size() == size && "Matrix c incorrect for Mat-Mul");
+
+	vector<T> temp3(size, 0);
+
+	if (truncation == false)
+	{
+		vector<T> recv(size, 0);
+		for (int i = 0; i < size; ++i)
+		{
+			temp3[i] += a[i].first * b[i].first +
+						a[i].first * b[i].second +
+						a[i].second * b[i].first;
+		}
+
+		thread *threads = new thread[2];
+
+		threads[0] = thread(sendVector<T>, ref(temp3), prevParty(partyNum), size);
+		threads[1] = thread(receiveVector<T>, ref(recv), nextParty(partyNum), size);
+
+		for (int i = 0; i < 2; i++)
+			threads[i].join();
+		delete[] threads;
+
+		for (int i = 0; i < size; ++i)
+		{
+			c[i].first = temp3[i];
+			c[i].second = recv[i];
+		}
+	}
+	else // TODO-trunction
+	{
+		vector<T> diffReconst(size, 0);
+		Vec r(size), rPrime(size);
+		PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
 
 		for (int i = 0; i < size; ++i)
 		{
@@ -1430,19 +1593,253 @@ void print_vector(RSSVectorLowType &var, string type, string pre_text, int print
 void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
 void print_vector(RSSVectorSmallType &var, string type, string pre_text, int print_nos);
 
-/********************* Share Conversion Functionalites *********************/
-void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input);
-void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
-void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input);
-void funcPosWrap(vector<highBit> &w, const RSSVectorLowType &input, size_t size);
-void funcMixedShareGeneration();
-
-template <typename Vec>
-void funcProbTruncation(const Vec &a, Vec &b, int trunc_bits, int size) {
-	log_print("probabilistic truncation");
+template <typename Vec, typename T>
+void funcAddOneConst(Vec &result, T c, size_t size)
+{
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].first += c;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].second += c;
+		}
+	}
 }
 
-void funcTruncAndReduce(const RSSVectorHighType &a, const RSSVectorLowType &b);
+template <typename vec, typename T>
+void funcAddConst(vec &result, vector<T> c, size_t size)
+{
+	if (partyNum == PARTY_B)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].second += c[i];
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].fisrt += c[i];
+		}
+	}
+}
+
+template <typename vec>
+void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
+{
+	if (minus)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(data1[i].first - data2[i].first, data1[i].second - data2[i].second);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(data1[i].first + data2[i].first, data1[i].second + data2[i].second);
+		}
+	}
+}
+
+/********************* Share Conversion Functionalites *********************/
+template <typename Vec, typename T>
+void funcRandBitByXor(Vec &b, size_t size);
+void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
+void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
+void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
+void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
+
+template <typename Vec, typename T>
+void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
+{
+	size_t k = sizeof(T) << 3;
+	assert(k - 2 > trunc_bits);
+	size_t reall = k - trunc_bits;
+	T bias1 = (1l << (k - 2));
+	T bias2 = -(1l << (k - 2 - trunc_bits));
+	T msb = (1l << (k - 1));
+
+	Vec rbits(size * k);
+	Vec r(size);
+	Vec rtrunc(size);
+	Vec rmsb(size);
+	vector<T> z(size);
+
+	if (OFFLINE_ON) // get r and rtrunc
+	{
+		funcRandBitByXor<Vec, T>(rbits, rbits.size());
+		T temp1;
+		T temp2;
+		// T temp_trunc1;
+		// T temp_trunc2;
+		// T msb1;
+		// T msb2;
+		for (size_t i = 0; i < size; ++i)
+		{
+			rmsb[i] = rbits[i * k];
+			temp1 = 0;
+			temp2 = 0;
+			// msb1 = rmsb[i].first << reall;
+			// msb2 = rmsb[i].second << reall;
+			size_t j;
+			for (j = 0; j < reall; ++j)
+			{
+				temp1 = (temp1 << 1) + rbits[i * k + j].first;
+				temp2 = (temp2 << 1) + rbits[i * k + j].second;
+			}
+			// temp_trunc1 = temp1;
+			// temp_trunc2 = temp2;
+			rtrunc[i] = make_pair(temp1, temp2);
+			for (; j < k; ++j)
+			{
+				temp1 = (temp1 << 1) + rbits[i * k + j].first;
+				temp2 = (temp2 << 1) + rbits[i * k + j].second;
+				// r[i] = make_pair((r[i].first << 1) + rbits[i * k + j].first, (r[i].second << 1) + rbits[i * k + j].second);
+				// temp_trunc1 += msb1;
+				// temp_trunc2 += msb2;
+				// msb1 <<= 1;
+				// msb2 <<= 1;
+			}
+			r[i] = make_pair(temp1, temp2);
+		}
+	}
+
+	// log
+	// vector<T> r_p(size);
+	// vector<T> rtrunc_p(size);
+	// vector<T> rmsb_p(size);
+	// vector<T> rbits_p(rbits.size());
+	// funcReconstruct<Vec, T>(r, r_p, size, "r", false);
+	// funcReconstruct<Vec, T>(rtrunc, rtrunc_p, size, "rtrunc", false);
+	// funcReconstruct<Vec, T>(rmsb, rmsb_p, size, "rmsb", false);
+	// printVector<T>(r_p, "r", size);
+	// printHighBitVec(r_p, "r", size);
+	// printVector<T>(r_p, "r", size);
+	// printHighBitVec(rtrunc_p, "rtrunc", size);
+	// printVector<T>(rtrunc_p, "rtrunc", size);
+	// printVector<T>(rtrunc_p, "rtrunc", size);
+	//  printVector<T>(rmsb_p, "rmsb", size);
+
+	funcAddOneConst(input, bias1, size);
+
+	// log x
+	// vector<T> biasx(size);
+	// funcReconstruct(input, biasx, size, "bias x", false);
+	// printVector<T>(biasx, "x", size);
+	// printHighBitVec(biasx, "x", size);
+
+	// reveal x+r
+	funcAdd(input, input, r, size, false);
+	funcReconstruct(input, z, size, "x+r", false);
+
+	// log x+r
+	// printVector<T>(z, "x+r", size);
+	// printHighBitVec(z, "x+r", size);
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+		if ((z[i] & msb))
+		{
+			rmsb[i] = make_pair(0, 0); // w-->rmsb
+		}
+		else
+		{
+			rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+		}
+	}
+
+	// 	log func
+	// vector<T> w(size);
+	// funcReconstruct<Vec, T>(rmsb, w, size, "w", true);
+
+	//  [x] = z − [rtrunc] + [w]·2^(k−f)
+	// if (partyNum == PARTY_A)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair((z[i] >> trunc_bits), 0);
+	// 	}
+	// }
+	// else if (partyNum == PARTY_C)
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair(0, (z[i] >> trunc_bits));
+	// 	}
+	// }
+	// else
+	// {
+	// 	for (size_t i = 0; i < size; i++)
+	// 	{
+	// 		output[i] = make_pair(0, 0);
+	// 	}
+	// }
+
+	// log
+	// vector<T> xtrunc(size);
+	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc", false);
+	// // printHighBitVec(xtrunc, "", size);
+	// printVector(xtrunc, "ztrunc", size);
+
+	// funcAdd(output, output, rtrunc, size, true); // truncz-truncr
+
+	// log
+	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc-rtrunc", true);
+	// // printHighBitVec(xtrunc, "", size);
+	// printVector(xtrunc, "z-r", size);
+
+	// funcAdd(output, output, rmsb, size, false); // x' += wrap
+
+	// log
+	// vector<T> x(size);
+	// funcReconstruct<Vec, T>(output, x, size, "before bias", false);
+	// printVector(x, "before bias", size);
+	// printHighBitVec(x, "before bias", size);
+	// cout << bitset<64>(bias2) << endl;
+
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair((z[i] >> trunc_bits) + rmsb[i].first - rtrunc[i].first, rmsb[i].second - rtrunc[i].second);
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair(rmsb[i].first - rtrunc[i].first, (z[i] >> trunc_bits) + rmsb[i].second - rtrunc[i].second);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			output[i] = make_pair(rmsb[i].first - rtrunc[i].first, rmsb[i].second - rtrunc[i].second);
+		}
+	}
+
+	funcAddOneConst(output, bias2, size);
+
+	// log
+	// funcReconstruct<Vec, T>(output, x, size, "after bias", true);
+	// printVector(x, "after bias", size);
+	// printHighBitVec(x, "after bias", size);
+}
+
+// void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
+void funcTruncAndReduce(RSSVectorLowType &a, const RSSVectorHighType &b, int trunc_bits, size_t size);
 
 /********************* Mixed-Precision Activations Functionalites *********************/
 void funcMReLU();
@@ -1458,18 +1855,24 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	log_print("funcSquare");
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<Vec, RSSVectorHighType>::value) {
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
 	vector<elementType> temp3(size, 0), diffReconst(size, 0);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] += a[i].first * a[i].first +
 					a[i].first * a[i].second +
 					a[i].second * a[i].first;
@@ -1479,7 +1882,8 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] -= rPrime[i].first;
 	}
 
@@ -1518,7 +1922,7 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 			b[i].first = r[i].first;
 			b[i].second = r[i].second + diffReconst[i];
 		}
-	}	
+	}
 }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
@@ -1528,19 +1932,25 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	log_print("funcExp");
 
 	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<Vec, RSSVectorHighType>::value) {
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
 		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<Vec, RSSVectorLowType>::value) {
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
 		float_precision = LOW_PRECISION;
-	} else {
+	}
+	else
+	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
-	
+
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
 	vector<elementType> temp3(size, 0), diffReconst(size, 0);
 
 	// compute FXP(x/m)
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] = a[i].first;
 	}
 
@@ -1548,7 +1958,8 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
 
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++)
+	{
 		temp3[i] -= rPrime[i].first;
 	}
 
@@ -1584,14 +1995,129 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		for (int i = 0; i < size; ++i)
 		{
 			b[i].first = r[i].first;
-			b[i].second = r[i].second + diffReconst[i]+(1 << float_precision);
+			b[i].second = r[i].second + diffReconst[i] + (1 << float_precision);
 		}
 	}
 
 	// compute (1+x/m)^m. using m invocations of square
-	for(size_t i = 0; i < EXP_PRECISION; i++){
+	for (size_t i = 0; i < EXP_PRECISION; i++)
+	{
 		funcSquare(b, b, size);
 	}
+}
+
+const int rec_const = 0.003 * FLOAT_BIAS;
+/**
+ * @brief get the reciprocal of b
+ *  'NR' : Newton-Raphson method computes the reciprocal using iterations of :math:
+ *  x_{i+1} = (2x_i - self * x_i^2) and uses math:
+ *  3*exp(1 - 2x) + 0.003` as an initial guess by default
+ *
+ * @tparam VEC
+ * @param a result
+ * @param b input
+ * @param input_in_01 Allows a user to indicate that the input is in the range [0, 1],
+					causing the function optimize for this range. This is useful for improving
+					the accuracy of functions on probabilities (e.g. entropy functions).
+ * @param size
+ */
+template <typename VEC>
+void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
+					size_t size)
+{
+	VEC temp(size);
+	if (input_in_01)
+	{
+		// funcMulConst(b, b, 64, size);
+		// funcReciprocal(a, b, false, size);
+		// funcMulConst(a, a, 64, size);
+		return;
+	}
+
+	// result = 3 * (1 - 2 * b).exp() + 0.003
+	// b = (1 - 2 * b)
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = FLOAT_BIAS - 2 * b[i].first;
+			a[i].second = -2 * b[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = -2 * b[i].first;
+			a[i].second = FLOAT_BIAS - 2 * b[i].second;
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = -2 * b[i].first;
+			a[i].second = -2 * b[i].second;
+		}
+	}
+
+	funcExp(a, a, size); // a = exp(a)= exp(1 - 2 * b)
+
+	// a = 3 * (1 - 2 * b).exp() + 0.003
+	// 0.003 * (1<<13) = 24.576
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first + rec_const;
+			a[i].second = 3 * a[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first;
+			a[i].second = 3 * a[i].second + rec_const;
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 3 * a[i].first;
+			a[i].second = 3 * a[i].second;
+		}
+	}
+
+	// funcReconstruct(a, r, size, "3*x + 0.003", false);
+	// printVectorReal(r, "3*x + 0.003", size);
+
+	// x_{i+1} = (2x_i - self * x_i^2)
+	for (size_t j = 0; j < REC_ITE; ++j)
+	{
+		funcSquare(a, temp, size);									// temp = a*a
+		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
+		for (size_t i = 0; i < size; ++i)
+		{
+			a[i].first = 2 * a[i].first - temp[i].first;
+			a[i].second = 2 * a[i].second - temp[i].second;
+			// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
+			// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
+		}
+		// funcReconstruct(a, r, size, "it", false);
+		// printVectorReal(r, "it", size);
+	}
+}
+
+template <typename VEC>
+void funcDivisionByNR(VEC &result, const VEC &input, VEC &quotient,
+					  size_t size)
+{
+	VEC q_rec(size);
+	funcReciprocal(q_rec, quotient, false, size);
+
+	funcDotProduct(q_rec, input, result, size, true, FLOAT_PRECISION);
 }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
@@ -1616,8 +2142,10 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	// vector<smallType> reconst_maxPrime(maxPrime.size());
 	// funcReconstructBit(maxPrime, reconst_maxPrime, rows * cols, "maxP", true);
 
-	for (size_t i = 0; i < rows; i++) {
-		for (size_t j = 0; j < cols; j++) {
+	for (size_t i = 0; i < rows; i++)
+	{
+		for (size_t j = 0; j < cols; j++)
+		{
 			temp[i * cols + j].first -= max[i].first;
 			temp[i * cols + j].second -= max[i].second;
 		}
@@ -1632,13 +2160,16 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 
 	// compute the dividend, i.e., the sum of the exps
 	Vec dividend(size);
-	for (size_t i = 0; i < rows; i++) {
+	for (size_t i = 0; i < rows; i++)
+	{
 		elementType tmp_sum_first = 0, tmp_sum_second = 0;
-		for (size_t j = 0; j < cols; j++) {
+		for (size_t j = 0; j < cols; j++)
+		{
 			tmp_sum_first += exp_elements[i * cols + j].first;
 			tmp_sum_second += exp_elements[i * cols + j].second;
 		}
-		for (size_t j = 0; j < cols; j++) {
+		for (size_t j = 0; j < cols; j++)
+		{
 			dividend[i * cols + j].first = tmp_sum_first;
 			dividend[i * cols + j].second = tmp_sum_second;
 		}
@@ -1649,4 +2180,439 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 
 	// compute the division
 	funcDivision(exp_elements, dividend, b, size);
+}
+
+// Random shared bit [b] over ring of Vec, and b is 0/1;
+// in fact, this is supposed to be offline op
+template <typename Vec, typename T, typename RealVec>
+void funcRandBit(RealVec &b, size_t size)
+{
+	Vec a(size);
+	Vec btemp(size);
+	// Vec btemp(size);
+	vector<T> e(size);
+	int K = sizeof(T) << 3;
+	int k1 = K - 1;
+	bool isFailure = false;
+
+	// test data
+	// vector<T> a_p(size);
+
+	do
+	{
+		PrecomputeObject->getPairRand<Vec, T>(a, size);
+
+		for (size_t i = 0; i < size; i++) // a = 2u + 1
+		{
+			a[i].first = (a[i].first << 1) + 1;
+			a[i].second = (a[i].second << 1) + 1;
+		}
+		// test log
+		// funcReconstruct<Vec, T>(a, a_p, size, "a", false);
+
+		funcDotProduct<Vec, T>(a, a, btemp, size, false, FLOAT_PRECISION); // e = a*a
+		funcReconstruct<Vec, T>(btemp, e, size, "a*a", false);			   // reveal e
+
+		// test log
+		// printVector<T>(a_p, "a", size);
+		// printVector<T>(e, "e=a*a", size);
+
+		for (size_t i = 0; i < size; i++)
+		{
+			if ((e[i] & 1) == 0) // a is not odd
+			{
+				isFailure = true;
+				cout << "failure" << endl;
+				break;
+			}
+		}
+
+	} while (isFailure);
+
+	T temp;
+	for (int i = 0; i < size; i++)
+	{
+		temp = sqrRoot<T>(e[i], K); // c=e^(1/2)
+		e[i] = invert<T>(temp, k1); // c^(-1)
+	}
+
+	// e [d] ← c−1[a] + 1.
+	switch (partyNum)
+	{
+	case PARTY_A:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] + 1), (a[i].second * e[i] + 1));
+		}
+		break;
+	case PARTY_C:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] - 1), (a[i].second * e[i] + 1));
+		}
+		break;
+	default:
+		for (size_t i = 0; i < size; i++)
+		{
+			btemp[i] = make_pair((a[i].first * e[i] + 1), (a[i].second * e[i] - 1));
+		}
+		break;
+	}
+
+	// logf
+	// vector<longBit> ac1(size);
+	// funcReconstruct<RSSVectorLongType, longBit>(btemp, ac1, size, "a*c+1", false);
+	// printVector<longBit>(ac1, "a*c+1", size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		b[i] = make_pair(btemp[i].first >> 1, btemp[i].second >> 1);
+	}
+	// funcReconstruct<RSSVectorLongType, longBit>(btemp, ac1, size, "a*c+1", false);
+	// printVector<longBit>(ac1, "after 1/2", size);
+}
+
+/******************** Boolean share op ******************/
+void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size);
+void mergeRSSVectorBool(vector<bool> &result, RSSVectorBoolType &data, size_t size);
+void funcBoolShareSender(RSSVectorBoolType &result, const vector<bool> &data, size_t size);
+void funcBoolShareReceiver(RSSVectorBoolType &result, int shareParty, size_t size);
+
+// void funcBoolShare(RSSVectorBoolType &result, const vector<bool> &a, size_t size);
+
+void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size, string title, bool isprint);
+
+void funcBoolAnd(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size);
+
+void funcBoolXor(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size);
+
+void funcBoolRev(vector<bool> &result, const RSSVectorBoolType &data, size_t size, string title, bool isprint);
+
+template <typename Vec, typename T>
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias);
+
+template <typename Vec, typename T>
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbias);
+
+// [b]^B = (b_0, b_1, b_2)
+// P_A: (b_2, 0) (0, b_0)  (0, 0)
+// P_B: (0, 0)   (b_0, 0)  (0, b_1)
+// P_C: (0, b_2) (0, 0)    (b_1, 0)
+template <typename Vec, typename T>
+void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias)
+{
+	Vec aRss(size);
+	Vec bRss(size);
+	Vec amulb(size);
+	T val = isbias ? FLOAT_BIAS : 1;
+	vector<T> a(size);
+	if (partyNum == PARTY_A)
+	{
+
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i] = (data[i].first ^ data[i].second) ? val : 0;
+		}
+
+		funcPartySS<Vec, T>(aRss, a, size, PARTY_A);
+		// funcShareSender<Vec, T>(aRss, a, size); // share a
+
+		// TODO: precomute
+		for (size_t i = 0; i < size; i++)
+		{
+			bRss[i] = make_pair(0, 0);
+		}
+	}
+	else
+	{
+		funcPartySS<Vec, T>(aRss, a, size, PARTY_A);
+		// funcShareReceiver<Vec, T>(aRss, size, PARTY_A); // get ss of a
+
+		if (partyNum == PARTY_B)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				bRss[i] = make_pair(0, data[i].second ? val : 0);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				bRss[i] = make_pair(data[i].first ? val : 0, 0);
+			}
+		}
+	}
+
+	// printRssVector<Vec>(aRss, "a_rss", size);
+	// printRssVector<Vec>(bRss, "b_rss", size);
+
+	// vector<T> a_plain(size);
+	// vector<T> b_plain(size);
+
+	// funcReconstruct<Vec, T>(aRss, a_plain, size, "a_plain", true);
+	// funcReconstruct<Vec, T>(bRss, b_plain, size, "b_plain", true);
+
+	// P_A: (a_2, a_0) (0,   0  )
+	// P_B: (a_0, a_1) (0,   b_1)
+	// P_C: (a_1, a_2) (b_1, 0  )
+
+	// a ^ b1 = a + b1 - 2*a*b1
+	if (isbias)
+	{
+		funcDotProduct(aRss, bRss, amulb, size, true, FLOAT_PRECISION); // a * b1
+	}
+	else
+	{
+		funcDotProduct(aRss, bRss, amulb, size, false, FLOAT_PRECISION); // a * b1
+	}
+	// printRssVector<Vec>(amulb, "a*b", size);
+
+	// vector<T> amulb_plain(size);
+	// funcReconstruct<Vec, T>(amulb, amulb_plain, size, "a*b_plain", true);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i] = make_pair(aRss[i].first + bRss[i].first - 2 * amulb[i].first,
+							  aRss[i].second + bRss[i].second - 2 * amulb[i].second);
+	}
+}
+
+template <typename Vec, typename T>
+void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbias)
+{
+	RSSVectorBoolType randB(size);
+	Vec randA(size);
+	if (OFFLINE_ON)
+	{
+		PrecomputeObject->getB2ARand(randB, size);
+		funcB2AbyXOR<Vec, T>(ref(randA), ref(randB), size, isbias);
+	}
+	// OFFLINE
+
+	// vector<bool> rB(size);
+	// funcBoolRev(rB, randB, size, "rand plain Bool", true);
+	// vector<T> rA(size);
+	// funcReconstruct<Vec, T>(randA, rA, size, "rand plain", true);
+	// vector<bool> d(size);
+	// funcBoolRev(d, data, size, "data plain Bool", true);
+
+	RSSVectorBoolType cRss(size);
+	funcBoolXor(cRss, data, randB, size); // mask data using rand
+	vector<bool> c(size);
+	funcBoolRev(c, cRss, size, "c plain", false);
+
+	T val = isbias ? FLOAT_BIAS : 1;
+
+	for (size_t i = 0; i < size; i++)
+	{
+		if (c[i])
+		{ // x1 = 1-c
+			if (partyNum == PARTY_B)
+			{
+				result[i] = make_pair(-randA[i].first, val - randA[i].second);
+			}
+			else if (partyNum == PARTY_C)
+			{
+				result[i] = make_pair(val - randA[i].first, -randA[i].second);
+			}
+			else
+			{
+				result[i] = make_pair(-randA[i].first, -randA[i].second);
+			}
+		}
+		else
+		{
+			result[i] = make_pair(randA[i].first, randA[i].second);
+		}
+	}
+
+	// vector<T> outputA(size);
+	// funcReconstruct<Vec, T>(result, outputA, size, "output plain", true);
+
+	// printRssVector(result, "b2a", size);
+}
+
+template <typename Vec, typename T>
+void funcShareAB(Vec &result1, const vector<T> &data1, const size_t size1, RSSVectorBoolType &result2, const vector<bool> &data2, size_t size2, const int shareParty)
+{
+	PrecomputeObject->getZeroShareRand<Vec, T>(result1, size1, shareParty);
+	PrecomputeObject->getZeroBShare(result2, size2, shareParty);
+	if (partyNum == shareParty)
+	{
+		vector<T> a1_plus_data(size1);
+		for (size_t i = 0; i < size1; i++)
+		{
+			T temp = data1[i] + result1[i].first;
+			result1[i].first = temp;
+			a1_plus_data[i] = temp;
+		}
+
+		// printBoolRssVec(result2, "result2", size2);
+		vector<bool> a1_xor_data(size2);
+		for (size_t i = 0; i < size2; i++)
+		{
+			bool temp = data2[i] ^ result2[i].first;
+			result2[i].first = temp;
+			a1_xor_data[i] = temp;
+		}
+		// printVector<T>(a1_plus_data, "a1+x", size1);
+		// printBoolVec(a1_xor_data, "a1^x", size2);
+
+		int plussize = ((size2 - 1) / sizeof(T)) + 1;
+		vector<T> senddata(size1 + plussize);
+		appendBool2u8(senddata, a1_plus_data, a1_xor_data, size1, size2); // a1_plus_data += a1_xor_data
+
+		// printVector<T>(senddata, "send data", senddata.size());
+
+		// bool2u8<T>(a1_xor_data, size2);
+		// thread *threads = new thread[2];
+		// send a1+x to prevparty
+		// threads[0] = thread(sendBoolVector, ref(a1_xor_data), prevParty(partyNum), size2);
+		// threads[1] = thread(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size1);
+		sendVector<T>(senddata, prevParty(partyNum), size1 + plussize);
+		// send a1^x to prevparty
+		// cout << "send a1 xor data" << endl;
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+		// vector<T> a3A(size1);
+		// PrecomputeObject->getZeroSharePrev<T>(a3A, size1);
+
+		// vector<bool> a3B(size2);
+		// PrecomputeObject->getZeroBSharePrev(a3B, size2);
+
+		int plussize = ((size2 - 1) / sizeof(T)) + 1;
+		vector<T> a1_plus_data(size1);
+		vector<bool> a1_xor_data(size2);
+		vector<T> receivedata(size1 + plussize);
+
+		// thread *threads = new thread[2];
+		// threads[0] = thread(receiveBoolVector, ref(a1_xor_data), shareParty, size2); // receive a1+x
+		receiveVector<T>(receivedata, shareParty, size1 + plussize); // receive a1+x
+		// cout << "receive a1 xor data" << endl;
+
+		// printVector<T>(receivedata, "receive data", receivedata.size());
+		// threads[0].join();
+		// for (int i = 0; i < 2; ++i)
+		// 	threads[i].join();
+		splitu82Bool(receivedata, a1_plus_data, a1_xor_data, size1, size2);
+
+		// printVector<T>(a1_plus_data, "a1+x", size1);
+		// printBoolVec(a1_xor_data, "a1^x", size2);
+		for (size_t i = 0; i < size1; i++)
+		{
+			result1[i].second = a1_plus_data[i];
+		}
+
+		for (size_t i = 0; i < size2; i++)
+		{
+			result2[i].second = a1_xor_data[i];
+		}
+
+		// merge2Vec<Vec, T>(result1, a3A, a1_plus_data, size1);
+		// mergeBoolVec(result2, a3B, a1_xor_data, size2);
+	}
+}
+
+// send data1(A share) and data2(B share)
+template <typename Vec, typename T>
+void funcShareABSender(Vec &result1, const vector<T> &data1, const size_t size1, RSSVectorBoolType &result2, const vector<bool> &data2, size_t size2)
+{
+	// assert(a.size() == size && "a.size mismatch for reconstruct function");
+
+	PrecomputeObject->getZeroShareSender<Vec, T>(result1, size1);
+	vector<T> a1_plus_data(size1);
+	for (size_t i = 0; i < size1; i++)
+	{
+		T temp = data1[i] + result1[i].first;
+		result1[i].first = temp;
+		a1_plus_data[i] = temp;
+	}
+
+	PrecomputeObject->getZeroBShareSender(result2, size2);
+	// printBoolRssVec(result2, "result2", size2);
+	vector<bool> a1_xor_data(size2);
+	for (size_t i = 0; i < size2; i++)
+	{
+		bool temp = data2[i] ^ result2[i].first;
+		result2[i].first = temp;
+		a1_xor_data[i] = temp;
+	}
+	// printVector<T>(a1_plus_data, "a1+x", size1);
+	// printBoolVec(a1_xor_data, "a1^x", size2);
+
+	int plussize = ((size2 - 1) / sizeof(T)) + 1;
+	vector<T> senddata(size1 + plussize);
+	appendBool2u8(senddata, a1_plus_data, a1_xor_data, size1, size2); // a1_plus_data += a1_xor_data
+
+	// printVector<T>(senddata, "send data", senddata.size());
+
+	// bool2u8<T>(a1_xor_data, size2);
+	// thread *threads = new thread[2];
+	// send a1+x to prevparty
+	// threads[0] = thread(sendBoolVector, ref(a1_xor_data), prevParty(partyNum), size2);
+	// threads[1] = thread(sendVector<T>, ref(a1_plus_data), prevParty(partyNum), size1);
+	thread sender(sendVector<T>, ref(senddata), prevParty(partyNum), size1 + plussize);
+	// send a1^x to prevparty
+	// cout << "send a1 xor data" << endl;
+	sender.join();
+
+	// threads[0].join();
+
+	// for (int i = 0; i < 2; ++i)
+	// 	threads[i].join();
+}
+
+template <typename Vec, typename T>
+void funcShareABReceiver(Vec &result1, const size_t size1, RSSVectorBoolType &result2, const size_t size2, const int shareParty)
+{
+	// assert(a.size() == size && "a.size mismatch for reconstruct function");
+
+	if (partyNum == prevParty(shareParty))
+	{
+		vector<T> a3A(size1);
+		PrecomputeObject->getZeroSharePrev<T>(a3A, size1);
+
+		vector<bool> a3B(size2);
+		PrecomputeObject->getZeroBSharePrev(a3B, size2);
+
+		int plussize = ((size2 - 1) / sizeof(T)) + 1;
+		vector<T> a1_plus_data(size1);
+		vector<bool> a1_xor_data(size2);
+		vector<T> receivedata(size1 + plussize);
+
+		// thread *threads = new thread[2];
+		// threads[0] = thread(receiveBoolVector, ref(a1_xor_data), shareParty, size2); // receive a1+x
+		thread receiver(receiveVector<T>, ref(receivedata), shareParty, size1 + plussize); // receive a1+x
+		// cout << "receive a1 xor data" << endl;
+		receiver.join();
+
+		// printVector<T>(receivedata, "receive data", receivedata.size());
+		// threads[0].join();
+		// for (int i = 0; i < 2; ++i)
+		// 	threads[i].join();
+		splitu82Bool(receivedata, a1_plus_data, a1_xor_data, size1, size2);
+
+		// printVector<T>(a1_plus_data, "a1+x", size1);
+		// printBoolVec(a1_xor_data, "a1^x", size2);
+
+		merge2Vec<Vec, T>(result1, a3A, a1_plus_data, size1);
+		mergeBoolVec(result2, a3B, a1_xor_data, size2);
+	}
+	else
+	{
+		PrecomputeObject->getZeroShareReceiver<Vec, T>(result1, size1);
+		PrecomputeObject->getZeroBShareReceiver(result2, size2);
+	}
+}
+
+// offline
+template <typename Vec, typename T>
+void funcRandBitByXor(Vec &b, size_t size)
+{
+	RSSVectorBoolType bRSS(size);
+	PrecomputeObject->getBPairRand(bRSS, size);
+
+	funcB2AbyXOR<Vec, T>(b, bRSS, size, false);
 }

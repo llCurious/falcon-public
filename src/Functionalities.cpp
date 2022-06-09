@@ -1475,10 +1475,9 @@ void funcSelectBitShares(const RSSVectorSmallType &a0, const RSSVectorSmallType 
 
 // convert data from ring 2^n to ring 2^m
 // convert data from 64-bit to 32-bit
-void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data)
+void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data, size_t size)
 {
-	size_t size = data.size();
-	cout << BIT_RANG_LOW << endl;
+	// cout << BIT_RANG_LOW << endl;
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1495,27 +1494,231 @@ void funcReduction(RSSVectorLowType &a, const RSSVectorHighType &data)
  */
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size)
 {
+	lowBit msb = (1 << 31);
+	// cout << "msb: " << bitset<32>(msb) << " " << msb << endl;
+	RSSVectorBoolType m0RSS(size);
+	RSSVectorBoolType m1RSS(size);
 
+	RSSVectorHighType w0RSS(size);
+
+	vector<bool> m1(size);
+	vector<highBit> w0(size);
 	if (partyNum == PARTY_B)
 	{
-		vector<highBit> w0(size);
+		// cout << "a1+a2" << endl;
 		for (size_t i = 0; i < size; i++)
 		{
 			// w0 = (x1 + x2 > 2^32)
 			lowBit temp = input[i].first + input[i].second;
-			w0[i] = (highBit)(((temp < input[i].first) || (temp < input[i].second)) ? FLOAT_BIAS : 0);
+			w0[i] = (highBit)(((temp < input[i].first) || (temp < input[i].second)) ? 1 : 0);
+			// cout << w0[i] << " ";
+			// cout << bitset<32>(temp) << " ";
+			m1[i] = (msb & temp);
+			// cout << m1[i] << endl;
 		}
-		funcShareSender<RSSVectorHighType, highBit>(w, w0, size);
+		// cout << endl;
+
+		// printBoolVec(m1, "m1: ", size);
+
+		for (size_t i = 0; i < size; i++)
+		{
+			m0RSS[i] = make_pair(false, false);
+		}
+
+		// funcBoolShareSender(m0RSS, m0, size);
+		// funcShareSender<RSSVectorHighType, highBit>(w, w0, size);
 	}
 	else
 	{
-		funcShareReceiver<RSSVectorHighType, highBit>(w, size, PARTY_B);
+		// funcShareABReceiver<RSSVectorHighType, highBit>(w0RSS, size, m1RSS, size, PARTY_B);
+		if (partyNum == PARTY_A)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				m0RSS[i] = make_pair((bool)(msb & input[i].first), 0);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				m0RSS[i] = make_pair(0, (bool)(msb & input[i].second));
+			}
+		}
+	}
+	funcShareAB<RSSVectorHighType, highBit>(w0RSS, w0, size, m1RSS, m1, size, PARTY_B);
+	// printRssVector<RSSVectorHighType>(w0RSS, "a1+x", size);
+	// vector<highBit> wtemp(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(w0RSS, wtemp, size, "w0", true);
+	// printBoolRssVec(m0RSS, "m0 rss", size);
+	// printBoolRssVec(m1RSS, "m1 rss", size);
+
+	vector<bool> w1(size);
+
+	// Bool share, PA: m0,0   PB: 0,0  PC:0,m0
+	// w2 = xor( xor(m0,m1), and(m0,m1) )
+	RSSVectorBoolType mxor(size);
+	RSSVectorBoolType mand(size);
+
+	funcBoolXor(mxor, m0RSS, m1RSS, size);
+
+	// printBoolRssVec(mxor, "m0 xor m1", size);
+	// funcBoolRev(w1, mxor, size, "m0 xor m1", true);
+
+	funcBoolAnd(mand, m0RSS, m1RSS, size);
+
+	// printBoolRssVec(mand, "m0 and m1", size);
+	// funcBoolRev(w1, mand, size, "m0 and m1", true);
+
+	funcBoolXor(mxor, mxor, mand, size);
+	// printBoolRssVec(mxor, "mxor xor mand", true);
+	// funcBoolRev(w1, mxor, size, "mxor xor mand", true);
+
+	// funcBoolRev(w1, mxor, size, "w1 plain bool", true);
+
+	funcB2A<RSSVectorHighType, highBit>(w, mxor, size, false);
+
+	// cout << "w0 w1" << endl;
+	// vector<highBit> w0plain(size);
+	// vector<highBit> w1plain(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(w0RSS, w0plain, size, "w0 plain", true);
+	// funcReconstruct<RSSVectorHighType, highBit>(w, w1plain, size, "w1 plain", true);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		w[i].first = w[i].first + w0RSS[i].first;
+		w[i].second = w[i].second + w0RSS[i].second;
 	}
 }
 
 // convert data from 32-bit to 64-bit
-void funcExtension(RSSVectorHighType &output, const RSSVectorLowType &input)
+void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
 {
+	// cout << "WC Extension" << endl;
+	lowBit bias1 = (1l << 30);
+
+	funcAddOneConst(input, bias1, size);
+
+	// log
+	// vector<lowBit> input2(size);
+	// funcReconstruct<RSSVectorLowType, lowBit>(input, input2, size, "input bias", false);
+	// printLowBitVec(input2, "input bias", size);
+
+	RSSVectorHighType w(size);
+	funcPosWrap(w, input, size);
+
+	// log
+	// vector<highBit> w_plain(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(w, w_plain, size, "w", true);
+	// printRSSLowBitVec(input, "input", size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		output[i] = make_pair((highBit)input[i].first - (w[i].first << 32), (highBit)input[i].second - (w[i].second << 32));
+	}
+
+	// log
+	// printRSSHighBitVec(output, "output", size);
+	// vector<highBit> output2(size);
+	// funcReconstruct<RSSVectorHighType, highBit>(output, output2, size, "output2", true);
+	// printHighBitVec(output2, "", size);
+
+	highBit bias2 = -(1l << 30);
+	funcAddOneConst(output, bias2, size);
+}
+
+// template <typename Vecn, typename Vecm>
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size)
+{
+	size_t lowsize = 32;
+	size_t bitsize = size * lowsize;
+	RSSVectorHighType anBit(bitsize);
+	funcRandBitByXor<RSSVectorHighType, highBit>(anBit, bitsize);
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		highBit temp1 = 0;
+		highBit temp2 = 0;
+		RSSHighType bitrss;
+		for (size_t j = 0; j < lowsize; ++j)
+		{
+			bitrss = anBit[i * lowsize + j];
+			temp1 = (temp1 << 1) + bitrss.first;
+			temp2 = (temp2 << 1) + bitrss.second;
+		}
+		msb[i] = anBit[i * lowsize];
+		an[i] = make_pair(temp1, temp2);
+	}
+
+	funcReduction(am, an, size);
+}
+
+void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
+{
+	RSSVectorHighType rn(size);
+	RSSVectorLowType rm(size);
+	RSSVectorHighType rmsb(size);
+	vector<highBit> ymsb(size);
+	vector<lowBit> y(size);
+	highBit msb = 1l << 63;
+	highBit m = 32;
+	lowBit bias1 = (1l << 30);
+	highBit bias2 = -(1l << 30);
+
+	if (OFFLINE_ON)
+	{
+		funcMixedShareGen(rn, rm, rmsb, size);
+	}
+
+	funcAddOneConst(input, bias1, size);
+
+	funcAdd<RSSVectorLowType>(input, input, rm, size, false);				 // x+r (m)
+	funcReconstruct<RSSVectorLowType, lowBit>(input, y, size, "x+r", false); // yrss = x+r
+
+	// [w]n = [rm−1]n·¬ym−1.
+	for (size_t i = 0; i < size; i++)
+	{
+		if ((y[i] & msb))
+		{
+			rmsb[i] = make_pair(0, 0);
+		}
+		// ymsb[i] = (y[i] & msb) ? 1 : 0;
+	}
+
+	// funcMulPlain<RSSVectorHighType, highBit>(rmsb, ymsb, size); // rmsb --> w
+
+	// [x]n = y − [r]n + [w]n · 2m.
+	if (partyNum == PARTY_A)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			output[i] = make_pair(y[i] + (rmsb[i].first << m) - rn[i].first, +(rmsb[i].second << m) - rn[i].second);
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			output[i] = make_pair((rmsb[i].first << m) - rn[i].first, y[i] + (rmsb[i].second << m) - rn[i].second);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			output[i] = make_pair((rmsb[i].first << m) - rn[i].first, (rmsb[i].second << m) - rn[i].second);
+		}
+	}
+
+	funcAddOneConst(output, bias2, size);
+}
+
+void funcTruncAndReduce(RSSVectorLowType &a, const RSSVectorHighType &b, int trunc_bits, size_t size)
+{
+	for (int i = 0; i < size; ++i)
+	{
+		a[i] = make_pair((b[i].first >> trunc_bits) % BIT_RANG_LOW, (b[i].second >> trunc_bits) % BIT_RANG_LOW);
+	}
 }
 
 /****************************************************************/
@@ -1916,36 +2119,36 @@ void debugMaxpool()
 
 void debugSquare()
 {
-	vector<lowBit> data_a {0, 2, 4, -5, 10, 7};
+	vector<lowBit> data_a{0, 2, 4, -5, 10, 7};
 	size_t size = data_a.size();
 	for (size_t i = 0; i < size; i++)
 		data_a[i] = data_a[i] * (1 << LOW_PRECISION);
-	RSSVectorLowType a(size),b(size);
+	RSSVectorLowType a(size), b(size);
 
 	funcGetShares(a, data_a);
 	funcSquare(a, b, size);
 
-// #if (!LOG_DEBUG)
+	// #if (!LOG_DEBUG)
 	print_vector(a, "FLOAT", "a_data:", size);
 	print_vector(b, "FLOAT", "b_data:", size);
-// #endif
+	// #endif
 }
 
 void debugExp()
 {
-	vector<highBit> data_a {0, -2, -4, 5, 3, 7};
+	vector<highBit> data_a{0, -2, -4, 5, 3, 7};
 	size_t size = data_a.size();
-	for (size_t i = 0; i< size; i++)
+	for (size_t i = 0; i < size; i++)
 		data_a[i] = data_a[i] * (1 << HIGH_PRECISION);
-	RSSVectorHighType a(size),b(size);
+	RSSVectorHighType a(size), b(size);
 
 	funcGetShares(a, data_a);
 	funcExp(a, b, size);
 
-// #if (!LOG_DEBUG)
+	// #if (!LOG_DEBUG)
 	print_vector(a, "FLOAT", "a_data:", size);
 	print_vector(b, "FLOAT", "b_data:", size);
-// #endif
+	// #endif
 }
 
 void debugSoftmax() {
@@ -1975,10 +2178,10 @@ void debugSoftmax() {
 	funcGetShares(a, data);
 	funcSoftmax(a, b, rows, cols, false);
 
-// #if (!LOG_DEBUG)
+	// #if (!LOG_DEBUG)
 	print_vector(a, "FLOAT", "a_data:", size);
 	print_vector(b, "FLOAT", "b_data:", size);
-// #endif
+	// #endif
 }
 
 /******************************** Test ********************************/
@@ -2134,3 +2337,174 @@ void print_vector(RSSVectorHighType &var, string type, string pre_text, int prin
 // 	}
 // 	cout << endl;
 // }
+
+/*********** boolean share op *************/
+
+void mergeBoolVec(RSSVectorBoolType &result, const vector<bool> &a1, const vector<bool> &a2, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i] = make_pair(a1[i], a2[i]);
+	}
+}
+
+// result = data.first ^ data.second
+void mergeRSSVectorBool(vector<bool> &result, RSSVectorBoolType &data, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i] = data[i].first ^ data[i].second;
+	}
+}
+
+/**
+ * @brief one shareParty know the plain of data
+ * and secret share to other parties.
+ * Other parties should use a empty data
+ *
+ * @param result
+ * @param data
+ * @param size
+ * @param shareParty
+ */
+void funcBoolPartySS(RSSVectorBoolType &result, const vector<bool> &data, size_t size, int shareParty)
+{
+	// PrecomputeObject->getZeroBShareSender(result, size);
+	PrecomputeObject->getZeroBShare(result, size, shareParty);
+
+	vector<bool> a1_xor_data(size);
+	if (partyNum == shareParty)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			bool temp = data[i] ^ result[i].first;
+			result[i].first = temp;
+			a1_xor_data[i] = temp;
+		}
+
+		// send a1^x to prevparty
+		sendBoolVector(a1_xor_data, prevParty(partyNum), size);
+	}
+	else if (partyNum == prevParty(shareParty))
+	{
+		// vector<bool> a3(size);
+		// PrecomputeObject->getZeroBSharePrev(a3, size);
+
+		receiveBoolVector(a1_xor_data, shareParty, size); // receive a1+x
+
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i].second = a1_xor_data[i];
+		}
+
+		// mergeBoolVec(result, a3, a1_xor_data, size);
+	}
+}
+
+void funcBoolShareSender(RSSVectorBoolType &result, const vector<bool> &data, size_t size)
+{
+
+	PrecomputeObject->getZeroBShareSender(result, size);
+
+	vector<bool> a1_xor_data(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		bool temp = data[i] ^ result[i].first;
+		result[i].first = temp;
+		a1_xor_data[i] = temp;
+	}
+
+	// send a1^x to prevparty
+	thread sender(sendBoolVector, ref(a1_xor_data), prevParty(partyNum), size);
+	sender.join();
+}
+
+void funcBoolShareReceiver(RSSVectorBoolType &result, int shareParty, size_t size)
+{
+	if (partyNum == prevParty(shareParty))
+	{
+		vector<bool> a3(size);
+		PrecomputeObject->getZeroBSharePrev(a3, size);
+
+		vector<bool> a1_xor_data(size);
+		thread receiver(receiveBoolVector, ref(a1_xor_data), shareParty, size); // receive a1+x
+		receiver.join();
+
+		mergeBoolVec(result, a3, a1_xor_data, size);
+	}
+	else
+	{
+		PrecomputeObject->getZeroBShareReceiver(result, size);
+	}
+}
+
+void funcBoolAnd(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size)
+{
+	vector<bool> zero_rand(size);
+	PrecomputeObject->getZeroBRand(zero_rand, size);
+
+	vector<bool> result1(size);
+	vector<bool> result2(size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		result1[i] = (a1[i].first & a2[i].first) ^ (a1[i].first & a2[i].second) ^ (a1[i].second & a2[i].first) ^ zero_rand[i];
+	}
+
+	thread *threads = new thread[2];
+	threads[0] = thread(sendBoolVector, ref(result1), prevParty(partyNum), size);
+	threads[1] = thread(receiveBoolVector, ref(result2), nextParty(partyNum), size);
+
+	for (int i = 0; i < 2; i++)
+		threads[i].join();
+
+	mergeBoolVec(result, result1, result2, size);
+}
+
+void funcBoolXor(RSSVectorBoolType &result, const RSSVectorBoolType &a1, const RSSVectorBoolType &a2, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		result[i].first = a1[i].first ^ a2[i].first;
+		result[i].second = a1[i].second ^ a2[i].second;
+	}
+}
+
+void funcBoolRev(vector<bool> &result, const RSSVectorBoolType &data, size_t size, string title, bool isprint)
+{
+	assert(result.size() == size && "a.size mismatch for reconstruct function");
+
+	if (SECURITY_TYPE.compare("Semi-honest") == 0)
+	{
+		vector<bool> data_next(size);
+		vector<bool> data_extra(size);
+
+		for (size_t i = 0; i < size; i++)
+		{
+			data_next[i] = data[i].second;
+			result[i] = data[i].first ^ data[i].second;
+		}
+
+		thread *threads = new thread[2];
+		threads[0] = thread(sendBoolVector, ref(data_next), prevParty(partyNum), size);
+		threads[1] = thread(receiveBoolVector, ref(data_extra), nextParty(partyNum), size);
+
+		for (int i = 0; i < 2; i++)
+			threads[i].join();
+
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = result[i] ^ data_extra[i];
+		}
+	}
+
+	if (isprint)
+	{
+		cout << title << endl;
+		for (size_t i = 0; i < size; i++)
+		{
+			cout << result[i] << " ";
+		}
+		cout << endl;
+	}
+}

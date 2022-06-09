@@ -45,11 +45,16 @@ public:
 								RSSVectorSmallType &alpha, size_t size)
 	{
 		size_t bit_size = BIT_SIZE;
-		if (std::is_same<T, RSSVectorHighType>::value) {
+		if (std::is_same<T, RSSVectorHighType>::value)
+		{
 			bit_size = BIT_SIZE_HIGH;
-		} else if (std::is_same<T, RSSVectorLowType>::value) {
+		}
+		else if (std::is_same<T, RSSVectorLowType>::value)
+		{
 			bit_size = BIT_SIZE_LOW;
-		} else {
+		}
+		else
+		{
 			cout << "Not supported type" << typeid(r).name() << endl;
 		}
 		assert(shares_r.size() == size * bit_size && "getShareConvertObjects size mismatch");
@@ -70,7 +75,19 @@ public:
 	void getTriplets(Vec &a, Vec &b, Vec &c, size_t size);
 	void getTriplets(RSSVectorSmallType &a, RSSVectorSmallType &b, RSSVectorSmallType &c, size_t size);
 
-	void getZeroBoolRand(vector<bool> &a, size_t size);
+	// template <typename Vec>
+	// void getRandBit(Vec &a, size_t size);
+
+	void getZeroBRand(vector<bool> &a, size_t size);
+
+	void getZeroBShare(vector<RSSBoolType> &a, size_t size, int shareParty);
+	// getZeroBShare(Sender + Prev + Receiver) = BShare
+	void getZeroBShareSender(vector<RSSBoolType> &a, size_t size);
+	void getZeroBSharePrev(vector<bool> &a, size_t size);
+	void getZeroBShareReceiver(vector<RSSBoolType> &a, size_t size);
+
+	// bool rand rss
+	void getBPairRand(RSSVectorBoolType &a, size_t size);
 
 	template <typename T>
 	void getNextRand(vector<T> &a, size_t size);
@@ -94,11 +111,15 @@ public:
 	void getZeroShareReceiver(Vec &a, size_t size);
 
 	// shareParty can know the all rand
+	// getZeroShareRand = getZeroShare(Sender + Prev + Receiver)
 	template <typename Vec, typename T>
 	void getZeroShareRand(Vec &a, size_t size, int shareParty);
 
+	// every party only know one share of 0
 	template <typename Vec, typename T>
 	void getZeroShareRand(vector<T> &a, size_t size);
+
+	void getB2ARand(RSSVectorBoolType &dataB, size_t size);
 };
 
 template <typename T>
@@ -195,34 +216,37 @@ void Precompute::getZeroShareReceiver(Vec &a, size_t size)
 template <typename Vec, typename T>
 void Precompute::getZeroShareRand(Vec &a, size_t size, int shareParty)
 {
-	// assert(a.size() == size && "a.size is incorrect");
+	assert(a.size() == size && "a.size is incorrect");
 
-	// if (shareParty == partyNum)
-	// {
-	// 	vector<T> a3(size);
-	// 	thread receiver(receiveVector<T>, ref(a3), nextParty(partyNum), size); // receive a3
+	if (shareParty == partyNum)
+	{
+		vector<T> a2(size);
+		getNextRand<T>(a2, size);
 
-	// 	vector<T> a2(size);
-	// 	getNextRand<T>(a2, size);
+		vector<T> a3(size);
+		receiveVector<T>(a3, prevParty(partyNum), size); // receive a3
 
-	// 	receiver.join();
+		for (size_t i = 0; i < size; i++)
+		{
+			T temp = 0 - a3[i] - a2[i];
+			a[i] = make_pair(temp, a2[i]);
+		}
+	}
+	else if (nextParty(shareParty) == partyNum)
+	{
+		getPairRand<Vec, T>(a, size);
+	}
+	else
+	{
+		vector<T> prevr(size);
+		getPrevRand<T>(prevr, size);
+		sendVector<T>(ref(prevr), nextParty(partyNum), size);
 
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		T temp = 0 - a3[i] - a2[i];
-	// 		a[i] = make_pair(temp, a2[i]);
-	// 	}
-	// }
-	// else if (nextParty(shareParty) == partyNum)
-	// {
-	// 	getPairRand<Vec, T>(a, size);
-	// }
-	// else
-	// {
-	// 	getPrevRand<T>(a, size);
-	// 	thread sender(sendVector<T>, ref(a), prevParty(partyNum), size);
-	// 	sender.join();
-	// }
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = prevr[i];
+		}
+	}
 }
 
 /**

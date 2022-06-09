@@ -73,11 +73,20 @@ int main(int argc, char **argv)
 	// runTest("Debug", "PairRandom", network);
 	// runTest("Debug", "PartyShare", network);
 	// runTest("Debug","ZeroRandom",network);
+	// runTest("Debug", "BoolAnd", network);
+	// cout << "POWWRAP" << endl;
 	// runTest("Debug", "PosWrap", network);
-	// runTest("Debug", "WC-Extension", network);
+	// runTest("Debug", "WCExtension", network);
+	// runTest("Debug", "MixedShareGen", network);
+	// runTest("Debug", "MSExtension", network);
+	// runTest("Debug", "ProbTruncation", network);
+	// runTest("Debug", "TruncAndReduce", network);
+	// runTest("Debug", "RandBit", network);
+	// runTest("Debug", "Reciprocal", network);
+	// runTest("Debug", "funcDivisionByNR", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
-	// runTest("Debug", "Softmax", network);
+	runTest("Debug", "Softmax", network);
 	// runTest("Test", "ReLUPrime1", network);
 
 	// runTest("Test", "BN", network);
@@ -98,7 +107,7 @@ int main(int argc, char **argv)
 	cout << "----------------------------------------------" << endl;
 	cout << "-------------------Run Training---------------" << endl;
 	network += " train";
-	train(net);
+	// train(net);
 
 	// Run inference (possibly with preloading a network)
 	//  network += " test";
