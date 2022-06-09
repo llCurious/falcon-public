@@ -82,11 +82,11 @@ int main(int argc, char **argv)
 	// runTest("Debug", "ProbTruncation", network);
 	// runTest("Debug", "TruncAndReduce", network);
 	// runTest("Debug", "RandBit", network);
-	// runTest("Debug", "Reciprocal", network);
+	runTest("Debug", "Reciprocal", network);
 	// runTest("Debug", "funcDivisionByNR", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
-	runTest("Debug", "Softmax", network);
+	// runTest("Debug", "Softmax", network);
 	// runTest("Test", "ReLUPrime1", network);
 
 	// runTest("Test", "BN", network);
