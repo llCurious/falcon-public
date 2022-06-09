@@ -174,7 +174,7 @@ void FCLayer::updateEquations(const RSSVectorMyType& prevActivations)
 	cout << "===============================" << endl;
 	RSSVectorMyType xx = prevActivations;
 	// print_vector(xx, "FLOAT", "prevActivations", 100);
-	// print_vector(deltas, "FLOAT", "deltas", 100);
-	// print_vector(deltaWeight, "FLOAT", "deltaWeight", 100);
+	// print_vector(deltas, "FLOAT", "deltas-FC", 100);
+	// print_vector(deltaWeight, "FLOAT", "deltaWeight-FC", 100);
 	// print_vector(temp, "FLOAT", "deltaBias", temp.size());
 }

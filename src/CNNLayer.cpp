@@ -29,10 +29,48 @@ void CNNLayer::initialize()
 	//Ensure that initialization is correctly done.
 	size_t lower = 30;
 	size_t higher = 50;
-	size_t decimation = 10000;
+	size_t decimation = 100;
 	size_t size = weights.size();
 	
-	fill(biases.begin(), biases.end(), make_pair(0,0));
+	// fill(biases.begin(), biases.end(), make_pair(0,0));
+
+	/**
+	 * Updates from https://github.com/HuangPZ/falcon-public/blob/master/src/FCLayer.cpp
+	 * The problem seems to be the initialization to myType has bugs.
+	 * TODO: We shall look at this. Since we need both master weights and forward weights.
+	 * */
+	RSSVectorMyType temp(size);
+	srand(10);
+	if(partyNum==PARTY_A){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower)/2) / decimation);
+			weights[i].second = 0;
+		}
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower)/2) / decimation);
+			biases[i].second = 0;
+		}
+	}
+	if(partyNum==PARTY_B){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].first = 0;
+			weights[i].second = 0;
+		}
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].first = 0;
+			biases[i].second = 0;
+		}
+	}
+	if(partyNum==PARTY_C){
+		for (size_t i = 0; i < size; ++i){
+			weights[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower)/2) / decimation);
+			weights[i].first = 0;
+		}
+		for (size_t i = 0; i < biases.size(); ++i){
+			biases[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower)/2) / decimation);
+			biases[i].first = 0;
+		}
+	}
 }
 
 
@@ -295,5 +333,6 @@ void CNNLayer::updateEquations(const RSSVectorMyType& prevActivations)
 		funcMatMul(temp2, temp3, temp4, (Dout), (ow*oh*B), (f*f*Din), 0, 1, 
 					FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE);
 	
-	subtractVectors<RSSMyType>(weights, temp4, weights, f*f*Din*Dout);
+	subtractVectors(weights, temp4, weights, f*f*Din*Dout);
+	// print_vector(temp4, "FLOAT", "deltaWeight", 100);
 }

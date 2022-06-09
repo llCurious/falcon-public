@@ -1012,8 +1012,8 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 	else if (network.compare("MiniONN") == 0)
 	{
 		assert((dataset.compare("MNIST") == 0) && "MiniONN only over MNIST");
-		NUM_LAYERS = 10;
-		WITH_NORMALIZATION = true;
+		NUM_LAYERS = 9;
+		WITH_NORMALIZATION = false;
 		CNNConfig* l0 = new CNNConfig(28,28,1,16,5,1,0,MINI_BATCH_SIZE);
 		MaxpoolConfig* l1 = new MaxpoolConfig(24,24,16,2,2,MINI_BATCH_SIZE);
 		ReLUConfig* l2 = new ReLUConfig(12*12*16, MINI_BATCH_SIZE);
@@ -1033,13 +1033,13 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 		config->addLayer(l6);
 		config->addLayer(l7);
 		config->addLayer(l8);
-		config->addLayer(l9);
+		// config->addLayer(l9);
 	}
 	else if (network.compare("LeNet") == 0)
 	{
 		assert((dataset.compare("MNIST") == 0) && "LeNet only over MNIST");
-		NUM_LAYERS = 10;
-		WITH_NORMALIZATION = true;
+		NUM_LAYERS = 9;
+		WITH_NORMALIZATION = false;
 		CNNConfig* l0 = new CNNConfig(28,28,1,20,5,1,0,MINI_BATCH_SIZE);
 		MaxpoolConfig* l1 = new MaxpoolConfig(24,24,20,2,2,MINI_BATCH_SIZE);
 		ReLUConfig* l2 = new ReLUConfig(12*12*20, MINI_BATCH_SIZE);
@@ -1059,7 +1059,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 		config->addLayer(l6);
 		config->addLayer(l7);
 		config->addLayer(l8);
-		config->addLayer(l9);
+		// config->addLayer(l9);
 	}
 	else if (network.compare("AlexNet") == 0)
 	{
