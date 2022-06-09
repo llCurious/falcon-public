@@ -107,7 +107,8 @@ int main(int argc, char **argv)
 	cout << "----------------------------------------------" << endl;
 	cout << "-------------------Run Training---------------" << endl;
 	network += " train";
-	// train(net);
+	printNetwork(net);
+	train(net);
 
 	// Run inference (possibly with preloading a network)
 	//  network += " test";
@@ -122,7 +123,6 @@ int main(int argc, char **argv)
 		 << endl;
 #endif
 
-	// printNetwork(net);
 
 	/****************************** CLEAN-UP ******************************/
 	// delete aes_indep;
