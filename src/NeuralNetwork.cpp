@@ -296,6 +296,8 @@ void NeuralNetwork::getLoss() {
 			} else if (sizeof(myType) == 8) { // int64
 				reconst_y_soft_float[i] = (static_cast<int64_t>(reconst_y_soft[i])) / (float)(1 << FLOAT_PRECISION);
 			}
+			// avoid log(0) cause nan
+			reconst_y_soft_float[i] = reconst_y_soft_float[i] == 0 ? 1e-6 : reconst_y_soft_float[i];
 			loss += -(reconst_label_float[i] * log(reconst_y_soft_float[i]));
 		}
 	} else {	// MSE
