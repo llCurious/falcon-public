@@ -773,7 +773,7 @@ void loadData(string net, string dataset)
 	{
 		INPUT_SIZE = 784;
 		LAST_LAYER_SIZE = 10;
-		TRAINING_DATA_SIZE = 100;
+		TRAINING_DATA_SIZE = 10000;
 		TEST_DATA_SIZE = 100;
 		LARGE_NETWORK = false;
 	}
@@ -836,38 +836,38 @@ void loadData(string net, string dataset)
 	// modified to let each party holding a share of data
 	if (partyNum == PARTY_A)
 	{
-		filename_train_data_next = "files/train_data_A";
-		filename_train_data_prev = "files/train_data_B";
-		filename_test_data_next = "files/test_data_A";
-		filename_test_data_prev = "files/test_data_B";
-		filename_train_labels_next = "files/train_labels_A";
-		filename_train_labels_prev = "files/train_labels_B";
-		filename_test_labels_next = "files/test_labels_A";
-		filename_test_labels_prev = "files/test_labels_B";
+		filename_train_data_next = string("files/train_data_A") + "_" + dataset;
+		filename_train_data_prev = string("files/train_data_B") + "_" + dataset;
+		filename_test_data_next = string("files/test_data_A") + "_" + dataset;
+		filename_test_data_prev = string("files/test_data_B") + "_" + dataset;
+		filename_train_labels_next = string("files/train_labels_A") + "_" + dataset;
+		filename_train_labels_prev = string("files/train_labels_B") + "_" + dataset;
+		filename_test_labels_next = string("files/test_labels_A") + "_" + dataset;
+		filename_test_labels_prev = string("files/test_labels_B") + "_" + dataset;
 	}
 
 	if (partyNum == PARTY_B)
 	{
-		filename_train_data_next = "files/train_data_B";
-		filename_train_data_prev = "files/train_data_C";
-		filename_test_data_next = "files/test_data_B";
-		filename_test_data_prev = "files/test_data_C";
-		filename_train_labels_next = "files/train_labels_B";
-		filename_train_labels_prev = "files/train_labels_C";
-		filename_test_labels_next = "files/test_labels_B";
-		filename_test_labels_prev = "files/test_labels_C";
+		filename_train_data_next = string("files/train_data_B") + "_" + dataset;
+		filename_train_data_prev = string("files/train_data_C") + "_" + dataset;
+		filename_test_data_next = string("files/test_data_B") + "_" + dataset;
+		filename_test_data_prev = string("files/test_data_C") + "_" + dataset;
+		filename_train_labels_next = string("files/train_labels_B") + "_" + dataset;
+		filename_train_labels_prev = string("files/train_labels_C") + "_" + dataset;
+		filename_test_labels_next = string("files/test_labels_B") + "_" + dataset;
+		filename_test_labels_prev = string("files/test_labels_C") + "_" + dataset;
 	}
 
 	if (partyNum == PARTY_C)
 	{
-		filename_train_data_next = "files/train_data_C";
-		filename_train_data_prev = "files/train_data_A";
-		filename_test_data_next = "files/test_data_C";
-		filename_test_data_prev = "files/test_data_A";
-		filename_train_labels_next = "files/train_labels_C";
-		filename_train_labels_prev = "files/train_labels_A";
-		filename_test_labels_next = "files/test_labels_C";
-		filename_test_labels_prev = "files/test_labels_A";
+		filename_train_data_next = string("files/train_data_C") + "_" + dataset;
+		filename_train_data_prev = string("files/train_data_A") + "_" + dataset;
+		filename_test_data_next = string("files/test_data_C") + "_" + dataset;
+		filename_test_data_prev = string("files/test_data_A") + "_" + dataset;
+		filename_train_labels_next = string("files/train_labels_C") + "_" + dataset;
+		filename_train_labels_prev = string("files/train_labels_A") + "_" + dataset;
+		filename_test_labels_next = string("files/test_labels_C") + "_" + dataset;
+		filename_test_labels_prev = string("files/test_labels_A") + "_" + dataset;
 	}	
 
 	float temp_next = 0, temp_prev = 0;

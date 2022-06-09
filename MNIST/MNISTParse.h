@@ -9,6 +9,11 @@
 #include <fstream>
 using namespace std;
 
+#define DATASET "MNIST"
+#define TRAINING_DATA_SIZE 60000
+#define TEST_DATA_SIZE 10000
+#define INPUT_DIMENSION 784
+#define OUTPUT_DIMENSION 10
 
 void ERROR(string str)
 {
@@ -34,22 +39,22 @@ int parse(char* filename, string type)
 	if (type == TRAINING)
 	{
 		data_size = TRAINING_DATA_SIZE;
-		data_file_A.open(TRAINING_DATA_A);
-		data_file_B.open(TRAINING_DATA_B);
-		data_file_C.open(TRAINING_DATA_C);
-		label_file_A.open(TRAINING_LABEL_A);
-		label_file_B.open(TRAINING_LABEL_B);
-		label_file_C.open(TRAINING_LABEL_C);
+		data_file_A.open(TRAINING_DATA_A "_" DATASET);
+		data_file_B.open(TRAINING_DATA_B "_" DATASET);
+		data_file_C.open(TRAINING_DATA_C "_" DATASET);
+		label_file_A.open(TRAINING_LABEL_A "_" DATASET);
+		label_file_B.open(TRAINING_LABEL_B "_" DATASET);
+		label_file_C.open(TRAINING_LABEL_C "_" DATASET);
 	}
 	else if (type == TESTING)
 	{
 		data_size = TEST_DATA_SIZE;
-		data_file_A.open(TESTING_DATA_A);
-		data_file_B.open(TESTING_DATA_B);
-		data_file_C.open(TESTING_DATA_C);
-		label_file_A.open(TESTING_LABEL_A);
-		label_file_B.open(TESTING_LABEL_B);
-		label_file_C.open(TESTING_LABEL_C);
+		data_file_A.open(TESTING_DATA_A "_" DATASET);
+		data_file_B.open(TESTING_DATA_B "_" DATASET);
+		data_file_C.open(TESTING_DATA_C "_" DATASET);
+		label_file_A.open(TESTING_LABEL_A "_" DATASET);
+		label_file_B.open(TESTING_LABEL_B "_" DATASET);
+		label_file_C.open(TESTING_LABEL_C "_" DATASET);
 	}
 	else
 		ERROR("parse() only accepts TRAINING/TESTING");
@@ -59,8 +64,8 @@ int parse(char* filename, string type)
 	for (int row = 0; row < data_size; ++row)
 	{
 		getline(input_file, line);
-		if (row == 0)
-			continue;
+		// if (row == 0)
+		// 	continue;
 		stringstream lineStream(line);
 		string cell;
 								
