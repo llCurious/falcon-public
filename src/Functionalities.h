@@ -2100,8 +2100,71 @@ void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
 		for (size_t i = 0; i < size; ++i)
 		{
-			a[i].first = 2 * a[i].first - temp[i].first;
-			a[i].second = 2 * a[i].second - temp[i].second;
+			a[i].first = (a[i].first << 1) - temp[i].first;
+			a[i].second = (a[i].second << 1) - temp[i].second;
+			// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
+			// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
+		}
+		// funcReconstruct(a, r, size, "it", false);
+		// printVectorReal(r, "it", size);
+	}
+}
+
+template <typename VEC>
+void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
+					 size_t size)
+{
+	VEC temp(size);
+	if (input_in_01)
+	{
+		// funcMulConst(b, b, 64, size);
+		// funcReciprocal(a, b, false, size);
+		// funcMulConst(a, a, 64, size);
+		return;
+	}
+
+	// result = 3 * (1 - 2 * b).exp() + 0.003
+	// b = (1 - 2 * b)
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = (1 << (FLOAT_PRECISION - REC_Y));
+			a[i].second = 0;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 0;
+			a[i].second = (1 << (FLOAT_PRECISION - REC_Y));
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			a[i].first = 0;
+			a[i].second = 0;
+		}
+	}
+
+	// a = 3 * (1 - 2 * b).exp() + 0.003
+	// 0.003 * (1<<13) = 24.576
+
+	// funcReconstruct(a, r, size, "3*x + 0.003", false);
+	// printVectorReal(r, "3*x + 0.003", size);
+
+	// x_{i+1} = (2x_i - self * x_i^2)
+	for (size_t j = 0; j < REC_Y; ++j)
+	{
+		funcSquare(a, temp, size);									// temp = a*a
+		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
+		for (size_t i = 0; i < size; ++i)
+		{
+			a[i].first = (a[i].first << 1) - temp[i].first;
+			a[i].second = (a[i].second << 1) - temp[i].second;
 			// a[i].first = 2 * a[i].first - a[i].first * a[i].first * b[i].first;
 			// a[i].second = 2 * a[i].second - a[i].second * a[i].second * b[i].second;
 		}

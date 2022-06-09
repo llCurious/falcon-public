@@ -126,7 +126,7 @@ void debugProbTruncation()
 template <typename Vec, typename T>
 void debugReciprocal()
 {
-    size_t size = 5;
+    size_t size = 10;
     vector<T> data(size);
     for (size_t i = 0; i < size; i++)
     {
@@ -139,7 +139,7 @@ void debugReciprocal()
     funcPartySS(input, data, size, checkParty);
 
     Vec output(size);
-    funcReciprocal(output, input, false, size);
+    funcReciprocal2(output, input, false, size);
 
     vector<T> result(size);
     funcReconstruct<Vec, T>(output, result, size, "out", false);
