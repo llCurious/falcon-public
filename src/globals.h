@@ -41,7 +41,7 @@
 
 /********************* Neural Network globals *********************/
 // Batch size has to be a power of two
-#define REC_ITE 3
+#define REC_ITE 10
 #define LOG_MINI_BATCH 7
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5

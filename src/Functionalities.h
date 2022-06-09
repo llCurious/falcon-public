@@ -2179,7 +2179,7 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	// funcReconstruct(dividend, reconst_dividend, size, "dividend", true);
 
 	// compute the division
-	funcDivision(exp_elements, dividend, b, size);
+	funcDivisionByNR(b, exp_elements, dividend, size);
 }
 
 // Random shared bit [b] over ring of Vec, and b is 0/1;
