@@ -1653,12 +1653,25 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 /********************* Share Conversion Functionalites *********************/
 template <typename Vec, typename T>
 void funcRandBitByXor(Vec &b, size_t size);
+
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
 void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
+template <typename Vec, typename T>
+void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size);
 
+/**
+ * @brief trunc trunc_bits of input to output
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param output
+ * @param input
+ * @param trunc_bits
+ * @param size
+ */
 template <typename Vec, typename T>
 void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 {
@@ -1680,10 +1693,6 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 		funcRandBitByXor<Vec, T>(rbits, rbits.size());
 		T temp1;
 		T temp2;
-		// T temp_trunc1;
-		// T temp_trunc2;
-		// T msb1;
-		// T msb2;
 		for (size_t i = 0; i < size; ++i)
 		{
 			rmsb[i] = rbits[i * k];
@@ -1697,18 +1706,11 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 				temp1 = (temp1 << 1) + rbits[i * k + j].first;
 				temp2 = (temp2 << 1) + rbits[i * k + j].second;
 			}
-			// temp_trunc1 = temp1;
-			// temp_trunc2 = temp2;
 			rtrunc[i] = make_pair(temp1, temp2);
 			for (; j < k; ++j)
 			{
 				temp1 = (temp1 << 1) + rbits[i * k + j].first;
 				temp2 = (temp2 << 1) + rbits[i * k + j].second;
-				// r[i] = make_pair((r[i].first << 1) + rbits[i * k + j].first, (r[i].second << 1) + rbits[i * k + j].second);
-				// temp_trunc1 += msb1;
-				// temp_trunc2 += msb2;
-				// msb1 <<= 1;
-				// msb2 <<= 1;
 			}
 			r[i] = make_pair(temp1, temp2);
 		}
@@ -2125,28 +2127,31 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 
 	// result = 3 * (1 - 2 * b).exp() + 0.003
 	// b = (1 - 2 * b)
-	if (partyNum == PARTY_A)
+	if (OFFLINE_ON)
 	{
-		for (size_t i = 0; i < size; i++)
+		if (partyNum == PARTY_A)
 		{
-			a[i].first = (1 << (FLOAT_PRECISION - REC_Y));
-			a[i].second = 0;
+			for (size_t i = 0; i < size; i++)
+			{
+				a[i].first = (1 << (FLOAT_PRECISION - REC_Y));
+				a[i].second = 0;
+			}
 		}
-	}
-	else if (partyNum == PARTY_C)
-	{
-		for (size_t i = 0; i < size; i++)
+		else if (partyNum == PARTY_C)
 		{
-			a[i].first = 0;
-			a[i].second = (1 << (FLOAT_PRECISION - REC_Y));
+			for (size_t i = 0; i < size; i++)
+			{
+				a[i].first = 0;
+				a[i].second = (1 << (FLOAT_PRECISION - REC_Y));
+			}
 		}
-	}
-	else
-	{
-		for (size_t i = 0; i < size; i++)
+		else
 		{
-			a[i].first = 0;
-			a[i].second = 0;
+			for (size_t i = 0; i < size; i++)
+			{
+				a[i].first = 0;
+				a[i].second = 0;
+			}
 		}
 	}
 
@@ -2670,7 +2675,15 @@ void funcShareABReceiver(Vec &result1, const size_t size1, RSSVectorBoolType &re
 	}
 }
 
-// offline
+// offline op
+/**
+ * @brief generate 0/1 random
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param b
+ * @param size
+ */
 template <typename Vec, typename T>
 void funcRandBitByXor(Vec &b, size_t size)
 {
