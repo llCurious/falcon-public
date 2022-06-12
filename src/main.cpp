@@ -75,10 +75,10 @@ int main(int argc, char **argv)
 	// runTest("Debug","ZeroRandom",network);
 	// runTest("Debug", "BoolAnd", network);
 	// cout << "POWWRAP" << endl;
-	// runTest("Debug", "PosWrap", network);
-	// runTest("Debug", "WCExtension", network);
-	// runTest("Debug", "MixedShareGen", network);
-	// runTest("Debug", "MSExtension", network);
+	runTest("Debug", "PosWrap", network);
+	runTest("Debug", "WCExtension", network);
+	runTest("Debug", "MixedShareGen", network);
+	runTest("Debug", "MSExtension", network);
 	runTest("Debug", "ProbTruncation", network);
 	// runTest("Debug", "TruncAndReduce", network);
 	// runTest("Debug", "RandBit", network);

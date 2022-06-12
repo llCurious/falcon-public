@@ -1072,7 +1072,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 }
 
 template <typename VEC>
-void funcDivisionByNR(VEC &a, const VEC &b, VEC &quotient,
+void funcDivisionByNR(VEC &a, const VEC &b, const VEC &quotient,
 					  size_t size);
 
 template <typename VEC>
@@ -1681,8 +1681,8 @@ template <typename Vec, typename T>
 void funcRandBitByXor(Vec &b, size_t size);
 
 void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
-void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
-void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size);
+void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
+void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
 template <typename Vec, typename T>
@@ -2206,7 +2206,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 }
 
 template <typename VEC>
-void funcDivisionByNR(VEC &result, const VEC &input, VEC &quotient,
+void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 					  size_t size)
 {
 	VEC q_rec(size);
@@ -2276,28 +2276,28 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 	{
 		for (int i = 0; i < size; ++i)
 		{
-			result[i].first = (result[i].first << 1) + insqrt_a0; // - temp[i].first;
-			result[i].second = (result[i].second << 1);			  // - temp[i].second;
+			result[i].first = (result[i].first << 1) + insqrt_a0 - temp[i].first;
+			result[i].second = (result[i].second << 1) - temp[i].second;
 		}
 	}
 	else if (partyNum == PARTY_C)
 	{
 		for (int i = 0; i < size; ++i)
 		{
-			result[i].first = (result[i].first << 1);				// - temp[i].first;
-			result[i].second = (result[i].second << 1) + insqrt_a0; // - temp[i].second;
+			result[i].first = (result[i].first << 1) - temp[i].first;
+			result[i].second = (result[i].second << 1) + insqrt_a0 - temp[i].second;
 		}
 	}
 	else
 	{
 		for (int i = 0; i < size; ++i)
 		{
-			result[i].first = (result[i].first << 1);	// - temp[i].first;
-			result[i].second = (result[i].second << 1); // - temp[i].second;
+			result[i].first = (result[i].first << 1) - temp[i].first;
+			result[i].second = (result[i].second << 1) - temp[i].second;
 		}
 	}
 
-	funcAdd<Vec>(result, result, temp, size, true);
+	// funcAdd<Vec>(result, result, temp, size, true);
 
 	// Newton Raphson iterations for inverse square root
 	for (size_t i = 0; i < INVSQRT_ITERS; i++)

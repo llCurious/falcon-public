@@ -1592,12 +1592,13 @@ void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t siz
 }
 
 // convert data from 32-bit to 64-bit
-void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
+void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size)
 {
 	// cout << "WC Extension" << endl;
 	lowBit bias1 = (1l << 30);
 
-	funcAddOneConst(input, bias1, size);
+	RSSVectorLowType input2(size);
+	funcAddOneConst<RSSVectorLowType, lowBit>(input2, input, bias1, size);
 
 	// log
 	// vector<lowBit> input2(size);
@@ -1605,7 +1606,7 @@ void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 	// printLowBitVec(input2, "input bias", size);
 
 	RSSVectorHighType w(size);
-	funcPosWrap(w, input, size);
+	funcPosWrap(w, input2, size);
 
 	// log
 	// vector<highBit> w_plain(size);
@@ -1614,7 +1615,7 @@ void funcWCExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 
 	for (size_t i = 0; i < size; i++)
 	{
-		output[i] = make_pair((highBit)input[i].first - (w[i].first << 32), (highBit)input[i].second - (w[i].second << 32));
+		output[i] = make_pair((highBit)input2[i].first - (w[i].first << 32), (highBit)input2[i].second - (w[i].second << 32));
 	}
 
 	// log
@@ -1653,11 +1654,12 @@ void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHig
 	funcReduction(am, an, size);
 }
 
-void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t size)
+void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size)
 {
 	RSSVectorHighType rn(size);
 	RSSVectorLowType rm(size);
 	RSSVectorHighType rmsb(size);
+	RSSVectorLowType input2(size);
 	vector<highBit> ymsb(size);
 	vector<lowBit> y(size);
 	highBit msb = 1l << 63;
@@ -1670,10 +1672,10 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 		funcMixedShareGen(rn, rm, rmsb, size);
 	}
 
-	funcAddOneConst(input, bias1, size);
+	funcAddOneConst(input2, input, bias1, size);
 
-	funcAdd<RSSVectorLowType>(input, input, rm, size, false);				 // x+r (m)
-	funcReconstruct<RSSVectorLowType, lowBit>(input, y, size, "x+r", false); // yrss = x+r
+	funcAdd<RSSVectorLowType>(input2, input2, rm, size, false);				  // x+r (m)
+	funcReconstruct<RSSVectorLowType, lowBit>(input2, y, size, "x+r", false); // yrss = x+r
 
 	// [w]n = [rm−1]n·¬ym−1.
 	for (size_t i = 0; i < size; i++)
@@ -2151,26 +2153,53 @@ void debugExp()
 	// #endif
 }
 
-void debugSoftmax() {
+void debugSoftmax()
+{
 	size_t rows = 3, cols = 10;
 	size_t size = rows * cols;
 
 	vector<float> data_raw = {
-		// 0.923921, 0.219685, -0.414526, 0.34122, -0.166053, -0.629501, 0.270858, 0.0569448, -0.283571, 0.261101, 
-		// 0.342496, 0.491277, -0.405227, 0.104489, 0.0440607, -0.558957, 0.213509, 0.14997, -0.0229616, 0.318014, 
+		// 0.923921, 0.219685, -0.414526, 0.34122, -0.166053, -0.629501, 0.270858, 0.0569448, -0.283571, 0.261101,
+		// 0.342496, 0.491277, -0.405227, 0.104489, 0.0440607, -0.558957, 0.213509, 0.14997, -0.0229616, 0.318014,
 		// 0.394563, 0.396146, -0.558138, 0.357716, -0.0295143, -0.772969, 0.377216, 0.0590944, -0.0873451, 0.325517,
 		2.60365, -0.290006, -0.721366, 0.507656, -0.434107, -0.595984, 0.532808, -0.0694342, -0.377345, -0.0523729,
 		-0.124932, 0.807279, -0.534957, -0.0588999, 0.0464973, -0.855241, 0.116036, 0.219089, 0.0108147, 0.756191,
-		0.41907, 0.301184, -0.434992, 0.190973, 0.18747, -0.639831, 0.21955, 0.151983, -0.169142, 0.523242
-	};
+		0.41907, 0.301184, -0.434992, 0.190973, 0.18747, -0.639831, 0.21955, 0.151983, -0.169142, 0.523242};
 
 	vector<highBit> data = {
-		1, 2, 3, 4, 5, 2, 1, 2, 7, 0,
-		8, 4, 4, 2, 1, 2, 1, 2, 7, 0,
-		8, 4, 4, 2, 1, 2, 1, 2, 7, 0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		2,
+		1,
+		2,
+		7,
+		0,
+		8,
+		4,
+		4,
+		2,
+		1,
+		2,
+		1,
+		2,
+		7,
+		0,
+		8,
+		4,
+		4,
+		2,
+		1,
+		2,
+		1,
+		2,
+		7,
+		0,
 	};
 
-	for (size_t i = 0; i< size; i++)
+	for (size_t i = 0; i < size; i++)
 		data[i] = data_raw[i] * (1 << HIGH_PRECISION);
 
 	RSSVectorHighType a(size), b(size);
