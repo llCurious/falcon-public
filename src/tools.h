@@ -250,10 +250,24 @@ template <typename T>
 void printVectorReal(const vector<T> &var, string pre_text, int print_nos)
 {
 	typedef typename std::conditional<std::is_same<T, highBit>::value, int64_t, int32_t>::type computeType;
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<T, highBit>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<T, lowBit>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(var).name() << endl;
+	}
+
 	cout << pre_text << " " << print_nos << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << (static_cast<computeType>(var[i])) / (float)(1 << FLOAT_PRECISION) << " ";
+		cout << (static_cast<computeType>(var[i])) / (float)(1 << float_precision) << " ";
 		// cout << var[i] << " ";
 	}
 	cout << endl;

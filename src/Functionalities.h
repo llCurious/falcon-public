@@ -2035,7 +2035,6 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 }
 
-const highBit rec_const = 0.003 * FLOAT_BIAS;
 /**
  * @brief get the reciprocal of b
  *  'NR' : Newton-Raphson method computes the reciprocal using iterations of :math:
@@ -2054,6 +2053,21 @@ template <typename VEC>
 void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 					size_t size)
 {
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
+	const highBit rec_const = 0.003 * (1 << float_precision);
+
 	VEC temp(size);
 	if (input_in_01)
 	{
@@ -2126,7 +2140,7 @@ void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 	for (size_t j = 0; j < REC_ITERS; ++j)
 	{
 		funcSquare(a, temp, size);									// temp = a*a
-		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
+		funcDotProduct(temp, b, temp, size, true, float_precision); // temp = a*a*b
 		for (size_t i = 0; i < size; ++i)
 		{
 			a[i].first = (a[i].first << 1) - temp[i].first;
@@ -2143,6 +2157,19 @@ template <typename VEC>
 void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 					 size_t size)
 {
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
 	VEC temp(size);
 	if (input_in_01)
 	{
@@ -2160,7 +2187,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				a[i].first = (1 << (FLOAT_PRECISION - REC_Y));
+				a[i].first = (1 << (float_precision - REC_Y));
 				a[i].second = 0;
 			}
 		}
@@ -2169,7 +2196,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 			for (size_t i = 0; i < size; i++)
 			{
 				a[i].first = 0;
-				a[i].second = (1 << (FLOAT_PRECISION - REC_Y));
+				a[i].second = (1 << (float_precision - REC_Y));
 			}
 		}
 		else
@@ -2209,16 +2236,26 @@ template <typename VEC>
 void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 					  size_t size)
 {
+
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(input).name() << endl;
+	}
 	VEC q_rec(size);
 	funcReciprocal(q_rec, quotient, false, size);
 
-	funcDotProduct(q_rec, input, result, size, true, FLOAT_PRECISION);
+	funcDotProduct(q_rec, input, result, size, true, float_precision);
 }
 
-const highBit insqrt_a0 = 0.2 * FLOAT_BIAS;
-// const highBit insqrt_a1 = 2.2;
-const highBit insqrt_a3 = 3 * FLOAT_BIAS;
-// const highBit insqrt_a3 = 2 * FLOAT_BIAS;
 /**
  * @brief   Computes the inverse square root of the input using the Newton-Raphson method.
  *
@@ -2233,10 +2270,21 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 
 	// Initialize using decent approximation
 	// y = exp(-( x/2 + 0.2 )) * 2.2 + 0.2
-	// T a0 = 0.2 * FLOAT_BIAS;
-	// T a1 = 2.2 * FLOAT_BIAS;
-	// T a2 = 3 * FLOAT_BIAS;
-	// T a3 = 2 * FLOAT_BIAS;
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(input).name() << endl;
+	}
+	const highBit insqrt_a0 = 0.2 * (1 << float_precision);
+	const highBit insqrt_a3 = 3 * (1 << float_precision);
 	Vec temp(size);
 	funcProbTruncation<Vec, T>(result, input, 1, size); // x/2
 	if (partyNum == PARTY_A)
@@ -2303,7 +2351,7 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 	for (size_t i = 0; i < INVSQRT_ITERS; i++)
 	{																	// y = (y * (3 - x * y * y))/2
 		funcSquare(result, temp, size);									// y1 = y*y
-		funcDotProduct(temp, input, temp, size, true, FLOAT_PRECISION); // y2 = y*y*x
+		funcDotProduct(temp, input, temp, size, true, float_precision); // y2 = y*y*x
 
 		if (partyNum == PARTY_A)
 		{ // 3 - x * y * y
@@ -2331,7 +2379,7 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 		}
 
 		// result = (y * (3 - x * y * y))/2
-		funcDotProduct(temp, result, result, size, true, FLOAT_PRECISION);
+		funcDotProduct(temp, result, result, size, true, float_precision);
 		funcProbTruncation<Vec, T>(result, result, 1, size);
 	}
 }
@@ -2403,6 +2451,19 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 template <typename Vec, typename T, typename RealVec>
 void funcRandBit(RealVec &b, size_t size)
 {
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(b).name() << endl;
+	}
 	Vec a(size);
 	Vec btemp(size);
 	// Vec btemp(size);
@@ -2426,7 +2487,7 @@ void funcRandBit(RealVec &b, size_t size)
 		// test log
 		// funcReconstruct<Vec, T>(a, a_p, size, "a", false);
 
-		funcDotProduct<Vec, T>(a, a, btemp, size, false, FLOAT_PRECISION); // e = a*a
+		funcDotProduct<Vec, T>(a, a, btemp, size, false, float_precision); // e = a*a
 		funcReconstruct<Vec, T>(btemp, e, size, "a*a", false);			   // reveal e
 
 		// test log
@@ -2517,6 +2578,19 @@ void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbia
 template <typename Vec, typename T>
 void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias)
 {
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(data).name() << endl;
+	}
 	Vec aRss(size);
 	Vec bRss(size);
 	Vec amulb(size);
@@ -2576,11 +2650,11 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias
 	// a ^ b1 = a + b1 - 2*a*b1
 	if (isbias)
 	{
-		funcDotProduct(aRss, bRss, amulb, size, true, FLOAT_PRECISION); // a * b1
+		funcDotProduct(aRss, bRss, amulb, size, true, float_precision); // a * b1
 	}
 	else
 	{
-		funcDotProduct(aRss, bRss, amulb, size, false, FLOAT_PRECISION); // a * b1
+		funcDotProduct(aRss, bRss, amulb, size, false, float_precision); // a * b1
 	}
 	// printRssVector<Vec>(amulb, "a*b", size);
 

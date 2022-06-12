@@ -102,7 +102,6 @@ void debugProbTruncation()
 
     // check
 #if (!LOG_DEBUG)
-    cout << "prob trunc" << endl;
     vector<T> trunc_plain(size);
     funcReconstruct<Vec, T>(datatrunc, trunc_plain, size, "trunc plain", false);
     if (checkParty == partyNum)
