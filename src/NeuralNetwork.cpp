@@ -143,8 +143,8 @@ void NeuralNetwork::computeDelta()
 			RSSVectorMyType diff(size);
 			subtractVectors(*(layers[NUM_LAYERS-1]->getActivation()), outputData, diff, size);
 			*(layers[NUM_LAYERS-1]->getDelta()) = diff;
-			// print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "getActivation", layers[NUM_LAYERS-1]->getActivation()->size());
-			// print_vector(outputData, "FLOAT", "outputData", outputData.size());
+			print_vector(*(layers[NUM_LAYERS-1]->getActivation()), "FLOAT", "predict", 100);
+			print_vector(outputData, "FLOAT", "label", 30);
 			// print_vector(diff, "FLOAT", "diff", diff.size());
 			// funcTruncate(diff, LOG_MINI_BATCH, size);
 		}

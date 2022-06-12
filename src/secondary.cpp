@@ -782,9 +782,9 @@ void loadData(string net, string dataset)
 		LARGE_NETWORK = false;
 		if (net.compare("AlexNet") == 0)
 		{
-			INPUT_SIZE = 33*33*3;
+			INPUT_SIZE = 32*32*3;
 			LAST_LAYER_SIZE = 10;
-			TRAINING_DATA_SIZE = 8;
+			TRAINING_DATA_SIZE = 1000;
 			TEST_DATA_SIZE = 8;			
 		}
 		else if (net.compare("VGG16") == 0)
@@ -809,9 +809,9 @@ void loadData(string net, string dataset)
 		//http://cs231n.stanford.edu/reports/2017/pdfs/931.pdf
 		if (net.compare("AlexNet") == 0)
 		{
-			INPUT_SIZE = 56*56*3;
+			INPUT_SIZE = 64*64*3;
 			LAST_LAYER_SIZE = 200;
-			TRAINING_DATA_SIZE = 8;
+			TRAINING_DATA_SIZE = 1000;
 			TEST_DATA_SIZE = 8;			
 		}
 		else if (net.compare("VGG16") == 0)
@@ -1067,16 +1067,18 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			assert(false && "No AlexNet on MNIST");
 		else if (dataset.compare("CIFAR10") == 0)
 		{
-			NUM_LAYERS = 20;
+			NUM_LAYERS = 17;
 			// NUM_LAYERS = 18;		//Without BN
 			WITH_NORMALIZATION = false;
-			CNNConfig* l0 = new CNNConfig(33,33,3,96,11,4,9,MINI_BATCH_SIZE);
-			MaxpoolConfig* l1 = new MaxpoolConfig(11,11,96,3,2,MINI_BATCH_SIZE);
-			ReLUConfig* l2 = new ReLUConfig(5*5*96,MINI_BATCH_SIZE);		
-			BNConfig * l3 = new BNConfig(5*5*96,MINI_BATCH_SIZE);
+			CNNConfig* l0 = new CNNConfig(32,32,3,96,11,4,9,MINI_BATCH_SIZE);
+			MaxpoolConfig* l1 = new MaxpoolConfig(10,10,96,3,2,MINI_BATCH_SIZE);
+			// TODO: check this. I modify from 5*5*96 to 4*4*96
+			// take the floor() operation to compute the out_img_width. https://medium.com/@RaghavPrabhu/cnn-architectures-lenet-alexnet-vgg-googlenet-and-resnet-7c81c017b848
+			ReLUConfig* l2 = new ReLUConfig(4*4*96,MINI_BATCH_SIZE);		
+			BNConfig * l3 = new BNConfig(4*4*96,MINI_BATCH_SIZE);
 
-			CNNConfig* l4 = new CNNConfig(5,5,96,256,5,1,1,MINI_BATCH_SIZE);
-			MaxpoolConfig* l5 = new MaxpoolConfig(3,3,256,3,2,MINI_BATCH_SIZE);
+			CNNConfig* l4 = new CNNConfig(4,4,96,256,5,1,1,MINI_BATCH_SIZE);
+			MaxpoolConfig* l5 = new MaxpoolConfig(2,2,256,2,1,MINI_BATCH_SIZE);
 			ReLUConfig* l6 = new ReLUConfig(1*1*256,MINI_BATCH_SIZE);		
 			BNConfig * l7 = new BNConfig(1*1*256,MINI_BATCH_SIZE);
 
@@ -1093,6 +1095,83 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			ReLUConfig* l17 = new ReLUConfig(256,MINI_BATCH_SIZE);
 			FCConfig* l18 = new FCConfig(256,MINI_BATCH_SIZE,10);
 			ReLUConfig* l19 = new ReLUConfig(10,MINI_BATCH_SIZE);
+			config->addLayer(l0);
+			config->addLayer(l1);
+			config->addLayer(l2);
+			// config->addLayer(l3);
+			config->addLayer(l4);
+			config->addLayer(l5);
+			config->addLayer(l6);
+			// config->addLayer(l7);
+			config->addLayer(l8);
+			config->addLayer(l9);
+			config->addLayer(l10);
+			config->addLayer(l11);
+			config->addLayer(l12);
+			config->addLayer(l13);
+			config->addLayer(l14);
+			config->addLayer(l15);
+			config->addLayer(l16);
+			config->addLayer(l17);
+			config->addLayer(l18);
+			// config->addLayer(l19);
+		}
+		else if (dataset.compare("ImageNet") == 0)
+		{
+			NUM_LAYERS = 20;
+			// NUM_LAYERS = 17;		//Without BN
+			WITH_NORMALIZATION = false;
+			// According to CryptGPU
+			CNNConfig* l0 = new CNNConfig(64,64,3,96,11,4,9,MINI_BATCH_SIZE);
+			MaxpoolConfig* l1 = new MaxpoolConfig(18,18,96,3,2,MINI_BATCH_SIZE);
+			// TODO: check this. I modify from 5*5*96 to 4*4*96
+			// take the floor() operation to compute the out_img_width. https://medium.com/@RaghavPrabhu/cnn-architectures-lenet-alexnet-vgg-googlenet-and-resnet-7c81c017b848
+			ReLUConfig* l2 = new ReLUConfig(8*8*96,MINI_BATCH_SIZE);		
+			BNConfig * l3 = new BNConfig(8*8*96,MINI_BATCH_SIZE);
+
+			CNNConfig* l4 = new CNNConfig(8,8,96,256,5,1,1,MINI_BATCH_SIZE);
+			MaxpoolConfig* l5 = new MaxpoolConfig(6,6,256,2,1,MINI_BATCH_SIZE);
+			ReLUConfig* l6 = new ReLUConfig(5*5*256,MINI_BATCH_SIZE);		
+			BNConfig * l7 = new BNConfig(5*5*256,MINI_BATCH_SIZE);
+
+			CNNConfig* l8 = new CNNConfig(5,5,256,384,3,1,1,MINI_BATCH_SIZE);
+			ReLUConfig* l9 = new ReLUConfig(5*5*384,MINI_BATCH_SIZE);
+			CNNConfig* l10 = new CNNConfig(5,5,384,384,3,1,1,MINI_BATCH_SIZE);
+			ReLUConfig* l11 = new ReLUConfig(5*5*384,MINI_BATCH_SIZE);
+			CNNConfig* l12 = new CNNConfig(5,5,384,256,3,1,1,MINI_BATCH_SIZE);
+			ReLUConfig* l13 = new ReLUConfig(5*5*256,MINI_BATCH_SIZE);
+
+			MaxpoolConfig* l14 = new MaxpoolConfig(5,5,256,2,2,MINI_BATCH_SIZE);
+			FCConfig* l15 = new FCConfig(2*2*256,MINI_BATCH_SIZE,1024);
+			ReLUConfig* l16 = new ReLUConfig(1024,MINI_BATCH_SIZE);
+			FCConfig* l17 = new FCConfig(1024,MINI_BATCH_SIZE,1024);
+			ReLUConfig* l18 = new ReLUConfig(1024,MINI_BATCH_SIZE);
+			FCConfig* l19 = new FCConfig(1024,MINI_BATCH_SIZE,200);
+			ReLUConfig* l20 = new ReLUConfig(200,MINI_BATCH_SIZE);
+
+			// Raw model architecture
+			// CNNConfig* l0 = new CNNConfig(56,56,3,64,7,1,3,MINI_BATCH_SIZE);
+			// CNNConfig* l1 = new CNNConfig(56,56,64,64,5,1,2,MINI_BATCH_SIZE);
+			// MaxpoolConfig* l2 = new MaxpoolConfig(56,56,64,2,2,MINI_BATCH_SIZE);
+			// ReLUConfig* l3 = new ReLUConfig(28*28*64,MINI_BATCH_SIZE);		
+			// BNConfig * l4 = new BNConfig(28*28*64,MINI_BATCH_SIZE);
+
+			// CNNConfig* l5 = new CNNConfig(28,28,64,128,5,1,2,MINI_BATCH_SIZE);
+			// MaxpoolConfig* l6 = new MaxpoolConfig(28,28,128,2,2,MINI_BATCH_SIZE);
+			// ReLUConfig* l7 = new ReLUConfig(14*14*128,MINI_BATCH_SIZE);		
+			// BNConfig * l8 = new BNConfig(14*14*128,MINI_BATCH_SIZE);
+
+			// CNNConfig* l9 = new CNNConfig(14,14,128,256,3,1,1,MINI_BATCH_SIZE);
+			// CNNConfig* l10 = new CNNConfig(14,14,256,256,3,1,1,MINI_BATCH_SIZE);
+			// MaxpoolConfig* l11 = new MaxpoolConfig(14,14,256,2,2,MINI_BATCH_SIZE);
+			// ReLUConfig* l12 = new ReLUConfig(7*7*256,MINI_BATCH_SIZE);
+
+			// FCConfig* l13 = new FCConfig(7*7*256,MINI_BATCH_SIZE,1024);
+			// ReLUConfig* l14 = new ReLUConfig(1024,MINI_BATCH_SIZE);
+			// FCConfig* l15 = new FCConfig(1024,MINI_BATCH_SIZE,1024);
+			// ReLUConfig* l16 = new ReLUConfig(1024,MINI_BATCH_SIZE);
+			// FCConfig* l17 = new FCConfig(1024,MINI_BATCH_SIZE,200);
+			// ReLUConfig* l18 = new ReLUConfig(200,MINI_BATCH_SIZE);
 			config->addLayer(l0);
 			config->addLayer(l1);
 			config->addLayer(l2);
@@ -1113,53 +1192,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			config->addLayer(l17);
 			config->addLayer(l18);
 			config->addLayer(l19);
-		}
-		else if (dataset.compare("ImageNet") == 0)
-		{
-			NUM_LAYERS = 19;
-			// NUM_LAYERS = 17;		//Without BN
-			WITH_NORMALIZATION = false;
-			CNNConfig* l0 = new CNNConfig(56,56,3,64,7,1,3,MINI_BATCH_SIZE);
-			CNNConfig* l1 = new CNNConfig(56,56,64,64,5,1,2,MINI_BATCH_SIZE);
-			MaxpoolConfig* l2 = new MaxpoolConfig(56,56,64,2,2,MINI_BATCH_SIZE);
-			ReLUConfig* l3 = new ReLUConfig(28*28*64,MINI_BATCH_SIZE);		
-			BNConfig * l4 = new BNConfig(28*28*64,MINI_BATCH_SIZE);
-
-			CNNConfig* l5 = new CNNConfig(28,28,64,128,5,1,2,MINI_BATCH_SIZE);
-			MaxpoolConfig* l6 = new MaxpoolConfig(28,28,128,2,2,MINI_BATCH_SIZE);
-			ReLUConfig* l7 = new ReLUConfig(14*14*128,MINI_BATCH_SIZE);		
-			BNConfig * l8 = new BNConfig(14*14*128,MINI_BATCH_SIZE);
-
-			CNNConfig* l9 = new CNNConfig(14,14,128,256,3,1,1,MINI_BATCH_SIZE);
-			CNNConfig* l10 = new CNNConfig(14,14,256,256,3,1,1,MINI_BATCH_SIZE);
-			MaxpoolConfig* l11 = new MaxpoolConfig(14,14,256,2,2,MINI_BATCH_SIZE);
-			ReLUConfig* l12 = new ReLUConfig(7*7*256,MINI_BATCH_SIZE);
-
-			FCConfig* l13 = new FCConfig(7*7*256,MINI_BATCH_SIZE,1024);
-			ReLUConfig* l14 = new ReLUConfig(1024,MINI_BATCH_SIZE);
-			FCConfig* l15 = new FCConfig(1024,MINI_BATCH_SIZE,1024);
-			ReLUConfig* l16 = new ReLUConfig(1024,MINI_BATCH_SIZE);
-			FCConfig* l17 = new FCConfig(1024,MINI_BATCH_SIZE,200);
-			ReLUConfig* l18 = new ReLUConfig(200,MINI_BATCH_SIZE);
-			config->addLayer(l0);
-			config->addLayer(l1);
-			config->addLayer(l2);
-			config->addLayer(l3);
-			config->addLayer(l4);
-			config->addLayer(l5);
-			config->addLayer(l6);
-			config->addLayer(l7);
-			config->addLayer(l8);
-			config->addLayer(l9);
-			config->addLayer(l10);
-			config->addLayer(l11);
-			config->addLayer(l12);
-			config->addLayer(l13);
-			config->addLayer(l14);
-			config->addLayer(l15);
-			config->addLayer(l16);
-			config->addLayer(l17);
-			config->addLayer(l18);
+			// config->addLayer(l20);
 		}
 	}
 	else if (network.compare("VGG16") == 0)
