@@ -1612,6 +1612,32 @@ void funcAddOneConst(Vec &result, T c, size_t size)
 	}
 }
 
+template <typename Vec, typename T>
+void funcAddOneConst(Vec &result, const Vec &input, T c, size_t size)
+{
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(input[i].first + c, input[i].second);
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(input[i].first, input[i].second + c);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			result[i] = make_pair(input[i].first, input[i].second);
+		}
+	}
+}
+
 template <typename vec, typename T>
 void funcAddConst(vec &result, vector<T> c, size_t size)
 {
@@ -1660,7 +1686,7 @@ void funcMSExtension(RSSVectorHighType &output, RSSVectorLowType &input, size_t 
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
 void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
 template <typename Vec, typename T>
-void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size);
+void funcProbTruncation(Vec &output, const Vec &input, int trunc_bits, size_t size);
 
 /**
  * @brief trunc trunc_bits of input to output
@@ -1673,7 +1699,7 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size);
  * @param size
  */
 template <typename Vec, typename T>
-void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
+void funcProbTruncation(Vec &output, const Vec &input, int trunc_bits, size_t size)
 {
 	size_t k = sizeof(T) << 3;
 	assert(k - 2 > trunc_bits);
@@ -1731,8 +1757,9 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 	// printVector<T>(rtrunc_p, "rtrunc", size);
 	// printVector<T>(rtrunc_p, "rtrunc", size);
 	//  printVector<T>(rmsb_p, "rmsb", size);
-
-	funcAddOneConst(input, bias1, size);
+	Vec input2(size);
+	funcAddOneConst<Vec, T>(input2, input, bias1, size);
+	// funcAddOneConst(input, bias1, size);
 
 	// log x
 	// vector<T> biasx(size);
@@ -1741,8 +1768,8 @@ void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
 	// printHighBitVec(biasx, "x", size);
 
 	// reveal x+r
-	funcAdd(input, input, r, size, false);
-	funcReconstruct(input, z, size, "x+r", false);
+	funcAdd(input2, input2, r, size, false);
+	funcReconstruct(input2, z, size, "x+r", false);
 
 	// log x+r
 	// printVector<T>(z, "x+r", size);
@@ -2008,7 +2035,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 }
 
-const int rec_const = 0.003 * FLOAT_BIAS;
+const highBit rec_const = 0.003 * FLOAT_BIAS;
 /**
  * @brief get the reciprocal of b
  *  'NR' : Newton-Raphson method computes the reciprocal using iterations of :math:
@@ -2096,7 +2123,7 @@ void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 	// printVectorReal(r, "3*x + 0.003", size);
 
 	// x_{i+1} = (2x_i - self * x_i^2)
-	for (size_t j = 0; j < REC_ITE; ++j)
+	for (size_t j = 0; j < REC_ITERS; ++j)
 	{
 		funcSquare(a, temp, size);									// temp = a*a
 		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
@@ -2186,6 +2213,127 @@ void funcDivisionByNR(VEC &result, const VEC &input, VEC &quotient,
 	funcReciprocal(q_rec, quotient, false, size);
 
 	funcDotProduct(q_rec, input, result, size, true, FLOAT_PRECISION);
+}
+
+const highBit insqrt_a0 = 0.2 * FLOAT_BIAS;
+// const highBit insqrt_a1 = 2.2;
+const highBit insqrt_a3 = 3 * FLOAT_BIAS;
+// const highBit insqrt_a3 = 2 * FLOAT_BIAS;
+/**
+ * @brief   Computes the inverse square root of the input using the Newton-Raphson method.
+ *
+ * @tparam Vec
+ * @param result
+ * @param input
+ * @param size
+ */
+template <typename Vec, typename T>
+void funcInverseSqrt(Vec &result, Vec &input, size_t size)
+{
+
+	// Initialize using decent approximation
+	// y = exp(-( x/2 + 0.2 )) * 2.2 + 0.2
+	// T a0 = 0.2 * FLOAT_BIAS;
+	// T a1 = 2.2 * FLOAT_BIAS;
+	// T a2 = 3 * FLOAT_BIAS;
+	// T a3 = 2 * FLOAT_BIAS;
+	Vec temp(size);
+	funcProbTruncation<Vec, T>(result, input, 1, size); // x/2
+	if (partyNum == PARTY_A)
+	{ // -( x/2 + 0.2 )
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = -result[i].first - insqrt_a0;
+			result[i].second = -result[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = -result[i].first;
+			result[i].second = -result[i].second - insqrt_a0;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = -result[i].first;
+			result[i].second = -result[i].second;
+		}
+	}
+	// funcReconstruct(result, plain, size, "-(x/2 + 0.2)", true);
+	// printVectorReal(plain, "-(x/2 + 0.2)", size);
+
+	funcExp(result, result, size); // exp(-( x/2 + 0.2 ))
+
+	// exp(-( x/2 + 0.2 )) * 2 + 0.2
+	// y -= x/1024
+	funcProbTruncation<Vec, T>(temp, input, 10, size);
+
+	if (partyNum == PARTY_A)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = (result[i].first << 1) + insqrt_a0; // - temp[i].first;
+			result[i].second = (result[i].second << 1);			  // - temp[i].second;
+		}
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = (result[i].first << 1);				// - temp[i].first;
+			result[i].second = (result[i].second << 1) + insqrt_a0; // - temp[i].second;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < size; ++i)
+		{
+			result[i].first = (result[i].first << 1);	// - temp[i].first;
+			result[i].second = (result[i].second << 1); // - temp[i].second;
+		}
+	}
+
+	funcAdd<Vec>(result, result, temp, size, true);
+
+	// Newton Raphson iterations for inverse square root
+	for (size_t i = 0; i < INVSQRT_ITERS; i++)
+	{																	// y = (y * (3 - x * y * y))/2
+		funcSquare(result, temp, size);									// y1 = y*y
+		funcDotProduct(temp, input, temp, size, true, FLOAT_PRECISION); // y2 = y*y*x
+
+		if (partyNum == PARTY_A)
+		{ // 3 - x * y * y
+			for (int i = 0; i < size; ++i)
+			{
+				temp[i].first = -temp[i].first + insqrt_a3;
+				temp[i].second = -temp[i].second;
+			}
+		}
+		else if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				temp[i].first = -temp[i].first;
+				temp[i].second = -temp[i].second + insqrt_a3;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				temp[i].first = -temp[i].first;
+				temp[i].second = -temp[i].second;
+			}
+		}
+
+		// result = (y * (3 - x * y * y))/2
+		funcDotProduct(temp, result, result, size, true, FLOAT_PRECISION);
+		funcProbTruncation<Vec, T>(result, result, 1, size);
+	}
 }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf

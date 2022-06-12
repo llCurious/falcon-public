@@ -549,8 +549,6 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "ProbTruncation";
 			debugProbTruncation<RSSVectorHighType, highBit>();
-			// debugProbTruncation<RSSVectorLowType, lowBit>();
-			// cout << "LOW" << endl;
 			debugProbTruncation<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("TruncAndReduce") == 0)
@@ -572,6 +570,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "funcDivisionByNR";
 			debugDivisionByNR<RSSVectorHighType, highBit>();
+		}
+		else if (whichTest.compare("InverseSqrt") == 0)
+		{
+			network = "InverseSqrt";
+			debugInverseSqrt<RSSVectorHighType, highBit>();
 		}
 		else if (whichTest.compare("ZeroRandom") == 0)
 		{

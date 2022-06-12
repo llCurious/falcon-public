@@ -26,6 +26,8 @@ template <typename Vec, typename T>
 void debugReciprocal();
 template <typename VEC, typename T>
 void debugDivisionByNR();
+template <typename Vec, typename T>
+void debugInverseSqrt();
 
 void runTest(string str, string whichTest, string &network);
 
@@ -56,34 +58,39 @@ void debugProbTruncation()
 
     T temp = 1l << trunc_bits;
 
-    size_t size = 1000;
+    size_t size = 5;
     vector<T> data(size);
     size_t i = 0;
 
-    data[i] = -(1l << (k));
-    i++;
-    for (; i < size / 4; i++)
+    for (size_t i = 0; i < size; i++)
     {
-        data[i] = data[i - 1] + temp;
+        data[i] = (FLOAT_BIAS << (i + 1));
     }
-    data[i] = 0;
-    i++;
-    for (; i < size / 2; i++)
-    {
-        data[i] = data[i - 1] - temp;
-    }
-    data[i] = 0;
-    i++;
-    for (; i < 3 * size / 4; i++)
-    {
-        data[i] = data[i - 1] + temp;
-    }
-    data[i] = (1l << k) - 1;
-    i++;
-    for (; i < size / 4; i++)
-    {
-        data[i] = data[i - 1] - temp;
-    }
+
+    // data[i] = -(1l << (k));
+    // i++;
+    // for (; i < size / 4; i++)
+    // {
+    //     data[i] = data[i - 1] + temp;
+    // }
+    // data[i] = 0;
+    // i++;
+    // for (; i < size / 2; i++)
+    // {
+    //     data[i] = data[i - 1] - temp;
+    // }
+    // data[i] = 0;
+    // i++;
+    // for (; i < 3 * size / 4; i++)
+    // {
+    //     data[i] = data[i - 1] + temp;
+    // }
+    // data[i] = (1l << k) - 1;
+    // i++;
+    // for (; i < size / 4; i++)
+    // {
+    //     data[i] = data[i - 1] - temp;
+    // }
 
     int checkParty = PARTY_B;
     Vec datahigh(size);
@@ -95,6 +102,7 @@ void debugProbTruncation()
 
     // check
 #if (!LOG_DEBUG)
+    cout << "prob trunc" << endl;
     vector<T> trunc_plain(size);
     funcReconstruct<Vec, T>(datatrunc, trunc_plain, size, "trunc plain", false);
     if (checkParty == partyNum)
@@ -103,9 +111,9 @@ void debugProbTruncation()
         {
             for (size_t i = 0; i < size; i++)
             {
-                // cout << (long)trunc_plain[i] << " " << (((long)data[i]) >> trunc_bits) << endl;
+                cout << (long)trunc_plain[i] << " " << (((long)data[i]) >> trunc_bits) << endl;
                 long temp = ((long)data[i]) >> trunc_bits;
-                assert(((long)trunc_plain[i] == temp) || ((long)trunc_plain[i] == temp + 1) || ((long)trunc_plain[i] == temp - 1));
+                // assert(((long)trunc_plain[i] == temp) || ((long)trunc_plain[i] == temp + 1) || ((long)trunc_plain[i] == temp - 1));
                 // cout << bitset<64>(trunc_plain[i]) << " " << bitset<64>((data[i] >> trunc_bits)) << endl;
             }
         }
@@ -171,6 +179,29 @@ void debugDivisionByNR()
 
     vector<T> result(size);
     funcReconstruct<VEC, T>(output, result, size, "out", false);
+    printVectorReal<T>(result, "output", size);
+}
+
+template <typename Vec, typename T>
+void debugInverseSqrt()
+{
+    size_t size = 5;
+    vector<T> data(size);
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = (FLOAT_BIAS << (i + 1));
+    }
+    printVectorReal<T>(data, "input", size);
+
+    Vec input(size);
+    int checkParty = PARTY_B;
+    funcPartySS(input, data, size, checkParty);
+
+    Vec output(size);
+    funcInverseSqrt<Vec, T>(output, input, size);
+
+    vector<T> result(size);
+    funcReconstruct<Vec, T>(output, result, size, "out", false);
     printVectorReal<T>(result, "output", size);
 }
 

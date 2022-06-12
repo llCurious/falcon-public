@@ -41,8 +41,9 @@
 
 /********************* Neural Network globals *********************/
 // Batch size has to be a power of two
-#define REC_ITE 7
+#define REC_ITERS 7
 #define REC_Y 6
+#define INVSQRT_ITERS 3
 #define LOG_MINI_BATCH 7
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
@@ -96,6 +97,6 @@ const smallType BOUNDARY = (256 / PRIME_NUMBER) * PRIME_NUMBER; // AES
 #define USE_SOFTMAX_CE false
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY false
+#define DEBUG_ONLY true
 #define OFFLINE_ON true
 #endif
