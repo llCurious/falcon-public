@@ -4,6 +4,8 @@
 
 #include <thread>
 #include "Functionalities.h"
+#include "BNConfig.h"
+#include "BNLayer.h"
 
 /************Debug****************/
 
@@ -134,6 +136,7 @@ void debugProbTruncation()
 template <typename Vec, typename T>
 void debugReciprocal()
 {
+    cout << "Debug Reciprocal" << endl;
     size_t size = 10;
     vector<T> data(size);
     for (size_t i = 0; i < size; i++)
@@ -157,6 +160,7 @@ void debugReciprocal()
 template <typename VEC, typename T>
 void debugDivisionByNR()
 {
+    cout << "Debug Division Using NR" << endl;
     size_t size = 5;
     vector<T> data(size);
     vector<T> que(size);
@@ -185,6 +189,7 @@ void debugDivisionByNR()
 template <typename Vec, typename T>
 void debugInverseSqrt()
 {
+    cout << "Debug Inverse Sqrt" << endl;
     size_t size = 5;
     vector<T> data(size);
     for (size_t i = 0; i < size; i++)
@@ -204,5 +209,7 @@ void debugInverseSqrt()
     funcReconstruct<Vec, T>(output, result, size, "out", false);
     printVectorReal<T>(result, "output", size);
 }
+
+void debugBNLayer();
 
 #endif

@@ -307,7 +307,8 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
-	size_t size = 100;
+	cout << "Debug WC-Share Extension" << endl;
+	size_t size = 10240;
 	vector<lowBit> data(size);
 	size_t i = 0;
 	data[i] = -(1 << 30);
@@ -453,6 +454,55 @@ void debugTruncAndReduce()
 			// cout << (int(data[i]) >> trunc_bits) << " " << int(output_p[i]) << endl;
 		}
 	}
+}
+
+void debugBNLayer() {
+	cout << "Debug Batch Normalization Layer" << endl;
+	size_t B = 3, D = 10;
+	size_t size = B * D;
+
+	// Floating point representation
+	vector<float> x_raw = {
+		1, 2, 3, 4, 5,
+		1, 3, 5, 7, 8,
+		1, 2, 3, 6, 6
+	};
+
+	vector<float> grad_raw = {
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1
+	};
+
+	// FXP representation
+	vector<highBit> x_p(size), grad_p(size);
+	for (size_t i = 0; i < size; i++) {
+		x_p[i] = x_raw[i] * (1 << HIGH_PRECISION);
+		grad_p[i] = grad_raw[i] * (1 << HIGH_PRECISION);
+	}
+
+	// Public to secret
+	RSSVectorHighType input_act(size), grad(size);
+	funcGetShares(input_act, x_p);
+	funcGetShares(grad, grad_p);
+
+	BNConfig *bn_conf = new BNConfig(D, B);
+	BNLayer *layer = new BNLayer(bn_conf, 0);
+
+	// Forward.
+	RSSVectorHighType forward_output(size);
+	layer->forward(input_act);
+	forward_output = *layer->getActivation();
+	print_vector(forward_output, "FLOAT", "BN Forward", size);
+
+	// Backward.
+	RSSVectorHighType x_grad(size);
+	*layer->getDelta() = grad; 
+	layer->computeDelta(x_grad);
+	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
+
+	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
+	layer->updateEquations(input_act);
 }
 
 void runTest(string str, string whichTest, string &network)
@@ -605,6 +655,11 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Softmax";
 			debugSoftmax();
+		}
+		else if (whichTest.compare("BNLayer") == 0)
+		{
+			network = "BNLayer";
+			debugBNLayer();
 		}
 		else
 			assert(false && "Unknown debug mode selected");
