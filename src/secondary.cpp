@@ -1483,21 +1483,21 @@ void end_rounds(string str)
 
 void aggregateCommunication()
 {
-	vector<myType> vec(4, 0), temp(4, 0);
+	vector<uint64_t> vec(4, 0), temp(4, 0);
 	vec[0] = commObject.getSent();
 	vec[1] = commObject.getRecv();
 	vec[2] = commObject.getRoundsSent();
 	vec[3] = commObject.getRoundsRecv();
 
 	if (partyNum == PARTY_B or partyNum == PARTY_C)
-		sendVector<myType>(vec, PARTY_A, 4);
+		sendVector(vec, PARTY_A, 4);
 
 	if (partyNum == PARTY_A)
 	{
-		receiveVector<myType>(temp, PARTY_B, 4);
+		receiveVector(temp, PARTY_B, 4);
 		for (size_t i = 0; i < 4; ++i)
 			vec[i] = temp[i] + vec[i];
-		receiveVector<myType>(temp, PARTY_C, 4);
+		receiveVector(temp, PARTY_C, 4);
 		for (size_t i = 0; i < 4; ++i)
 			vec[i] = temp[i] + vec[i];
 	}
