@@ -99,20 +99,24 @@ void debugProbTruncation()
 
     Vec datatrunc(size);
     funcProbTruncation<Vec, T>(datatrunc, datahigh, trunc_bits, size);
+    funcProbTruncation<Vec, T>(datahigh, trunc_bits, size);
 
     // check
 #if (!LOG_DEBUG)
     vector<T> trunc_plain(size);
     funcReconstruct<Vec, T>(datatrunc, trunc_plain, size, "trunc plain", false);
+    vector<T> trunc_plain2(size);
+    funcReconstruct<Vec, T>(datahigh, trunc_plain2, size, "trunc plain", false);
     if (checkParty == partyNum)
     {
         if (k == 62)
         {
             for (size_t i = 0; i < size; i++)
             {
-                cout << (long)trunc_plain[i] << " " << (((long)data[i]) >> trunc_bits) << endl;
+                // cout << (long)trunc_plain[i] << " " << (((long)data[i]) >> trunc_bits) << endl;
                 long temp = ((long)data[i]) >> trunc_bits;
-                // assert(((long)trunc_plain[i] == temp) || ((long)trunc_plain[i] == temp + 1) || ((long)trunc_plain[i] == temp - 1));
+                assert(((long)trunc_plain[i] == temp) || ((long)trunc_plain[i] == temp + 1) || ((long)trunc_plain[i] == temp - 1));
+                assert(((long)trunc_plain2[i] == temp) || ((long)trunc_plain2[i] == temp + 1) || ((long)trunc_plain2[i] == temp - 1));
                 // cout << bitset<64>(trunc_plain[i]) << " " << bitset<64>((data[i] >> trunc_bits)) << endl;
             }
         }
@@ -122,6 +126,7 @@ void debugProbTruncation()
             {
                 int temp = ((int)data[i]) >> trunc_bits;
                 assert(((int)trunc_plain[i] == temp) || ((int)trunc_plain[i] == temp + 1) || ((int)trunc_plain[i] == temp - 1));
+                assert(((int)trunc_plain2[i] == temp) || ((int)trunc_plain2[i] == temp + 1) || ((int)trunc_plain2[i] == temp - 1));
                 // cout << (long)trunc_plain[i] << " " << (((long)data[i]) >> trunc_bits) << endl;
                 // cout << bitset<64>(trunc_plain[i]) << " " << bitset<64>((data[i] >> trunc_bits)) << endl;
             }

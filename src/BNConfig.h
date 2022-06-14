@@ -11,8 +11,7 @@ public:
 	size_t numBatches = 0;
 
 	BNConfig(size_t _inputSize, size_t _numBatches)
-	:inputSize(_inputSize),
-	 numBatches(_numBatches),
-	 LayerConfig("BN")
-	{};
+		: inputSize(_inputSize),
+		  numBatches(_numBatches),
+		  LayerConfig("BN"){};
 };
