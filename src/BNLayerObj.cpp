@@ -181,9 +181,12 @@ void BNLayerObj::backward(const RSSVectorMyType &input_grad)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             sumdxx[j] = sumdxx[j] + dxx[i * m + j];
-    for (int i = 0; i < B; ++i)
-        for (int j = 1; j < m; ++j)
-            sumdxx[j] = sumdxx[j - m];
+    for (int i = 0; i < m; ++i)
+    {
+        RSSMyType temp = sumdxx[i];
+        for (int j = 1; j < B; ++j)
+            sumdxx[j * m + i] = temp;
+    }
     funcReconstruct(sumdxx, plainsize, size, "np.sum(dxhat * self.norm_x, axis=0)", true);
     funcDotProduct(norm_x, sumdxx, sumdxx, size, true, FLOAT_PRECISION);
     funcReconstruct(sumdxx, plainsize, size, "self.norm_x * np.sum", true);
