@@ -20,6 +20,7 @@ private:
     RSSVectorMyType gamma;
     RSSVectorMyType beta;
     RSSVectorMyType inv_sqrt;
+    RSSVectorMyType inv_sqrt_rep;
     RSSVectorMyType norm_x;
     RSSVectorMyType beta_grad;
     RSSVectorMyType gamma_grad;

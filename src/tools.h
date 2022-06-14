@@ -249,7 +249,7 @@ void printVector(const vector<T> &var, string pre_text, int print_nos)
 template <typename T>
 void printVectorReal(const vector<T> &var, string pre_text, int print_nos)
 {
-	typedef typename std::conditional<std::is_same<T, highBit>::value, int64_t, int32_t>::type computeType;
+	typedef typename std::conditional<std::is_same<T, lowBit>::value, int32_t, int64_t>::type computeType;
 	size_t float_precision = FLOAT_PRECISION;
 	if (std::is_same<T, highBit>::value)
 	{

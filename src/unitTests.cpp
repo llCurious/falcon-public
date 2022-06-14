@@ -456,29 +456,31 @@ void debugTruncAndReduce()
 	}
 }
 
-void debugBNLayer() {
+void debugBNLayer()
+{
 	cout << "Debug Batch Normalization Layer" << endl;
-	size_t B = 3, D = 10;
+	size_t B = 4, D = 5;
 	size_t size = B * D;
 
 	// Floating point representation
 	vector<float> x_raw = {
 		1, 2, 3, 4, 5,
 		1, 3, 5, 7, 8,
-		1, 2, 3, 6, 6
-	};
+		1, 2, 3, 6, 6,
+		1, 2, 4, 5, 6};
 
 	vector<float> grad_raw = {
 		1, 1, 1, 1, 1,
 		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1
-	};
+		1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1};
 
 	// FXP representation
 	vector<highBit> x_p(size), grad_p(size);
-	for (size_t i = 0; i < size; i++) {
-		x_p[i] = x_raw[i] * (1 << HIGH_PRECISION);
-		grad_p[i] = grad_raw[i] * (1 << HIGH_PRECISION);
+	for (size_t i = 0; i < size; i++)
+	{
+		x_p[i] = x_raw[i] * (1 << FLOAT_PRECISION);
+		grad_p[i] = grad_raw[i] * (1 << FLOAT_PRECISION);
 	}
 
 	// Public to secret
@@ -487,22 +489,26 @@ void debugBNLayer() {
 	funcGetShares(grad, grad_p);
 
 	BNConfig *bn_conf = new BNConfig(D, B);
-	BNLayer *layer = new BNLayer(bn_conf, 0);
+	BNLayerObj *layer = new BNLayerObj(bn_conf, 0);
+	layer->printLayer();
 
 	// Forward.
-	RSSVectorHighType forward_output(size);
+	RSSVectorHighType forward_output(size), backward_output(size);
 	layer->forward(input_act);
 	forward_output = *layer->getActivation();
 	print_vector(forward_output, "FLOAT", "BN Forward", size);
 
 	// Backward.
 	RSSVectorHighType x_grad(size);
-	*layer->getDelta() = grad; 
-	layer->computeDelta(x_grad);
-	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
+	layer->backward(grad);
+	// *layer->getDelta() = grad;
+	// layer->computeDelta(x_grad);
+	// print_vector(grad, "FLOAT", "BN Backward- X", size);
+	backward_output = *layer->getActivation();
+	print_vector(backward_output, "FLOAT", "BN Backward", size);
 
 	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-	layer->updateEquations(input_act);
+	// layer->updateEquations(input_act);
 }
 
 void runTest(string str, string whichTest, string &network)

@@ -6,6 +6,7 @@
 #include "Functionalities.h"
 #include "BNConfig.h"
 #include "BNLayer.h"
+#include "BNLayerObj.h"
 
 /************Debug****************/
 

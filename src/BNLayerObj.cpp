@@ -10,9 +10,10 @@ BNLayerObj::BNLayerObj(BNConfig *conf, int _layerNum)
       //   gamma(conf->inputSize, make_pair(0, 0)),
       beta(conf->inputSize, make_pair(0, 0)),
       inv_sqrt(conf->inputSize),
+      inv_sqrt_rep(conf->numBatches * conf->inputSize),
       norm_x(conf->numBatches * conf->inputSize),
-      beta_grad(conf->numBatches * conf->inputSize),
-      gamma_grad(conf->numBatches * conf->inputSize),
+      beta_grad(conf->inputSize),
+      gamma_grad(conf->inputSize, make_pair(0, 0)),
       activations(conf->numBatches * conf->inputSize)
 //   xhat(conf->numBatches * conf->inputSize),
 //   sigma(conf->numBatches),
@@ -26,19 +27,19 @@ void BNLayerObj::initialize()
 {
     if (partyNum == PARTY_A) // gamma = 1
     {
-        gamma = RSSVectorMyType(conf.inputSize, make_pair(1, 0));
+        gamma = RSSVectorMyType(conf.inputSize, make_pair(1l << FLOAT_PRECISION, 0));
     }
     else if (partyNum == PARTY_C)
     {
-        gamma = RSSVectorMyType(conf.inputSize, make_pair(0, 1));
+        gamma = RSSVectorMyType(conf.inputSize, make_pair(0, 1l << FLOAT_PRECISION));
     }
     else
     {
         gamma = RSSVectorMyType(conf.inputSize, make_pair(0, 0));
     }
-    size_t B = conf.numBatches;
-    size_t m = conf.inputSize;
-    size_t size = B * m;
+    B = conf.numBatches;
+    m = conf.inputSize;
+    size = B * m;
 };
 
 void BNLayerObj::printLayer()
@@ -55,31 +56,35 @@ void BNLayerObj::printLayer()
  */
 void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
 {
-    log_print("BN.forward");
-    // size_t B = conf.numBatches;
-    // size_t m = conf.inputSize;
-    // size_t size = B * m;
+    cout << "forward... " << size << " " << m << " " << B << " " << endl;
     myType eps = (1e-5) * (1 << FLOAT_PRECISION);
-    // size_t EPSILON = (myType)(1 << (FLOAT_PRECISION - 8));
-    // TODO: Accept initialization from the paper
-    // size_t INITIAL_GUESS = (myType)(1 << (FLOAT_PRECISION));
-    // size_t SQRT_ROUNDS = 4;
 
-    // vector<myType> eps(B, EPSILON), initG(B, INITIAL_GUESS);
-    RSSVectorMyType var_eps(size, make_pair(0, 0)), mu(m, make_pair(0, 0)), b(B);
-    // RSSVectorMyType divisor(B, make_pair(0, 0));
+    RSSVectorMyType var_eps(m);
+    RSSVectorMyType mu(m);
+    // RSSVectorMyType var_eps(size, make_pair(0, 0)), mu(m, make_pair(0, 0));
 
     // Compute mean
     for (int i = 0; i < B; ++i)
+    {
         for (int j = 0; j < m; ++j)
+        {
             mu[j] = mu[j] + inputActivation[i * m + j];
+        }
+    }
     funcProbTruncation<RSSVectorMyType, myType>(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
+
+    // log
+    // vector<myType> plainm(m);
+    // funcReconstruct(mu, plainm, m, "mean", true);
 
     // Compute x - mean
     RSSVectorMyType x_mean(size);
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
+    // log
+    // vector<myType> plainsize(size);
+    // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     RSSVectorMyType temp2(size);
@@ -89,28 +94,32 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             var_eps[j] = var_eps[j] + temp2[i * m + j];
-    // funcProbTruncation<RSSVectorMyType, myType>(var_eps, LOG_MINI_BATCH, m);
+    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // Compute (variance + epsilon)
     funcAddOneConst(var_eps, eps, m);
+    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
     funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
-    for (int i = 0; i < m; ++i)                                     // scalling invsqrt
+    // funcReconstruct(inv_sqrt, plainm, m, "inv_sqrt", true);
+    for (int i = 0; i < m; ++i) // scalling invsqrt
     {
-        RSSMyType temp = var_eps[i];
-        for (int j = 1; j < B; ++j)
-            var_eps[j * m + i] = temp;
+        RSSMyType temp = inv_sqrt[i];
+        for (int j = 0; j < B; ++j)
+            inv_sqrt_rep[j * m + i] = temp;
     }
-    funcDotProduct<RSSVectorMyType, myType>(inv_sqrt, x_mean, norm_x, size, true, FLOAT_PRECISION); // [B, D] * [1, D]
-
+    // funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
+    funcDotProduct<RSSVectorMyType, myType>(inv_sqrt_rep, x_mean, norm_x, size, true, FLOAT_PRECISION); // [B, D] * [1, D]
+    // funcReconstruct(norm_x, plainsize, size, "norm_x", true);
     // self.gamma * self.norm_x + self.beta
     // Scaling
     RSSVectorMyType g_repeat(size);
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             g_repeat[i * m + j] = gamma[j];
-    funcDotProduct(gamma, norm_x, activations, size, true, FLOAT_PRECISION);
+    funcDotProduct(g_repeat, norm_x, activations, size, true, FLOAT_PRECISION);
+    // funcReconstruct(activations, plainsize, size, "self.gamma * self.norm_x ", true);
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             activations[i * m + j] = activations[i * m + j] + beta[j];
@@ -118,18 +127,24 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
 
 void BNLayerObj::backward(const RSSVectorMyType &input_grad)
 {
+    cout << "backward... " << size << " " << m << " " << B << " " << endl;
     //  self.beta_grad = np.sum(grad, axis=0)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             beta_grad[j] = beta_grad[j] + input_grad[i * m + j];
     // funcProbTruncation<RSSVectorMyType, myType>(beta_grad, LOG_MINI_BATCH, m);
+    vector<myType> plainm(m);
+    vector<myType> plainsize(size);
+    funcReconstruct(beta_grad, plainm, m, "beta_grad", true);
 
     // self.gamma_grad = np.sum(self.norm_x * grad, axis=0)    # 1 multiplication
     RSSVectorMyType temp(size);
     funcDotProduct(norm_x, input_grad, temp, size, true, FLOAT_PRECISION);
+    funcReconstruct(temp, plainsize, size, "self.norm_x * grad", true);
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             gamma_grad[j] = gamma_grad[j] + temp[i * m + j];
+    funcReconstruct(gamma_grad, plainm, m, "gamma_grad", true);
 
     //  dxhat = grad * self.gamma   # 1 multiplication
     RSSVectorMyType dxhat(size);
@@ -138,35 +153,49 @@ void BNLayerObj::backward(const RSSVectorMyType &input_grad)
         for (int j = 0; j < m; ++j)
             g_repeat[i * m + j] = gamma[j];
     funcDotProduct(input_grad, g_repeat, dxhat, size, true, FLOAT_PRECISION);
+    funcReconstruct(dxhat, plainsize, size, "dxhat", true);
 
     // self.act_grad = self.inv_sqrt * (B*dxhat - np.sum(dxhat, axis=0) - self.norm_x * np.sum(dxhat * self.norm_x, axis=0)) / B
+
     RSSVectorMyType bdxhat(size);
-    funcMulConst(bdxhat, dxhat, B, size);            // B*dxhat
+    funcMulConst(bdxhat, dxhat, B, size); // B*dxhat
+    funcReconstruct(bdxhat, plainsize, size, "B*dxhat", true);
+
     RSSVectorMyType sumdxhat(size, make_pair(0, 0)); // np.sum(dxhat, axis=0)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             sumdxhat[j] = sumdxhat[j] + dxhat[i * m + j];
+    for (int i = 0; i < m; ++i)
+    {
+        RSSMyType temp = sumdxhat[i];
+        for (int j = 1; j < B; ++j)
+            sumdxhat[j * m + i] = temp;
+    }
+    funcReconstruct(sumdxhat, plainsize, size, "np.sum(dxhat, axis=0)", true);
+
     RSSVectorMyType dxx(size); // dxhat * self.norm_x
     funcDotProduct(dxhat, norm_x, dxx, size, true, FLOAT_PRECISION);
-    RSSVectorMyType sumdxx(size); // np.sum(dxhat * self.norm_x, axis=0)
+    funcReconstruct(dxx, plainsize, size, "dxhat * self.norm_x", true);
+
+    RSSVectorMyType sumdxx(size, make_pair(0, 0)); // np.sum(dxhat * self.norm_x, axis=0)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             sumdxx[j] = sumdxx[j] + dxx[i * m + j];
     for (int i = 0; i < B; ++i)
         for (int j = 1; j < m; ++j)
             sumdxx[j] = sumdxx[j - m];
+    funcReconstruct(sumdxx, plainsize, size, "np.sum(dxhat * self.norm_x, axis=0)", true);
     funcDotProduct(norm_x, sumdxx, sumdxx, size, true, FLOAT_PRECISION);
+    funcReconstruct(sumdxx, plainsize, size, "self.norm_x * np.sum", true);
+
     // (bdxhat-sumdxhat-sumdxx)
     for (size_t i = 0; i < size; i++)
     {
         bdxhat[i] = bdxhat[i] - sumdxhat[i] - sumdxx[i];
     }
+    funcReconstruct(bdxhat, plainsize, size, "(--)", true);
     // self.inv_sqrt * ()/B
-    RSSVectorMyType inv_repeat(size);
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            inv_repeat[i * m + j] = inv_sqrt[j];
-    funcDotProduct(inv_repeat, bdxhat, activations, size, true, FLOAT_PRECISION + B);
+    funcDotProduct(inv_sqrt_rep, bdxhat, activations, size, true, FLOAT_PRECISION + LOG_MINI_BATCH);
 }
 
 // https://kevinzakka.github.io/2016/09/14/batch_normalization/

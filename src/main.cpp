@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 	runTest("Debug", "Reciprocal", network);
 	runTest("Debug", "InverseSqrt", network);
 	runTest("Debug", "funcDivisionByNR", network);
+	runTest("Debug", "BNLayer", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);
@@ -123,7 +124,6 @@ int main(int argc, char **argv)
 	cout << "----------------------------------------------" << endl
 		 << endl;
 #endif
-
 
 	/****************************** CLEAN-UP ******************************/
 	// delete aes_indep;
