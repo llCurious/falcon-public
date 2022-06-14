@@ -12,7 +12,7 @@ class BNLayerOpt : public Layer
 private:
     BNConfig conf;
     // RSSVectorMyType activations;
-    // RSSVectorMyType deltas;
+    RSSVectorMyType deltas;
     // RSSVectorMyType gamma;
     // RSSVectorMyType beta;
     // RSSVectorMyType xhat;
@@ -38,10 +38,10 @@ public:
     void printLayer() override;
     void forward(const RSSVectorMyType &input_act) override;
     void backward(const RSSVectorMyType &input_grad);
-    // void computeDelta(RSSVectorMyType &prevDelta) override;
-    // void updateEquations(const RSSVectorMyType &prevActivations) override;
+    void computeDelta(RSSVectorMyType &prevDelta) override;
+    void updateEquations(const RSSVectorMyType &prevActivations) override;
 
     // Getters
     RSSVectorMyType *getActivation() { return &activations; };
-    // RSSVectorMyType *getDelta() { return &deltas; };
+    RSSVectorMyType *getDelta() { return &deltas; };
 };

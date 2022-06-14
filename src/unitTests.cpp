@@ -500,15 +500,13 @@ void debugBNLayer()
 
 	// Backward.
 	RSSVectorHighType x_grad(size);
-	layer->backward(grad);
-	// *layer->getDelta() = grad;
-	// layer->computeDelta(x_grad);
-	// print_vector(grad, "FLOAT", "BN Backward- X", size);
-	backward_output = *layer->getActivation();
-	print_vector(backward_output, "FLOAT", "BN Backward", size);
+	// layer->backward(grad);
+	*(layer->getDelta()) = grad;
+	layer->computeDelta(x_grad);
+	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
 	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-	// layer->updateEquations(input_act);
+	layer->updateEquations(input_act);
 }
 
 void runTest(string str, string whichTest, string &network)
