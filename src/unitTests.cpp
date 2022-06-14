@@ -489,7 +489,7 @@ void debugBNLayer()
 	funcGetShares(grad, grad_p);
 
 	BNConfig *bn_conf = new BNConfig(D, B);
-	BNLayerObj *layer = new BNLayerObj(bn_conf, 0);
+	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
 	layer->printLayer();
 
 	// Forward.

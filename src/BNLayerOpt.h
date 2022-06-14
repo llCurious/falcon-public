@@ -7,7 +7,7 @@
 #include "globals.h"
 using namespace std;
 
-class BNLayerObj : public Layer
+class BNLayerOpt : public Layer
 {
 private:
     BNConfig conf;
@@ -31,7 +31,7 @@ private:
 
 public:
     // Constructor and initializer
-    BNLayerObj(BNConfig *conf, int _layerNum);
+    BNLayerOpt(BNConfig *conf, int _layerNum);
     void initialize();
 
     // Functions

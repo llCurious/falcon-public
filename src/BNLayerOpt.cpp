@@ -1,10 +1,10 @@
 #pragma once
-#include "BNLayerObj.h"
+#include "BNLayerOpt.h"
 #include "Functionalities.h"
 #include <cmath>
 using namespace std;
 
-BNLayerObj::BNLayerObj(BNConfig *conf, int _layerNum)
+BNLayerOpt::BNLayerOpt(BNConfig *conf, int _layerNum)
     : Layer(_layerNum),
       conf(conf->inputSize, conf->numBatches),
       //   gamma(conf->inputSize, make_pair(0, 0)),
@@ -23,7 +23,7 @@ BNLayerObj::BNLayerObj(BNConfig *conf, int _layerNum)
     initialize();
 };
 
-void BNLayerObj::initialize()
+void BNLayerOpt::initialize()
 {
     if (partyNum == PARTY_A) // gamma = 1
     {
@@ -42,7 +42,7 @@ void BNLayerObj::initialize()
     size = B * m;
 };
 
-void BNLayerObj::printLayer()
+void BNLayerOpt::printLayer()
 {
     cout << "----------------------------------------------" << endl;
     cout << "(" << layerNum + 1 << ") BN Layer\t\t  " << conf.inputSize << " x "
@@ -54,7 +54,7 @@ void BNLayerObj::printLayer()
  *
  * @param inputActivation
  */
-void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
+void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
 {
     cout << "forward... " << size << " " << m << " " << B << " " << endl;
     myType eps = (1e-5) * (1 << FLOAT_PRECISION);
@@ -125,7 +125,7 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
             activations[i * m + j] = activations[i * m + j] + beta[j];
 }
 
-void BNLayerObj::backward(const RSSVectorMyType &input_grad)
+void BNLayerOpt::backward(const RSSVectorMyType &input_grad)
 {
     cout << "backward... " << size << " " << m << " " << B << " " << endl;
     //  self.beta_grad = np.sum(grad, axis=0)
