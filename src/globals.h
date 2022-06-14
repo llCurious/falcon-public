@@ -44,7 +44,7 @@
 #define REC_ITERS 7
 #define REC_Y 6
 #define INVSQRT_ITERS 3
-#define LOG_MINI_BATCH 2
+#define LOG_MINI_BATCH 5
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
@@ -59,6 +59,11 @@ typedef std::pair<myType, myType> RSSMyType;
 typedef std::pair<smallType, smallType> RSSSmallType;
 typedef std::vector<RSSMyType> RSSVectorMyType;
 typedef std::vector<RSSSmallType> RSSVectorSmallType;
+
+const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
+const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
+const myType MINUS_ONE = (myType)-1;                            // wrap computation in tools.h
+const smallType BOUNDARY = (256 / PRIME_NUMBER) * PRIME_NUMBER; // AES
 
 // bool
 typedef std::pair<bool, bool> RSSBoolType;
@@ -87,16 +92,11 @@ operator<<(std::ostream &dest, longBit value);
 #define HIGH_PRECISION 20
 #define LOW_PRECISION 13
 
-const int BIT_SIZE = (sizeof(myType) * CHAR_BIT);
-const myType LARGEST_NEG = ((myType)1 << (BIT_SIZE - 1));       // not used
-const myType MINUS_ONE = (myType)-1;                            // wrap computation in tools.h
-const smallType BOUNDARY = (256 / PRIME_NUMBER) * PRIME_NUMBER; // AES
-
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
-#define USE_SOFTMAX_CE false
+#define USE_SOFTMAX_CE true
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY true
-#define OFFLINE_ON true
+#define DEBUG_ONLY false
+#define OFFLINE_ON false
 #endif
