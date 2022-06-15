@@ -2174,6 +2174,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	// }
 	// cout << endl;
 
+	// !!!!!!!!!!!!!!! Note: the below computes r + (x'-r')/2^d + 1. The last +1 operation is required to compute 1+x/m !!!!!!!!! 
 	if (partyNum == PARTY_A)
 	{
 		for (int i = 0; i < size; ++i)
@@ -2354,8 +2355,8 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 
 	// result = 3 * (1 - 2 * b).exp() + 0.003
 	// b = (1 - 2 * b)
-	if (OFFLINE_ON)
-	{
+	// if (OFFLINE_ON)
+	// {
 		if (partyNum == PARTY_A)
 		{
 			for (size_t i = 0; i < size; i++)
@@ -2380,7 +2381,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 				a[i].second = 0;
 			}
 		}
-	}
+	// }
 
 	// a = 3 * (1 - 2 * b).exp() + 0.003
 	// 0.003 * (1<<13) = 24.576
@@ -2424,7 +2425,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		cout << "Not supported type" << typeid(input).name() << endl;
 	}
 	VEC q_rec(size);
-	funcReciprocal(q_rec, quotient, false, size);
+	funcReciprocal2(q_rec, quotient, false, size);
 
 	funcDotProduct(q_rec, input, result, size, true, float_precision);
 }
