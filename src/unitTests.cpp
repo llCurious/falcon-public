@@ -456,59 +456,6 @@ void debugTruncAndReduce()
 	}
 }
 
-void debugBNLayer()
-{
-	cout << "Debug Batch Normalization Layer" << endl;
-	size_t B = 4, D = 5;
-	size_t size = B * D;
-
-	// Floating point representation
-	vector<float> x_raw = {
-		1, 2, 3, 4, 5,
-		1, 3, 5, 7, 8,
-		1, 2, 3, 6, 6,
-		1, 2, 4, 5, 6};
-
-	vector<float> grad_raw = {
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1};
-
-	// FXP representation
-	vector<highBit> x_p(size), grad_p(size);
-	for (size_t i = 0; i < size; i++)
-	{
-		x_p[i] = x_raw[i] * (1 << FLOAT_PRECISION);
-		grad_p[i] = grad_raw[i] * (1 << FLOAT_PRECISION);
-	}
-
-	// Public to secret
-	RSSVectorHighType input_act(size), grad(size);
-	funcGetShares(input_act, x_p);
-	funcGetShares(grad, grad_p);
-
-	BNConfig *bn_conf = new BNConfig(D, B);
-	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
-	layer->printLayer();
-
-	// Forward.
-	RSSVectorHighType forward_output(size), backward_output(size);
-	layer->forward(input_act);
-	forward_output = *layer->getActivation();
-	print_vector(forward_output, "FLOAT", "BN Forward", size);
-
-	// Backward.
-	RSSVectorHighType x_grad(size);
-	// layer->backward(grad);
-	*(layer->getDelta()) = grad;
-	layer->computeDelta(x_grad);
-	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
-
-	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-	layer->updateEquations(input_act);
-}
-
 void runTest(string str, string whichTest, string &network)
 {
 	if (str.compare("Debug") == 0)
@@ -623,7 +570,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("funcDivisionByNR") == 0)
 		{
 			network = "funcDivisionByNR";
-			debugDivisionByNR<RSSVectorHighType, highBit>();
+			// debugDivisionByNR<RSSVectorHighType, highBit>();
+			debugDivisionByNR<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("InverseSqrt") == 0)
 		{
@@ -658,12 +606,14 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("Softmax") == 0)
 		{
 			network = "Softmax";
-			debugSoftmax();
+			// debugSoftmax<RSSVectorHighType, highBit>();
+			debugSoftmax<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{
 			network = "BNLayer";
-			debugBNLayer();
+			// debugBNLayer<RSSVectorHighType, highBit>();
+			debugBNLayer<RSSVectorLowType, lowBit>();
 		}
 		else
 			assert(false && "Unknown debug mode selected");
