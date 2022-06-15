@@ -59,7 +59,7 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
     cout << "forward... " << size << " " << m << " " << B << " " << endl;
     myType eps = (1e-5) * (1 << FLOAT_PRECISION);
 
-    RSSVectorMyType var_eps(m);
+    RSSVectorMyType var_eps(m, make_pair(0, 0));
     RSSVectorMyType mu(m);
     // RSSVectorMyType var_eps(size, make_pair(0, 0)), mu(m, make_pair(0, 0));
 
@@ -74,7 +74,7 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
     funcProbTruncation<RSSVectorMyType, myType>(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
 
     // log
-    // vector<myType> plainm(m);
+    vector<myType> plainm(m);
     // funcReconstruct(mu, plainm, m, "mean", true);
 
     // Compute x - mean
@@ -83,8 +83,8 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
         for (int j = 0; j < m; ++j)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
     // log
-    // vector<myType> plainsize(size);
-    // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
+    vector<myType> plainsize(size);
+    funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     RSSVectorMyType temp2(size);
@@ -98,7 +98,7 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
 
     // Compute (variance + epsilon)
     funcAddOneConst(var_eps, eps, m);
-    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
+    funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
     funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
@@ -109,9 +109,9 @@ void BNLayerObj::forward(const RSSVectorMyType &inputActivation)
         for (int j = 0; j < B; ++j)
             inv_sqrt_rep[j * m + i] = temp;
     }
-    // funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
+    funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
     funcDotProduct<RSSVectorMyType, myType>(inv_sqrt_rep, x_mean, norm_x, size, true, FLOAT_PRECISION); // [B, D] * [1, D]
-    // funcReconstruct(norm_x, plainsize, size, "norm_x", true);
+    funcReconstruct(norm_x, plainsize, size, "norm_x", true);
     // self.gamma * self.norm_x + self.beta
     // Scaling
     RSSVectorMyType g_repeat(size);
@@ -198,7 +198,9 @@ void BNLayerObj::backward(const RSSVectorMyType &input_grad)
     }
     funcReconstruct(bdxhat, plainsize, size, "(--)", true);
     // self.inv_sqrt * ()/B
+    funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
     funcDotProduct(inv_sqrt_rep, bdxhat, activations, size, true, FLOAT_PRECISION + LOG_MINI_BATCH);
+    funcReconstruct(activations, plainsize, size, "act_grad", true);
 }
 
 // https://kevinzakka.github.io/2016/09/14/batch_normalization/

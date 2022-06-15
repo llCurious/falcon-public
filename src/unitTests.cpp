@@ -469,11 +469,17 @@ void debugBNLayer()
 		1, 2, 3, 6, 6,
 		1, 2, 4, 5, 6};
 
+	// vector<float> grad_raw = {
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1};
 	vector<float> grad_raw = {
 		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1};
+		1, 2, 1, 1, 1,
+		2, 2, 1, 1, 2,
+		1, 2, 2, 1, 2
+	};
 
 	// FXP representation
 	vector<highBit> x_p(size), grad_p(size);
