@@ -7,12 +7,12 @@
 #include "globals.h"
 using namespace std;
 
-class BNLayerObj : public Layer
+class BNLayerOpt : public Layer
 {
 private:
     BNConfig conf;
     // RSSVectorMyType activations;
-    // RSSVectorMyType deltas;
+    RSSVectorMyType deltas;
     // RSSVectorMyType gamma;
     // RSSVectorMyType beta;
     // RSSVectorMyType xhat;
@@ -31,17 +31,17 @@ private:
 
 public:
     // Constructor and initializer
-    BNLayerObj(BNConfig *conf, int _layerNum);
+    BNLayerOpt(BNConfig *conf, int _layerNum);
     void initialize();
 
     // Functions
     void printLayer() override;
     void forward(const RSSVectorMyType &input_act) override;
     void backward(const RSSVectorMyType &input_grad);
-    // void computeDelta(RSSVectorMyType &prevDelta) override;
-    // void updateEquations(const RSSVectorMyType &prevActivations) override;
+    void computeDelta(RSSVectorMyType &prevDelta) override;
+    void updateEquations(const RSSVectorMyType &prevActivations) override;
 
     // Getters
     RSSVectorMyType *getActivation() { return &activations; };
-    // RSSVectorMyType *getDelta() { return &deltas; };
+    RSSVectorMyType *getDelta() { return &deltas; };
 };

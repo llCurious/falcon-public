@@ -2144,24 +2144,28 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
-	vector<elementType> temp3(size, 0), diffReconst(size, 0);
+	vector<elementType> diffReconst(size, 0);
 
 	// compute FXP(x/m)
-	for (size_t i = 0; i < size; i++)
-	{
-		temp3[i] = a[i].first;
-	}
+	// vector<elementType> temp3(size, 0), 
+	// for (size_t i = 0; i < size; i++)
+	// {
+	// 	temp3[i] = a[i].first;
+	// }
 
 	// TODO: perform truncation
 	Vec r(size), rPrime(size);
 	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
 
+	Vec temp = a;
 	for (size_t i = 0; i < size; i++)
 	{
-		temp3[i] -= rPrime[i].first;
+		// temp3[i] -= rPrime[i].first;
+		temp[i] =  temp[i] - rPrime[i];
 	}
+	funcReconstruct(temp, diffReconst, size, "Exp Truncation", false);
 
-	funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
+	// funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
 	dividePlain(diffReconst, (1l << EXP_PRECISION));
 
 	// cout << "Reconstrut Exp Diff." << endl;
