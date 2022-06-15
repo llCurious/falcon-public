@@ -1537,7 +1537,7 @@ void debugMaxpool();
 // void debugPartySS();
 void debugSquare();
 void debugExp();
-void debugSoftmax();
+// void debugSoftmax();
 
 // Test
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter);
@@ -2425,7 +2425,17 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		cout << "Not supported type" << typeid(input).name() << endl;
 	}
 	VEC q_rec(size);
-	funcReciprocal2(q_rec, quotient, false, size);
+
+	if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION) {
+		cout << "Mixed-Precision Division" << endl;
+		RSSVectorHighType highP_dividend(size), highP_rec(size);
+		funcMSExtension(highP_dividend, quotient, size);
+		funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
+		funcReciprocal2(highP_rec, highP_dividend, false, size);
+		funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
+	} else {
+		funcReciprocal2(q_rec, quotient, false, size);
+	}
 
 	funcDotProduct(q_rec, input, result, size, true, float_precision);
 }

@@ -49,7 +49,7 @@
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 130
+#define NUM_ITERATIONS 500
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -95,6 +95,8 @@ operator<<(std::ostream &dest, longBit value);
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
+#define MP_FOR_DIVISION false
+#define MP_FOR_INV_SQRT true
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY false
