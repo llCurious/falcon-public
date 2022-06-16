@@ -84,7 +84,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
     // log
     vector<myType> plainsize(size);
-    funcReconstruct(x_mean, plainsize, size, "x_mean", true);
+    // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     RSSVectorMyType temp2(size);
@@ -98,7 +98,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
 
     // Compute (variance + epsilon)
     funcAddOneConst(var_eps, eps, m);
-    funcReconstruct(var_eps, plainm, m, "var_eps", true);
+    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
     // // https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
@@ -113,7 +113,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     //     funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
     // }
     mixedPrecisionOp<decltype(var_eps), decltype(eps)>(inv_sqrt, var_eps, m);
-    print_vector(inv_sqrt, "FLOAT", "inv_sqrt", m);
+    // print_vector(inv_sqrt, "FLOAT", "inv_sqrt", m);
     // print_vector(var_eps, "FLOAT", "var_eps", m);
     // print_vector(x_mean, "FLOAT", "x_mean", m);
 
