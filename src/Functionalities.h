@@ -1537,7 +1537,7 @@ void debugMaxpool();
 // void debugPartySS();
 void debugSquare();
 void debugExp();
-void debugSoftmax();
+// void debugSoftmax();
 
 // Test
 void testMatMul(size_t rows, size_t common_dim, size_t columns, size_t iter);
@@ -2174,6 +2174,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	// }
 	// cout << endl;
 
+	// !!!!!!!!!!!!!!! Note: the below computes r + (x'-r')/2^d + 1. The last +1 operation is required to compute 1+x/m !!!!!!!!! 
 	if (partyNum == PARTY_A)
 	{
 		for (int i = 0; i < size; ++i)
@@ -2354,8 +2355,8 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 
 	// result = 3 * (1 - 2 * b).exp() + 0.003
 	// b = (1 - 2 * b)
-	if (OFFLINE_ON)
-	{
+	// if (OFFLINE_ON)
+	// {
 		if (partyNum == PARTY_A)
 		{
 			for (size_t i = 0; i < size; i++)
@@ -2380,7 +2381,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 				a[i].second = 0;
 			}
 		}
-	}
+	// }
 
 	// a = 3 * (1 - 2 * b).exp() + 0.003
 	// 0.003 * (1<<13) = 24.576
@@ -2424,7 +2425,17 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		cout << "Not supported type" << typeid(input).name() << endl;
 	}
 	VEC q_rec(size);
-	funcReciprocal(q_rec, quotient, false, size);
+
+	if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION) {
+		cout << "Mixed-Precision Division" << endl;
+		RSSVectorHighType highP_dividend(size), highP_rec(size);
+		funcMSExtension(highP_dividend, quotient, size);
+		funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
+		funcReciprocal2(highP_rec, highP_dividend, false, size);
+		funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
+	} else {
+		funcReciprocal2(q_rec, quotient, false, size);
+	}
 
 	funcDotProduct(q_rec, input, result, size, true, float_precision);
 }
@@ -2438,7 +2449,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
  * @param size
  */
 template <typename Vec, typename T>
-void funcInverseSqrt(Vec &result, Vec &input, size_t size)
+void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 {
 
 	// Initialize using decent approximation
@@ -2456,8 +2467,8 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 	{
 		cout << "Not supported type" << typeid(input).name() << endl;
 	}
-	const highBit insqrt_a0 = 0.2 * (1 << float_precision);
-	const highBit insqrt_a3 = 3 * (1 << float_precision);
+	const T insqrt_a0 = 0.2 * (1 << float_precision);
+	const T insqrt_a3 = 3 * (1 << float_precision);
 	Vec temp(size);
 	funcProbTruncation<Vec, T>(result, input, 1, size); // x/2
 	if (partyNum == PARTY_A)
@@ -2554,6 +2565,22 @@ void funcInverseSqrt(Vec &result, Vec &input, size_t size)
 		// result = (y * (3 - x * y * y))/2
 		funcDotProduct(temp, result, result, size, true, float_precision + 1);
 		// funcProbTruncation<Vec, T>(result, result, 1, size);
+	}
+}
+
+template<typename Vec, typename T>
+void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
+	// inver Square Root
+	// https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
+	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value) {
+		cout << "Mixed-Precision Inverse Sqrt" << endl;
+		RSSVectorHighType highP_var_eps(size), highP_inv_sqrt(size);
+		funcMSExtension(highP_var_eps, input, size);
+		funcMulConst(highP_var_eps, highP_var_eps, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
+		funcInverseSqrt<RSSVectorHighType, highBit>(highP_inv_sqrt, highP_var_eps, size); // [1,D]
+		funcTruncAndReduce(output, highP_inv_sqrt, (HIGH_PRECISION - LOW_PRECISION), size);
+	} else {
+		funcInverseSqrt<Vec, T>(output, input, size); // [1,D]
 	}
 }
 

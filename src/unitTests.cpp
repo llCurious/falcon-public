@@ -732,7 +732,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("funcDivisionByNR") == 0)
 		{
 			network = "funcDivisionByNR";
-			debugDivisionByNR<RSSVectorHighType, highBit>();
+			// debugDivisionByNR<RSSVectorHighType, highBit>();
+			debugDivisionByNR<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("InverseSqrt") == 0)
 		{
@@ -767,12 +768,14 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("Softmax") == 0)
 		{
 			network = "Softmax";
-			debugSoftmax();
+			// debugSoftmax<RSSVectorHighType, highBit>();
+			debugSoftmax<RSSVectorLowType, lowBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{
 			network = "BNLayer";
-			debugBNLayer();
+			debugBNLayer<RSSVectorHighType, highBit>();
+			// debugBNLayer<RSSVectorLowType, lowBit>();
 		}
 		else
 			assert(false && "Unknown debug mode selected");
