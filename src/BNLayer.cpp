@@ -45,7 +45,7 @@ void BNLayer::forward(const RSSVectorMyType& inputActivation)
 	for (int i = 0; i < B; ++i)
 		for (int j = 0; j < m; ++j)
 			mu[i] = mu[i] + inputActivation[i*m+j];
-	funcTruncatePublic(mu, m, B);	
+	// funcTruncatePublic(mu, m, B);
 
 	//Compute x - mean
 	RSSVectorMyType temp1(B*m);
@@ -61,7 +61,7 @@ void BNLayer::forward(const RSSVectorMyType& inputActivation)
 			temp3[i] = temp3[i] + temp2[i*m+j];
 
 	//Compute (variance + epsilon)
-	funcTruncatePublic(temp3, m, B);
+	// funcTruncatePublic(temp3, m, B);
 	funcGetShares(epsilon, eps);
 	addVectors<RSSMyType>(temp3, epsilon, temp3, B);
 		
@@ -69,9 +69,9 @@ void BNLayer::forward(const RSSVectorMyType& inputActivation)
 	funcGetShares(sigma, initG);
 	for (int i = 0; i < SQRT_ROUNDS; ++i)
 	{
-		funcDivision(temp3, sigma, b, B);
+		// funcDivision(temp3, sigma, b, B);
 		addVectors<RSSMyType>(sigma, b, sigma, B);
-		funcTruncatePublic(sigma, 2, B);
+		// funcTruncatePublic(sigma, 2, B);
 	}
 
 	//Normalized x (xhat)

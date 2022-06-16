@@ -59,7 +59,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     cout << "forward... " << size << " " << m << " " << B << " " << endl;
     myType eps = (1e-5) * (1l << FLOAT_PRECISION);
 
-    RSSVectorMyType var_eps(m);
+    RSSVectorMyType var_eps(m, make_pair(0, 0));
     RSSVectorMyType mu(m);
     // RSSVectorMyType var_eps(size, make_pair(0, 0)), mu(m, make_pair(0, 0));
 
@@ -74,7 +74,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     funcProbTruncation<RSSVectorMyType, myType>(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
 
     // log
-    // vector<myType> plainm(m);
+    vector<myType> plainm(m);
     // funcReconstruct(mu, plainm, m, "mean", true);
 
     // Compute x - mean
@@ -83,8 +83,8 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
         for (int j = 0; j < m; ++j)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
     // log
-    // vector<myType> plainsize(size);
-    // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
+    vector<myType> plainsize(size);
+    funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     RSSVectorMyType temp2(size);
@@ -98,7 +98,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
 
     // Compute (variance + epsilon)
     funcAddOneConst(var_eps, eps, m);
-    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
+    funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
     // // https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
@@ -211,7 +211,9 @@ void BNLayerOpt::backward(const RSSVectorMyType &input_grad)
     }
     funcReconstruct(bdxhat, plainsize, size, "(--)", true);
     // self.inv_sqrt * ()/B
+    funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
     funcDotProduct(inv_sqrt_rep, bdxhat, activations, size, true, FLOAT_PRECISION + LOG_MINI_BATCH);
+    funcReconstruct(activations, plainsize, size, "act_grad", true);
     print_vector(activations, "FLOAT", "BN Backward- X", size);
 }
 

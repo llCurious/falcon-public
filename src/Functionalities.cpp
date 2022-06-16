@@ -2012,7 +2012,7 @@ void debugDivision()
 
 	funcGetShares(a, data_a);
 	funcGetShares(b, data_b);
-	funcDivision(a, b, quotient, size);
+	// funcDivision(a, b, quotient, size);
 
 #if (!LOG_DEBUG)
 	funcReconstruct(a, reconst, size, "a", true);

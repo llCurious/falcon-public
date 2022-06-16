@@ -118,7 +118,8 @@ void NeuralNetwork::computeDelta()
 			for (size_t j = 0; j < columns; ++j)
 				rowSum[i*columns + j] = rowSum[i*columns];
 
-		funcDivision(*(layers[NUM_LAYERS-1]->getActivation()), rowSum, quotient, size);
+		funcDivisionByNR(*(layers[NUM_LAYERS-1]->getActivation()), rowSum, quotient, size);
+		// funcDivision(*(layers[NUM_LAYERS-1]->getActivation()), rowSum, quotient, size);
 
 		for (size_t i = 0; i < rows; ++i)
 			for (size_t j = 0; j < columns; ++j)

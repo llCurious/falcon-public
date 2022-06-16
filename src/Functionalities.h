@@ -1015,62 +1015,62 @@ void funcPow(const VEC &b, vector<smallType> &alpha, size_t size)
 	}
 }
 
-template <typename VEC>
-void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
-				  size_t size)
-{
-	log_print("funcDivision");
+// template <typename VEC>
+// void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
+// 				  size_t size)
+// {
+// 	log_print("funcDivision");
 
-	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
-	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, RSSHighType, RSSLowType>::type RSScomputeType;
+// 	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+// 	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, RSSHighType, RSSLowType>::type RSScomputeType;
 
-	// TODO incorporate funcPow
-	// TODO Scale up and complete this computation with fixed-point precision
-	vector<smallType> alpha_temp(size);
-	funcPow(b, alpha_temp, size);
+// 	// TODO incorporate funcPow
+// 	// TODO Scale up and complete this computation with fixed-point precision
+// 	vector<smallType> alpha_temp(size);
+// 	funcPow(b, alpha_temp, size);
 
-	size_t alpha = alpha_temp[0];
-	size_t precision = alpha + 1;
-	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
-	const computeType constOne = ((computeType)(1 * (1 << precision)));
+// 	size_t alpha = alpha_temp[0];
+// 	size_t precision = alpha + 1;
+// 	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
+// 	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
-	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<VEC, RSSVectorHighType>::value)
-	{
-		float_precision = HIGH_PRECISION;
-	}
-	else if (std::is_same<VEC, RSSVectorLowType>::value)
-	{
-		float_precision = LOW_PRECISION;
-	}
-	else
-	{
-		cout << "Not supported type" << typeid(a).name() << endl;
-	}
+// 	size_t float_precision = FLOAT_PRECISION;
+// 	if (std::is_same<VEC, RSSVectorHighType>::value)
+// 	{
+// 		float_precision = HIGH_PRECISION;
+// 	}
+// 	else if (std::is_same<VEC, RSSVectorLowType>::value)
+// 	{
+// 		float_precision = LOW_PRECISION;
+// 	}
+// 	else
+// 	{
+// 		cout << "Not supported type" << typeid(a).name() << endl;
+// 	}
 
-	vector<computeType> data_twoPointNine(size, constTwoPointNine), data_one(size, constOne), reconst(size);
-	VEC ones(size), twoPointNine(size), twoX(size), w0(size), xw0(size),
-		epsilon0(size), epsilon1(size), termOne(size), termTwo(size), answer(size);
-	funcGetShares(twoPointNine, data_twoPointNine);
-	funcGetShares(ones, data_one);
+// 	vector<computeType> data_twoPointNine(size, constTwoPointNine), data_one(size, constOne), reconst(size);
+// 	VEC ones(size), twoPointNine(size), twoX(size), w0(size), xw0(size),
+// 		epsilon0(size), epsilon1(size), termOne(size), termTwo(size), answer(size);
+// 	funcGetShares(twoPointNine, data_twoPointNine);
+// 	funcGetShares(ones, data_one);
 
-	multiplyByScalar(b, 2, twoX);
-	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
-	funcDotProduct(b, w0, xw0, size, true, precision);
-	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
-	if (PRECISE_DIVISION)
-		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
-	addVectors(ones, epsilon0, termOne, size);
-	if (PRECISE_DIVISION)
-		addVectors(ones, epsilon1, termTwo, size);
-	funcDotProduct(w0, termOne, answer, size, true, precision);
-	if (PRECISE_DIVISION)
-		funcDotProduct(answer, termTwo, answer, size, true, precision);
+// 	multiplyByScalar(b, 2, twoX);
+// 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
+// 	funcDotProduct(b, w0, xw0, size, true, precision);
+// 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
+// 	if (PRECISE_DIVISION)
+// 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
+// 	addVectors(ones, epsilon0, termOne, size);
+// 	if (PRECISE_DIVISION)
+// 		addVectors(ones, epsilon1, termTwo, size);
+// 	funcDotProduct(w0, termOne, answer, size, true, precision);
+// 	if (PRECISE_DIVISION)
+// 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
-	// RSSVectorMyType scaledA(size);
-	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
-	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-}
+// 	// RSSVectorMyType scaledA(size);
+// 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
+// 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
+// }
 
 template <typename VEC>
 void funcDivisionByNR(VEC &a, const VEC &b, const VEC &quotient,
