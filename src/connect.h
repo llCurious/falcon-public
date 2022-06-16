@@ -153,7 +153,6 @@ void sendVector(const vector<T> &vec, size_t player, size_t size)
 	else if (sizeof(T) == 1)
 		cout << "smallType" << endl;
 #endif
-
 	if (!communicationSenders[player]->sendMsg(vec.data(), size * sizeof(T), 0))
 		cout << "Send vector error" << endl;
 }
@@ -400,15 +399,12 @@ void splitu82Bool(const vector<T> &data, vector<T> &adata, vector<bool> &booldat
 	T msb = (1l << (bit_num - 1));
 
 	bitset<64> msbbit(msb);
-	// cout << "bit num " << bit_num << " msb " << msbbit << " ";
 	while (j < size2 && size2 - j >= bit_num)
 	{
 		temp = data[i];
-		cout << temp;
 		for (int k = bit_num; k > 0; --k)
 		{
 			booldata[j] = (temp & msb) ? true : false;
-			// cout << booldata[j] << "hh ";
 			temp = temp << 1;
 			// res[j] = temp[k];
 			++j;
@@ -421,7 +417,6 @@ void splitu82Bool(const vector<T> &data, vector<T> &adata, vector<bool> &booldat
 	{
 		msb = (msb >> (bit_num - d));
 		temp = data[i];
-		// cout << data[i] << " " << msb << "hh ";
 		// bitset<bit_num> temp(data[i]);
 		for (int k = d; k > 0; --k)
 		{

@@ -7,6 +7,14 @@
 #include "BNConfig.h"
 #include "BNLayer.h"
 #include "BNLayerOpt.h"
+#include <time.h>
+#include "connect.h"
+#include "basicSockets.h"
+
+extern CommunicationObject commObject;
+
+void benchWCExtension();
+void benchMSExtension();
 
 /************Debug****************/
 

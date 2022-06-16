@@ -85,7 +85,9 @@ int main(int argc, char **argv)
 	// runTest("Debug", "Reciprocal", network);
 	// runTest("Debug", "InverseSqrt", network);
 	// runTest("Debug", "funcDivisionByNR", network);
-	runTest("Debug", "BNLayer", network);
+	// runTest("Debug", "BNLayer", network);
+	// runTest("Bench", "MSExtension", network);
+	runTest("Bench", "WCExtension", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);

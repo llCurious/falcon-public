@@ -1,5 +1,109 @@
 #include "unitTests.h"
 
+void benchWCExtension()
+{
+	size_t dims[4] = {100, 1000, 10000, 100000};
+	int cnt = 20;
+	clock_t start, end;
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	commObject.setMeasurement(true);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		vector<lowBit> data(size);
+		RSSVectorLowType datalow(size);
+		RSSVectorHighType datahigh(size);
+		funcGetShares(datalow, data);
+
+		round = commObject.getRoundsRecv();
+		commsize = commObject.getRecv();
+
+		funcWCExtension(datahigh, datalow, size); // test function
+
+		cout << "round " << commObject.getRoundsRecv() - round << endl;
+		// cout << "send round " << commObject.getRoundsSent() << endl;
+		cout << "size " << commObject.getRecv() - commsize << endl;
+		// cout << "send size" << commObject.getSent() << endl;
+	}
+	commObject.setMeasurement(false);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		double time_sum = 0;
+		for (int j = 0; j < cnt; ++j)
+		{
+			vector<lowBit> data(size);
+			RSSVectorLowType datalow(size);
+			RSSVectorHighType datahigh(size);
+			funcGetShares(datalow, data);
+
+			start = clock();
+			funcWCExtension(datahigh, datalow, size); // test function
+			end = clock();
+			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			time_sum += dur;
+			// cout << j << " " << dur << endl;
+		}
+		cout << time_sum / cnt << endl;
+	}
+}
+
+void benchMSExtension()
+{
+	size_t dims[4] = {100, 1000, 10000, 100000};
+	int cnt = 20;
+	clock_t start, end;
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	commObject.setMeasurement(true);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		vector<lowBit> data(size);
+		RSSVectorLowType datalow(size);
+		RSSVectorHighType datahigh(size);
+		funcGetShares(datalow, data);
+
+		round = commObject.getRoundsRecv();
+		commsize = commObject.getRecv();
+
+		funcMSExtension(datahigh, datalow, size); // test function
+
+		cout << "round " << commObject.getRoundsRecv() - round << endl;
+		// cout << "send round " << commObject.getRoundsSent() << endl;
+		cout << "size " << commObject.getRecv() - commsize << endl;
+		// cout << "send size" << commObject.getSent() << endl;
+	}
+	commObject.setMeasurement(false);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		double time_sum = 0;
+		for (int j = 0; j < cnt; ++j)
+		{
+			vector<lowBit> data(size);
+			RSSVectorLowType datalow(size);
+			RSSVectorHighType datahigh(size);
+			funcGetShares(datalow, data);
+
+			start = clock();
+			funcMSExtension(datahigh, datalow, size); // test function
+			end = clock();
+			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			time_sum += dur;
+			// cout << j << " " << dur << endl;
+		}
+		cout << time_sum / cnt << endl;
+	}
+}
+
 void debugPartySS()
 {
 	size_t size = 5;
@@ -307,7 +411,7 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
-	cout << "Debug WC-Share Extension" << endl;
+	// cout << "Debug WC-Share Extension" << endl;
 	size_t size = 10240;
 	vector<lowBit> data(size);
 	size_t i = 0;
@@ -478,8 +582,7 @@ void debugBNLayer()
 		1, 1, 1, 1, 1,
 		1, 2, 1, 1, 1,
 		2, 2, 1, 1, 2,
-		1, 2, 2, 1, 2
-	};
+		1, 2, 2, 1, 2};
 
 	// FXP representation
 	vector<highBit> x_p(size), grad_p(size);
@@ -758,6 +861,19 @@ void runTest(string str, string whichTest, string &network)
 		}
 		else
 			assert(false && "Unknown test mode selected");
+	}
+	else if (str.compare("Bench") == 0)
+	{
+		if (whichTest.compare("MSExtension") == 0)
+		{
+			network = "MSExtension";
+			benchMSExtension();
+		}
+		else if (whichTest.compare("WCExtension") == 0)
+		{
+			network = "WCExtension";
+			benchWCExtension();
+		}
 	}
 	else
 		assert(false && "Only Debug or Test mode supported");

@@ -97,6 +97,6 @@ operator<<(std::ostream &dest, longBit value);
 #define USE_SOFTMAX_CE true
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY false
+#define DEBUG_ONLY true
 #define OFFLINE_ON false
 #endif

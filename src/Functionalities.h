@@ -2953,7 +2953,6 @@ void funcShareAB(Vec &result1, const vector<T> &data1, const size_t size1, RSSVe
 		// thread *threads = new thread[2];
 		// threads[0] = thread(receiveBoolVector, ref(a1_xor_data), shareParty, size2); // receive a1+x
 		receiveVector<T>(receivedata, shareParty, size1 + plussize); // receive a1+x
-		// cout << "receive a1 xor data" << endl;
 
 		// printVector<T>(receivedata, "receive data", receivedata.size());
 		// threads[0].join();
