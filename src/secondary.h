@@ -11,7 +11,7 @@ void parseInputs(int argc, char* argv[]);
 void train(NeuralNetwork* net);
 void test(bool PRELOADING, string network, NeuralNetwork* net);
 // void generate_zeros(string name, size_t number, string network);
-void preload_network(bool PRELOADING, string network, NeuralNetwork* net);
+void preload_network(bool PRELOADING, string network, string dataset, NeuralNetwork* net);
 void loadData(string net, string dataset);
 void readMiniBatch(NeuralNetwork* net, string phase);
 void printNetwork(NeuralNetwork* net);

@@ -96,9 +96,10 @@ operator<<(std::ostream &dest, longBit value);
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION false
-#define MP_FOR_INV_SQRT true
+#define MP_FOR_INV_SQRT false
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY false
 #define OFFLINE_ON false
+#define PRE_LOAD true
 #endif

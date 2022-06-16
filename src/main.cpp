@@ -56,8 +56,11 @@ int main(int argc, char **argv)
 	// Run these if you want a preloaded network to be tested
 	// assert(NUM_ITERATION == 1 and "check if readMiniBatch is false in test(net)")
 	// First argument {SecureML, Sarda, MiniONN, or LeNet}
-	//  network += " preloaded"; PRELOADING = true;
-	//  preload_network(PRELOADING, network, net);
+	if (PRE_LOAD) {
+		network += " preloaded"; PRELOADING = true;
+		preload_network(PRELOADING, network, dataset, net);
+	}
+	
 
 	start_m();
 	// Run unit tests in two modes:
@@ -85,7 +88,7 @@ int main(int argc, char **argv)
 	// runTest("Debug", "Reciprocal", network);
 	// runTest("Debug", "InverseSqrt", network);
 	// runTest("Debug", "funcDivisionByNR", network);
-	runTest("Debug", "BNLayer", network);
+	// runTest("Debug", "BNLayer", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);
 	// runTest("Debug", "Softmax", network);
@@ -109,13 +112,15 @@ int main(int argc, char **argv)
 	// Run training
 	cout << "----------------------------------------------" << endl;
 	cout << "-------------------Run Training---------------" << endl;
-	network += " train";
-	printNetwork(net);
-	train(net);
+	// network += " train";
+	// printNetwork(net);
+	// train(net);
 
 	// Run inference (possibly with preloading a network)
-	//  network += " test";
-	//  test(PRELOADING, network, net);
+	cout << "----------------------------------------------" << endl;
+	cout << "-------------------Run Inference---------------" << endl;
+	network += " test";
+	test(PRELOADING, network, net);
 
 	end_m(network);
 	cout << "----------------------------------------------" << endl;
