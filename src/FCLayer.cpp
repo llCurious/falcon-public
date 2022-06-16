@@ -159,8 +159,14 @@ void FCLayer::updateEquations(const RSSVectorMyType &prevActivations)
 		for (size_t j = 0; j < columns; ++j)
 			temp[j] = temp[j] + deltas[i * columns + j];
 	// TODO-trunc
-	funcProbTruncation<RSSVectorMyType, myType>(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
-	// funcTruncate(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
+	if (IS_FALCON)
+	{
+		funcTruncate(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
+	}
+	else
+	{
+		funcProbTruncation<RSSVectorMyType, myType>(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
+	}
 	subtractVectors<RSSMyType>(biases, temp, biases, columns);
 
 	// Update Weights

@@ -282,8 +282,14 @@ void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 					for (size_t x = 0; x < ow; ++x)
 						temp1[d] = temp1[d] + deltas[b * sizeB + d * sizeD + y * sizeY + x];
 	}
-	funcProbTruncation<RSSVectorMyType, myType>(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
-	// funcTruncate(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
+	if (IS_FALCON)
+	{
+		funcTruncate(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
+	}
+	else
+	{
+		funcProbTruncation<RSSVectorMyType, myType>(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
+	}
 	subtractVectors<RSSMyType>(biases, temp1, biases, Dout);
 
 	/********************** Weights update **********************/

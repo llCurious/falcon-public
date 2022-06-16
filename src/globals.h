@@ -44,7 +44,7 @@
 #define REC_ITERS 7
 #define REC_Y 6
 #define INVSQRT_ITERS 3
-#define LOG_MINI_BATCH 5
+#define LOG_MINI_BATCH 2
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
@@ -101,4 +101,6 @@ operator<<(std::ostream &dest, longBit value);
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
 #define OFFLINE_ON false
+#define IS_FALCON false
+
 #endif
