@@ -612,8 +612,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BNLayer") == 0)
 		{
 			network = "BNLayer";
-			// debugBNLayer<RSSVectorHighType, highBit>();
-			debugBNLayer<RSSVectorLowType, lowBit>();
+			debugBNLayer<RSSVectorHighType, highBit>();
+			// debugBNLayer<RSSVectorLowType, lowBit>();
 		}
 		else
 			assert(false && "Unknown debug mode selected");

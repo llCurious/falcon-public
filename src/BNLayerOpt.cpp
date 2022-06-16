@@ -101,17 +101,30 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
-    funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
-    // funcReconstruct(inv_sqrt, plainm, m, "inv_sqrt", true);
-    for (int i = 0; i < m; ++i) // scalling invsqrt
+    // // https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
+    // if constexpr (MP_FOR_INV_SQRT && std::is_same<decltype(var_eps), RSSVectorLowType>::value) {
+    //     cout << "Mixed-Precision Inverse Sqrt" << endl;
+	// 	RSSVectorHighType highP_var_eps(m), highP_inv_sqrt(m);
+	// 	funcMSExtension(highP_var_eps, var_eps, m);
+	// 	funcMulConst(highP_var_eps, highP_var_eps, 1 << (HIGH_PRECISION - LOW_PRECISION), m);	// maintain same precision
+    //     funcInverseSqrt<RSSVectorHighType, highBit>(highP_inv_sqrt, highP_var_eps, m); // [1,D]
+    //     funcTruncAndReduce(inv_sqrt, highP_inv_sqrt, (HIGH_PRECISION - LOW_PRECISION), m);
+    // } else {
+    //     funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
+    // }
+    mixedPrecisionOp<decltype(var_eps), decltype(eps)>(inv_sqrt, var_eps, m);
+    print_vector(inv_sqrt, "FLOAT", "inv_sqrt", m);
+    // print_vector(var_eps, "FLOAT", "var_eps", m);
+    // print_vector(x_mean, "FLOAT", "x_mean", m);
+
+    for (int i = 0; i < m; ++i) // compute norm_x
     {
         RSSMyType temp = inv_sqrt[i];
         for (int j = 0; j < B; ++j)
             inv_sqrt_rep[j * m + i] = temp;
     }
-    // funcReconstruct(inv_sqrt_rep, plainsize, size, "inv_sqrt", true);
     funcDotProduct<RSSVectorMyType, myType>(inv_sqrt_rep, x_mean, norm_x, size, true, FLOAT_PRECISION); // [B, D] * [1, D]
-    // funcReconstruct(norm_x, plainsize, size, "norm_x", true);
+
     // self.gamma * self.norm_x + self.beta
     // Scaling
     RSSVectorMyType g_repeat(size);
