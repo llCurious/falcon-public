@@ -2805,7 +2805,6 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++) {
 			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
-			cout << pl_input_float[i] << ", ";
 			pl_input_float[i] = 1. / pl_input_float[i];
 			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
 		}
