@@ -2522,7 +2522,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		elementType msb = (1l << (k - 1));
 		if (OFFLINE_ON)
 		{
-			funcTruncationR<Vec, elementType>(rPrime, r, EXP_PRECISION, size);
+			funcTruncationR<Vec, elementType>(rPrime, r, rmsb, EXP_PRECISION, size);
 		}
 
 		Vec temp = a;
@@ -2531,7 +2531,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 			// temp3[i] -= rPrime[i].first;
 			temp[i] = temp[i] - rPrime[i];
 		}
-		funcAddOneConst(temp, bias2, size);
+		funcAddOneConst(temp, bias1, size);
 
 		funcReconstruct(temp, diffReconst, size, "Exp Truncation", false);
 
@@ -2569,6 +2569,8 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 				b[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
 			}
 		}
+
+		funcAddOneConst(b, bias2, size);
 	}
 
 	// compute (1+x/m)^m. using m invocations of square
@@ -2803,6 +2805,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++) {
 			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
+			cout << pl_input_float[i] << ", ";
 			pl_input_float[i] = 1. / pl_input_float[i];
 			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
 		}
