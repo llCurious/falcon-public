@@ -2361,7 +2361,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				a[i].first = (1 << (float_precision - REC_Y));
+				a[i].first = (1 << (float_precision - REC_INIT));
 				a[i].second = 0;
 			}
 		}
@@ -2370,7 +2370,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 			for (size_t i = 0; i < size; i++)
 			{
 				a[i].first = 0;
-				a[i].second = (1 << (float_precision - REC_Y));
+				a[i].second = (1 << (float_precision - REC_INIT));
 			}
 		}
 		else
@@ -2426,15 +2426,31 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	}
 	VEC q_rec(size);
 
-	if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION) {
-		cout << "Mixed-Precision Division" << endl;
-		RSSVectorHighType highP_dividend(size), highP_rec(size);
-		funcMSExtension(highP_dividend, quotient, size);
-		funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
-		funcReciprocal2(highP_rec, highP_dividend, false, size);
-		funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
+	if (PLAINTEXT_RECIPROCAL) {
+		cout << "Plaintext Reciprocal" << endl;
+		vector<uint64_t> plain_input(size), plain_output(size);
+		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
+
+		vector<float> pl_input_float(size);
+		for (size_t i = 0; i < size; i++) {
+			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
+			pl_input_float[i] = 1. / pl_input_float[i];
+			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
+		}
+		funcGetShares(q_rec, plain_output);
+		// print_vector(q_rec, "FLOAT", "mixed-preicision reciprocal", size);
 	} else {
-		funcReciprocal2(q_rec, quotient, false, size);
+		cout << "Private Reciprocal" << endl;
+		if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION) {
+			cout << "Mixed-Precision Division" << endl;
+			RSSVectorHighType highP_dividend(size), highP_rec(size);
+			funcMSExtension(highP_dividend, quotient, size);
+			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
+			funcReciprocal2(highP_rec, highP_dividend, false, size);
+			funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
+		} else {
+			funcReciprocal2(q_rec, quotient, false, size);
+		}
 	}
 
 	funcDotProduct(q_rec, input, result, size, true, float_precision);
@@ -2570,6 +2586,33 @@ void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 
 template<typename Vec, typename T>
 void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
+	if (PLAINTEXT_INV_SQRT) {
+		cout << "Plaintext Inverse sqrt" << endl;
+		vector<T> plain_input(size), plain_output(size);
+		funcReconstruct(input, plain_input, size, "mixed-preicision inverse sqrt", false);
+		vector<float> pl_input_float(size);
+		size_t float_precision = FLOAT_PRECISION;
+		if (std::is_same<T, highBit>::value)
+		{
+			float_precision = HIGH_PRECISION;
+		}
+		else if (std::is_same<T, lowBit>::value)
+		{
+			float_precision = LOW_PRECISION;
+		}
+		else
+		{
+			cout << "Not supported type" << typeid(input).name() << endl;
+		}
+		for (size_t i = 0; i < size; i++) {
+			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
+			pl_input_float[i] = 1. / sqrt(pl_input_float[i]);
+			plain_output[i] = (T)(pl_input_float[i] * (1 << float_precision));
+		}
+		funcGetShares(output, plain_output);
+		return;
+	}
+	cout << "Private Inverse sqrt" << endl;
 	// inver Square Root
 	// https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
 	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value) {
