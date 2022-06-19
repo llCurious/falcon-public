@@ -27,7 +27,8 @@ void MaxpoolLayer::printLayer()
 		 << " x " << conf.features << endl << "\t\t\t  " 
 		 << conf.poolSize << "  \t\t(Pooling Size)" << endl << "\t\t\t  " 
 		 << conf.stride << " \t\t(Stride)" << endl << "\t\t\t  " 
-		 << conf.batchSize << "\t\t(Batch Size)" << endl;
+		 << conf.batchSize << "\t\t(Batch Size)" << endl << "\t\t\t  " 
+		 << conf.features << " x " << (((conf.imageWidth - conf.poolSize)/conf.stride) + 1) << " x " << (((conf.imageHeight - conf.poolSize)/conf.stride) + 1) << "\t(Output)" << endl;
 }
 
 void MaxpoolLayer::forward(const RSSVectorMyType& inputActivation)
