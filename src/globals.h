@@ -45,7 +45,7 @@
 #define REC_Y 6
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
 #define INVSQRT_ITERS 3
-#define LOG_MINI_BATCH 5
+#define LOG_MINI_BATCH 2
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
@@ -103,7 +103,9 @@ operator<<(std::ostream &dest, longBit value);
 #define USE_BN true
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY false
+#define DEBUG_ONLY true
 #define OFFLINE_ON false
 #define PRE_LOAD true
+#define IS_FALCON false
+
 #endif

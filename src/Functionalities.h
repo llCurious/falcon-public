@@ -20,6 +20,27 @@ extern void start_communication();
 extern void end_time(string str);
 extern void end_communication(string str);
 
+//************** offline op ******************//
+template <typename Vec, typename T>
+void funcRandBitByXor(Vec &b, size_t size);
+template <typename Vec, typename T, typename RealVec>
+void funcRandBit(RealVec &b, size_t size);
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorBoolType &b, size_t size);
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorSmallType &b, size_t size);
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
+template <typename Vec, typename T>
+void funcTruncationR(Vec &r, Vec &r_trunc, int trunc_bits, size_t size);
+template <typename Vec, typename T>
+void funcAddOneConst(Vec &result, T c, size_t size);
+template <typename Vec, typename T>
+void funcAddOneConst(Vec &result, const Vec &input, T c, size_t size);
+template <typename Vec, typename T>
+void funcTruncationR(Vec &r, Vec &rtrunc, Vec &rmsb, int trunc_bits, size_t size);
+
+template <typename vec>
+void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus);
 void funcTruncatePublic(RSSVectorMyType &a, size_t divisor, size_t size);
 
 template <typename Vec, typename T>
@@ -311,7 +332,11 @@ void funcTruncate(VEC &a, size_t power, size_t size)
 
 	VEC r(size), rPrime(size);
 	vector<computeType> reconst(size);
-	PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
+	if (OFFLINE_ON)
+	{
+		funcTruncationR<VEC, computeType>(rPrime, r, power, size);
+		// PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
+	}
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -931,7 +956,13 @@ void funcRELU(const VEC &a, RSSVectorSmallType &temp, VEC &b, size_t size)
 
 	// cout << "ReLU': \t\t" << funcTime(funcRELUPrime, a, temp, size) << endl;
 	funcRELUPrime(a, temp, size);
-	PrecomputeObject->getSelectorBitShares(c, m_c, size);
+
+	if (OFFLINE_ON)
+	{
+		typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+		funcRandBandA<VEC, computeType>(m_c, c, size);
+		// PrecomputeObject->getSelectorBitShares(c, m_c, size);
+	}
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1015,62 +1046,62 @@ void funcPow(const VEC &b, vector<smallType> &alpha, size_t size)
 	}
 }
 
-// template <typename VEC>
-// void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
-// 				  size_t size)
-// {
-// 	log_print("funcDivision");
+template <typename VEC>
+void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
+				  size_t size)
+{
+	log_print("funcDivision");
 
-// 	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
-// 	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, RSSHighType, RSSLowType>::type RSScomputeType;
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, RSSHighType, RSSLowType>::type RSScomputeType;
 
-// 	// TODO incorporate funcPow
-// 	// TODO Scale up and complete this computation with fixed-point precision
-// 	vector<smallType> alpha_temp(size);
-// 	funcPow(b, alpha_temp, size);
+	// TODO incorporate funcPow
+	// TODO Scale up and complete this computation with fixed-point precision
+	vector<smallType> alpha_temp(size);
+	funcPow(b, alpha_temp, size);
 
-// 	size_t alpha = alpha_temp[0];
-// 	size_t precision = alpha + 1;
-// 	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
-// 	const computeType constOne = ((computeType)(1 * (1 << precision)));
+	size_t alpha = alpha_temp[0];
+	size_t precision = alpha + 1;
+	const computeType constTwoPointNine = ((computeType)(2.9142 * (1 << precision)));
+	const computeType constOne = ((computeType)(1 * (1 << precision)));
 
-// 	size_t float_precision = FLOAT_PRECISION;
-// 	if (std::is_same<VEC, RSSVectorHighType>::value)
-// 	{
-// 		float_precision = HIGH_PRECISION;
-// 	}
-// 	else if (std::is_same<VEC, RSSVectorLowType>::value)
-// 	{
-// 		float_precision = LOW_PRECISION;
-// 	}
-// 	else
-// 	{
-// 		cout << "Not supported type" << typeid(a).name() << endl;
-// 	}
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<VEC, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<VEC, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
 
-// 	vector<computeType> data_twoPointNine(size, constTwoPointNine), data_one(size, constOne), reconst(size);
-// 	VEC ones(size), twoPointNine(size), twoX(size), w0(size), xw0(size),
-// 		epsilon0(size), epsilon1(size), termOne(size), termTwo(size), answer(size);
-// 	funcGetShares(twoPointNine, data_twoPointNine);
-// 	funcGetShares(ones, data_one);
+	vector<computeType> data_twoPointNine(size, constTwoPointNine), data_one(size, constOne), reconst(size);
+	VEC ones(size), twoPointNine(size), twoX(size), w0(size), xw0(size),
+		epsilon0(size), epsilon1(size), termOne(size), termTwo(size), answer(size);
+	funcGetShares(twoPointNine, data_twoPointNine);
+	funcGetShares(ones, data_one);
 
-// 	multiplyByScalar(b, 2, twoX);
-// 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
-// 	funcDotProduct(b, w0, xw0, size, true, precision);
-// 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
-// 	if (PRECISE_DIVISION)
-// 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
-// 	addVectors(ones, epsilon0, termOne, size);
-// 	if (PRECISE_DIVISION)
-// 		addVectors(ones, epsilon1, termTwo, size);
-// 	funcDotProduct(w0, termOne, answer, size, true, precision);
-// 	if (PRECISE_DIVISION)
-// 		funcDotProduct(answer, termTwo, answer, size, true, precision);
+	multiplyByScalar(b, 2, twoX);
+	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
+	funcDotProduct(b, w0, xw0, size, true, precision);
+	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
+	if (PRECISE_DIVISION)
+		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
+	addVectors(ones, epsilon0, termOne, size);
+	if (PRECISE_DIVISION)
+		addVectors(ones, epsilon1, termTwo, size);
+	funcDotProduct(w0, termOne, answer, size, true, precision);
+	if (PRECISE_DIVISION)
+		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
-// 	// RSSVectorMyType scaledA(size);
-// 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
-// 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-// }
+	// RSSVectorMyType scaledA(size);
+	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
+	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
+}
 
 template <typename VEC>
 void funcDivisionByNR(VEC &a, const VEC &b, const VEC &quotient,
@@ -1331,44 +1362,156 @@ void funcDotProduct(const T &a, const T &b,
 	else // TODO-trunction
 	{
 		vector<computeType> diffReconst(size, 0);
-		T r(size), rPrime(size);
-		PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
-
-		for (int i = 0; i < size; ++i)
+		T r(size), rPrime(size), rmsb(size);
+		if (IS_FALCON)
 		{
-			temp3[i] += a[i].first * b[i].first +
-						a[i].first * b[i].second +
-						a[i].second * b[i].first -
-						rPrime[i].first;
-		}
+			if (OFFLINE_ON)
+			{
+				funcTruncationR<T, computeType>(rPrime, r, precision, size);
+			}
+			// PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
 
-		funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
-		dividePlain(diffReconst, (1l << precision));
-		if (partyNum == PARTY_A)
-		{
 			for (int i = 0; i < size; ++i)
 			{
-				c[i].first = r[i].first + diffReconst[i];
-				c[i].second = r[i].second;
+				temp3[i] += a[i].first * b[i].first +
+							a[i].first * b[i].second +
+							a[i].second * b[i].first -
+							rPrime[i].first;
+			}
+
+			funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+			dividePlain(diffReconst, (1l << precision));
+
+			if (partyNum == PARTY_A)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first + diffReconst[i];
+					c[i].second = r[i].second;
+				}
+			}
+
+			if (partyNum == PARTY_B)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first;
+					c[i].second = r[i].second;
+				}
+			}
+
+			if (partyNum == PARTY_C)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first;
+					c[i].second = r[i].second + diffReconst[i];
+				}
 			}
 		}
-
-		if (partyNum == PARTY_B)
+		else
 		{
+			size_t k = sizeof(computeType) << 3;
+			size_t reall = k - precision;
+			computeType bias1 = (1l << (k - 2));
+			computeType bias2 = -(1l << (k - 2 - precision));
+			computeType msb = (1l << (k - 1));
+			if (OFFLINE_ON)
+			{
+				funcTruncationR<T, computeType>(rPrime, r, rmsb, precision, size);
+			}
+
 			for (int i = 0; i < size; ++i)
 			{
-				c[i].first = r[i].first;
-				c[i].second = r[i].second;
+				temp3[i] += a[i].first * b[i].first +
+							a[i].first * b[i].second +
+							a[i].second * b[i].first +
+							rPrime[i].first;
 			}
-		}
-
-		if (partyNum == PARTY_C)
-		{
-			for (int i = 0; i < size; ++i)
+			if (partyNum == PARTY_A)
 			{
-				c[i].first = r[i].first;
-				c[i].second = r[i].second + diffReconst[i];
+				for (int i = 0; i < size; ++i)
+				{
+					temp3[i] += bias1;
+				}
 			}
+			// funcAddOneConst<T, computeType>(temp3, bias1, size);
+			// // reveal x+r
+			// funcAdd<T>(temp3, temp3, rPrime, size, false);
+			// funcReconstruct(data, z, size, "x+r", false);
+
+			funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+			// funcAddOneConst<Vec, T>(data, bias1, size);
+
+			// // reveal x+r
+			// funcAdd(data, data, r, size, false);
+			// funcReconstruct(data, z, size, "x+r", false);
+
+			for (size_t i = 0; i < size; ++i)
+			{
+				// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+				if ((diffReconst[i] & msb))
+				{
+					rmsb[i] = make_pair(0, 0); // w-->rmsb
+				}
+				else
+				{
+					rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+				}
+			}
+
+			if (partyNum == PARTY_A)
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair((diffReconst[i] >> precision) + rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+				}
+			}
+			else if (partyNum == PARTY_C)
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair(rmsb[i].first - r[i].first, (diffReconst[i] >> precision) + rmsb[i].second - r[i].second);
+				}
+			}
+			else
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+				}
+			}
+
+			funcAddOneConst(c, bias2, size);
+
+			// dividePlain(diffReconst, (1l << precision));
+
+			// if (partyNum == PARTY_A)
+			// {
+			// 	for (int i = 0; i < size; ++i)
+			// 	{
+			// 		c[i].first = r[i].first + diffReconst[i];
+			// 		c[i].second = r[i].second;
+			// 	}
+			// }
+
+			// if (partyNum == PARTY_B)
+			// {
+			// 	for (int i = 0; i < size; ++i)
+			// 	{
+			// 		c[i].first = r[i].first;
+			// 		c[i].second = r[i].second;
+			// 	}
+			// }
+
+			// if (partyNum == PARTY_C)
+			// {
+			// 	for (int i = 0; i < size; ++i)
+			// 	{
+			// 		c[i].first = r[i].first;
+			// 		c[i].second = r[i].second + diffReconst[i];
+			// 	}
+			// }
 		}
 	}
 	if (SECURITY_TYPE.compare("Malicious") == 0)
@@ -1413,44 +1556,126 @@ void funcDotProduct(const Vec &a, const Vec &b,
 	else // TODO-trunction
 	{
 		vector<T> diffReconst(size, 0);
-		Vec r(size), rPrime(size);
-		PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
-
-		for (int i = 0; i < size; ++i)
+		Vec r(size), rPrime(size), rmsb(size);
+		if (IS_FALCON)
 		{
-			temp3[i] += a[i].first * b[i].first +
-						a[i].first * b[i].second +
-						a[i].second * b[i].first -
-						rPrime[i].first;
-		}
+			if (OFFLINE_ON)
+			{
+				funcTruncationR<Vec, T>(rPrime, r, precision, size);
+			}
+			// PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
 
-		funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
-		dividePlain(diffReconst, (1l << precision));
-		if (partyNum == PARTY_A)
-		{
 			for (int i = 0; i < size; ++i)
 			{
-				c[i].first = r[i].first + diffReconst[i];
-				c[i].second = r[i].second;
+				temp3[i] += a[i].first * b[i].first +
+							a[i].first * b[i].second +
+							a[i].second * b[i].first -
+							rPrime[i].first;
+			}
+
+			funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+			dividePlain(diffReconst, (1l << precision));
+			if (partyNum == PARTY_A)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first + diffReconst[i];
+					c[i].second = r[i].second;
+				}
+			}
+
+			if (partyNum == PARTY_B)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first;
+					c[i].second = r[i].second;
+				}
+			}
+
+			if (partyNum == PARTY_C)
+			{
+				for (int i = 0; i < size; ++i)
+				{
+					c[i].first = r[i].first;
+					c[i].second = r[i].second + diffReconst[i];
+				}
 			}
 		}
-
-		if (partyNum == PARTY_B)
+		else
 		{
+			size_t k = sizeof(T) << 3;
+			size_t reall = k - precision;
+			T bias1 = (1l << (k - 2));
+			T bias2 = -(1l << (k - 2 - precision));
+			T msb = (1l << (k - 1));
+			if (OFFLINE_ON)
+			{
+				funcTruncationR<Vec, T>(rPrime, r, rmsb, precision, size);
+			}
+
 			for (int i = 0; i < size; ++i)
 			{
-				c[i].first = r[i].first;
-				c[i].second = r[i].second;
+				temp3[i] += a[i].first * b[i].first +
+							a[i].first * b[i].second +
+							a[i].second * b[i].first +
+							rPrime[i].first;
 			}
-		}
-
-		if (partyNum == PARTY_C)
-		{
-			for (int i = 0; i < size; ++i)
+			if (partyNum == PARTY_A)
 			{
-				c[i].first = r[i].first;
-				c[i].second = r[i].second + diffReconst[i];
+				for (int i = 0; i < size; ++i)
+				{
+					temp3[i] += bias1;
+				}
 			}
+			// funcAddOneConst<T, computeType>(temp3, bias1, size);
+			// // reveal x+r
+			// funcAdd<T>(temp3, temp3, rPrime, size, false);
+			// funcReconstruct(data, z, size, "x+r", false);
+
+			funcReconstruct3out3(temp3, diffReconst, size, "Dot-product diff reconst", false);
+			// funcAddOneConst<Vec, T>(data, bias1, size);
+
+			// // reveal x+r
+			// funcAdd(data, data, r, size, false);
+			// funcReconstruct(data, z, size, "x+r", false);
+
+			for (size_t i = 0; i < size; ++i)
+			{
+				// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+				if ((diffReconst[i] & msb))
+				{
+					rmsb[i] = make_pair(0, 0); // w-->rmsb
+				}
+				else
+				{
+					rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+				}
+			}
+
+			if (partyNum == PARTY_A)
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair((diffReconst[i] >> precision) + rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+				}
+			}
+			else if (partyNum == PARTY_C)
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair(rmsb[i].first - r[i].first, (diffReconst[i] >> precision) + rmsb[i].second - r[i].second);
+				}
+			}
+			else
+			{
+				for (size_t i = 0; i < size; i++)
+				{
+					c[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+				}
+			}
+
+			funcAddOneConst(c, bias2, size);
 		}
 	}
 	if (SECURITY_TYPE.compare("Malicious") == 0)
@@ -1477,46 +1702,115 @@ void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 	matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
 	matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
 
-	Vec r(final_size), rPrime(final_size);
-	PrecomputeObject->getDividedShares(r, rPrime, (1 << truncation), final_size);
-	for (int i = 0; i < final_size; ++i)
-		temp3[i] = temp3[i] - rPrime[i].first;
-
-	funcReconstruct3out3(temp3, diffReconst, final_size, "Mat-Mul diff reconst", false);
-	if (SECURITY_TYPE.compare("Malicious") == 0)
-		funcCheckMaliciousMatMul(a, b, c, temp3, rows, common_dim, columns, transpose_a, transpose_b);
-
-	dividePlain(diffReconst, (1l << truncation));
-
-	// for (int i = 0; i < 128; ++i)
-	// 	print_linear(diffReconst[i], "FLOAT");
-	// cout << endl;
-
-	if (partyNum == PARTY_A)
+	Vec r(final_size), rPrime(final_size), rmsb(final_size);
+	if (IS_FALCON)
 	{
-		for (int i = 0; i < final_size; ++i)
+		if (OFFLINE_ON)
 		{
-			c[i].first = r[i].first + diffReconst[i];
-			c[i].second = r[i].second;
+			funcTruncationR<Vec, computeType>(rPrime, r, truncation, final_size);
+		}
+		// PrecomputeObject->getDividedShares(r, rPrime, (1 << truncation), final_size);
+		for (int i = 0; i < final_size; ++i)
+			temp3[i] = temp3[i] - rPrime[i].first;
+
+		funcReconstruct3out3(temp3, diffReconst, final_size, "Mat-Mul diff reconst", false);
+		if (SECURITY_TYPE.compare("Malicious") == 0)
+			funcCheckMaliciousMatMul(a, b, c, temp3, rows, common_dim, columns, transpose_a, transpose_b);
+
+		dividePlain(diffReconst, (1l << truncation));
+
+		// for (int i = 0; i < 128; ++i)
+		// 	print_linear(diffReconst[i], "FLOAT");
+		// cout << endl;
+
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < final_size; ++i)
+			{
+				c[i].first = r[i].first + diffReconst[i];
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_B)
+		{
+			for (int i = 0; i < final_size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < final_size; ++i)
+			{
+				c[i].first = r[i].first;
+				c[i].second = r[i].second + diffReconst[i];
+			}
 		}
 	}
-
-	if (partyNum == PARTY_B)
+	else
 	{
-		for (int i = 0; i < final_size; ++i)
+		size_t k = sizeof(computeType) << 3;
+		size_t reall = k - truncation;
+		computeType bias1 = (1l << (k - 2));
+		computeType bias2 = -(1l << (k - 2 - truncation));
+		computeType msb = (1l << (k - 1));
+		if (OFFLINE_ON)
 		{
-			c[i].first = r[i].first;
-			c[i].second = r[i].second;
+			funcTruncationR<Vec, computeType>(rPrime, r, rmsb, truncation, final_size);
 		}
-	}
+		for (int i = 0; i < final_size; ++i)
+			temp3[i] = temp3[i] + rPrime[i].first;
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < final_size; ++i)
+			{
+				temp3[i] += bias1;
+			}
+		}
 
-	if (partyNum == PARTY_C)
-	{
-		for (int i = 0; i < final_size; ++i)
+		funcReconstruct3out3(temp3, diffReconst, final_size, "Mat-Mul diff reconst", false);
+		if (SECURITY_TYPE.compare("Malicious") == 0)
+			funcCheckMaliciousMatMul(a, b, c, temp3, rows, common_dim, columns, transpose_a, transpose_b);
+
+		for (size_t i = 0; i < final_size; ++i)
 		{
-			c[i].first = r[i].first;
-			c[i].second = r[i].second + diffReconst[i];
+			// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+			if ((diffReconst[i] & msb))
+			{
+				rmsb[i] = make_pair(0, 0); // w-->rmsb
+			}
+			else
+			{
+				rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+			}
 		}
+
+		if (partyNum == PARTY_A)
+		{
+			for (size_t i = 0; i < final_size; i++)
+			{
+				c[i] = make_pair((diffReconst[i] >> truncation) + rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+			}
+		}
+		else if (partyNum == PARTY_C)
+		{
+			for (size_t i = 0; i < final_size; i++)
+			{
+				c[i] = make_pair(rmsb[i].first - r[i].first, (diffReconst[i] >> truncation) + rmsb[i].second - r[i].second);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < final_size; i++)
+			{
+				c[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+			}
+		}
+
+		funcAddOneConst(c, bias2, final_size);
 	}
 }
 
@@ -1678,16 +1972,85 @@ void funcAdd(vec &result, vec &data1, vec &data2, size_t size, bool minus)
 }
 
 /********************* Share Conversion Functionalites *********************/
-template <typename Vec, typename T>
-void funcRandBitByXor(Vec &b, size_t size);
-
-void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
 void funcWCExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size);
 void funcPosWrap(RSSVectorHighType &w, const RSSVectorLowType &input, size_t size);
-void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHighType &msb, size_t size);
 template <typename Vec, typename T>
 void funcProbTruncation(Vec &output, const Vec &input, int trunc_bits, size_t size);
+void funcReduction(RSSVectorLowType &output, const RSSVectorHighType &input, size_t size);
+/**
+ * @brief get random r and trunc r
+ *
+ * @tparam Vec
+ * @tparam T
+ * @param r original random
+ * @param rtrunc after truncation
+ * @param rmsb msb of random
+ * @param trunc_bits
+ * @param size
+ */
+template <typename Vec, typename T>
+void funcTruncationR(Vec &r, Vec &rtrunc, Vec &rmsb, int trunc_bits, size_t size)
+{
+	size_t k = sizeof(T) << 3;
+	size_t reall = k - trunc_bits;
+
+	Vec rbits(size * k);
+
+	funcRandBitByXor<Vec, T>(rbits, rbits.size());
+	T temp1;
+	T temp2;
+	for (size_t i = 0; i < size; ++i)
+	{
+		rmsb[i] = rbits[i * k];
+		temp1 = 0;
+		temp2 = 0;
+		size_t j;
+		for (j = 0; j < reall; ++j)
+		{
+			temp1 = (temp1 << 1) + rbits[i * k + j].first;
+			temp2 = (temp2 << 1) + rbits[i * k + j].second;
+		}
+		rtrunc[i] = make_pair(temp1, temp2);
+		for (; j < k; ++j)
+		{
+			temp1 = (temp1 << 1) + rbits[i * k + j].first;
+			temp2 = (temp2 << 1) + rbits[i * k + j].second;
+		}
+		r[i] = make_pair(temp1, temp2);
+	}
+}
+
+template <typename Vec, typename T>
+void funcTruncationR(Vec &r, Vec &rtrunc, int trunc_bits, size_t size)
+{
+	size_t k = sizeof(T) << 3;
+	size_t reall = k - trunc_bits;
+
+	Vec rbits(size * k);
+
+	funcRandBitByXor<Vec, T>(rbits, rbits.size());
+	T temp1;
+	T temp2;
+	for (size_t i = 0; i < size; ++i)
+	{
+		temp1 = 0;
+		temp2 = 0;
+		size_t j;
+		for (j = 0; j < reall; ++j)
+		{
+			temp1 = (temp1 << 1) + rbits[i * k + j].first;
+			temp2 = (temp2 << 1) + rbits[i * k + j].second;
+		}
+		rtrunc[i] = make_pair(temp1, temp2);
+		for (; j < k; ++j)
+		{
+			temp1 = (temp1 << 1) + rbits[i * k + j].first;
+			temp2 = (temp2 << 1) + rbits[i * k + j].second;
+		}
+		r[i] = make_pair(temp1, temp2);
+	}
+}
 
 /**
  * @brief trunc trunc_bits of input to output
@@ -1709,7 +2072,6 @@ void funcProbTruncation(Vec &output, const Vec &input, int trunc_bits, size_t si
 	T bias2 = -(1l << (k - 2 - trunc_bits));
 	T msb = (1l << (k - 1));
 
-	Vec rbits(size * k);
 	Vec r(size);
 	Vec rtrunc(size);
 	Vec rmsb(size);
@@ -1717,30 +2079,7 @@ void funcProbTruncation(Vec &output, const Vec &input, int trunc_bits, size_t si
 
 	if (OFFLINE_ON) // get r and rtrunc
 	{
-		funcRandBitByXor<Vec, T>(rbits, rbits.size());
-		T temp1;
-		T temp2;
-		for (size_t i = 0; i < size; ++i)
-		{
-			rmsb[i] = rbits[i * k];
-			temp1 = 0;
-			temp2 = 0;
-			// msb1 = rmsb[i].first << reall;
-			// msb2 = rmsb[i].second << reall;
-			size_t j;
-			for (j = 0; j < reall; ++j)
-			{
-				temp1 = (temp1 << 1) + rbits[i * k + j].first;
-				temp2 = (temp2 << 1) + rbits[i * k + j].second;
-			}
-			rtrunc[i] = make_pair(temp1, temp2);
-			for (; j < k; ++j)
-			{
-				temp1 = (temp1 << 1) + rbits[i * k + j].first;
-				temp2 = (temp2 << 1) + rbits[i * k + j].second;
-			}
-			r[i] = make_pair(temp1, temp2);
-		}
+		funcTruncationR<Vec, T>(r, rtrunc, rmsb, trunc_bits, size);
 	}
 
 	// log
@@ -1886,63 +2225,14 @@ void funcProbTruncation(Vec &data, int trunc_bits, size_t size)
 
 	if (OFFLINE_ON) // get r and rtrunc
 	{
-		funcRandBitByXor<Vec, T>(rbits, rbits.size());
-		T temp1;
-		T temp2;
-		for (size_t i = 0; i < size; ++i)
-		{
-			rmsb[i] = rbits[i * k];
-			temp1 = 0;
-			temp2 = 0;
-			// msb1 = rmsb[i].first << reall;
-			// msb2 = rmsb[i].second << reall;
-			size_t j;
-			for (j = 0; j < reall; ++j)
-			{
-				temp1 = (temp1 << 1) + rbits[i * k + j].first;
-				temp2 = (temp2 << 1) + rbits[i * k + j].second;
-			}
-			rtrunc[i] = make_pair(temp1, temp2);
-			for (; j < k; ++j)
-			{
-				temp1 = (temp1 << 1) + rbits[i * k + j].first;
-				temp2 = (temp2 << 1) + rbits[i * k + j].second;
-			}
-			r[i] = make_pair(temp1, temp2);
-		}
+		funcTruncationR<Vec, T>(r, rtrunc, rmsb, trunc_bits, size);
 	}
 
-	// log
-	// vector<T> r_p(size);
-	// vector<T> rtrunc_p(size);
-	// vector<T> rmsb_p(size);
-	// vector<T> rbits_p(rbits.size());
-	// funcReconstruct<Vec, T>(r, r_p, size, "r", false);
-	// funcReconstruct<Vec, T>(rtrunc, rtrunc_p, size, "rtrunc", false);
-	// funcReconstruct<Vec, T>(rmsb, rmsb_p, size, "rmsb", false);
-	// printVector<T>(r_p, "r", size);
-	// printHighBitVec(r_p, "r", size);
-	// printVector<T>(r_p, "r", size);
-	// printHighBitVec(rtrunc_p, "rtrunc", size);
-	// printVector<T>(rtrunc_p, "rtrunc", size);
-	// printVector<T>(rtrunc_p, "rtrunc", size);
-	//  printVector<T>(rmsb_p, "rmsb", size);
 	funcAddOneConst<Vec, T>(data, bias1, size);
-	// funcAddOneConst(input, bias1, size);
-
-	// log x
-	// vector<T> biasx(size);
-	// funcReconstruct(input, biasx, size, "bias x", false);
-	// printVector<T>(biasx, "x", size);
-	// printHighBitVec(biasx, "x", size);
 
 	// reveal x+r
 	funcAdd(data, data, r, size, false);
 	funcReconstruct(data, z, size, "x+r", false);
-
-	// log x+r
-	// printVector<T>(z, "x+r", size);
-	// printHighBitVec(z, "x+r", size);
 
 	for (size_t i = 0; i < size; ++i)
 	{
@@ -1956,55 +2246,6 @@ void funcProbTruncation(Vec &data, int trunc_bits, size_t size)
 			rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
 		}
 	}
-
-	// 	log func
-	// vector<T> w(size);
-	// funcReconstruct<Vec, T>(rmsb, w, size, "w", true);
-
-	//  [x] = z − [rtrunc] + [w]·2^(k−f)
-	// if (partyNum == PARTY_A)
-	// {
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		output[i] = make_pair((z[i] >> trunc_bits), 0);
-	// 	}
-	// }
-	// else if (partyNum == PARTY_C)
-	// {
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		output[i] = make_pair(0, (z[i] >> trunc_bits));
-	// 	}
-	// }
-	// else
-	// {
-	// 	for (size_t i = 0; i < size; i++)
-	// 	{
-	// 		output[i] = make_pair(0, 0);
-	// 	}
-	// }
-
-	// log
-	// vector<T> xtrunc(size);
-	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc", false);
-	// // printHighBitVec(xtrunc, "", size);
-	// printVector(xtrunc, "ztrunc", size);
-
-	// funcAdd(output, output, rtrunc, size, true); // truncz-truncr
-
-	// log
-	// funcReconstruct<Vec, T>(output, xtrunc, size, "ztrunc-rtrunc", true);
-	// // printHighBitVec(xtrunc, "", size);
-	// printVector(xtrunc, "z-r", size);
-
-	// funcAdd(output, output, rmsb, size, false); // x' += wrap
-
-	// log
-	// vector<T> x(size);
-	// funcReconstruct<Vec, T>(output, x, size, "before bias", false);
-	// printVector(x, "before bias", size);
-	// printHighBitVec(x, "before bias", size);
-	// cout << bitset<64>(bias2) << endl;
 
 	if (partyNum == PARTY_A)
 	{
@@ -2029,11 +2270,6 @@ void funcProbTruncation(Vec &data, int trunc_bits, size_t size)
 	}
 
 	funcAddOneConst(data, bias2, size);
-
-	// log
-	// funcReconstruct<Vec, T>(output, x, size, "after bias", true);
-	// printVector(x, "after bias", size);
-	// printHighBitVec(x, "after bias", size);
 }
 
 // void funcProbTruncation(Vec &output, Vec &input, int trunc_bits, size_t size)
@@ -2077,49 +2313,118 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 	}
 
 	// TODO: perform truncation
-	Vec r(size), rPrime(size);
-	PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
-
-	for (size_t i = 0; i < size; i++)
+	Vec r(size), rPrime(size), rmsb(size);
+	if (IS_FALCON)
 	{
-		temp3[i] -= rPrime[i].first;
-	}
-
-	funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
-	dividePlain(diffReconst, (1l << float_precision));
-
-	// cout << "Reconstrut Square Diff." << endl;
-	// for (size_t i = 0; i < size; i++) {
-	// 	print_linear(diffReconst[i], "FLOAT");
-	// }
-	// cout << endl;
-
-	// Reshare 2-3 RSS
-	if (partyNum == PARTY_A)
-	{
-		for (int i = 0; i < size; ++i)
+		if (OFFLINE_ON)
 		{
-			b[i].first = r[i].first + diffReconst[i];
-			b[i].second = r[i].second;
+			funcTruncationR<Vec, elementType>(rPrime, r, float_precision, size);
+		}
+		// PrecomputeObject->getDividedShares(r, rPrime, (1 << float_precision), size);
+
+		for (size_t i = 0; i < size; i++)
+		{
+			temp3[i] -= rPrime[i].first;
+		}
+
+		funcReconstruct3out3(temp3, diffReconst, size, "Square Truncation", false);
+		dividePlain(diffReconst, (1l << float_precision));
+
+		// cout << "Reconstrut Square Diff." << endl;
+		// for (size_t i = 0; i < size; i++) {
+		// 	print_linear(diffReconst[i], "FLOAT");
+		// }
+		// cout << endl;
+
+		// Reshare 2-3 RSS
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first + diffReconst[i];
+				b[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_B)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first;
+				b[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first;
+				b[i].second = r[i].second + diffReconst[i];
+			}
 		}
 	}
-
-	if (partyNum == PARTY_B)
+	else
 	{
-		for (int i = 0; i < size; ++i)
+		size_t k = sizeof(elementType) << 3;
+		size_t reall = k - float_precision;
+		elementType bias1 = (1l << (k - 2));
+		elementType bias2 = -(1l << (k - 2 - float_precision));
+		elementType msb = (1l << (k - 1));
+		if (OFFLINE_ON)
 		{
-			b[i].first = r[i].first;
-			b[i].second = r[i].second;
+			funcTruncationR<Vec, elementType>(rPrime, r, rmsb, float_precision, size);
 		}
-	}
+		for (size_t i = 0; i < size; i++)
+		{
+			temp3[i] -= rPrime[i].first;
+		}
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				temp3[i] += bias1;
+			}
+		}
 
-	if (partyNum == PARTY_C)
-	{
-		for (int i = 0; i < size; ++i)
+		funcReconstruct3out3(temp3, diffReconst, size, "Mat-Mul diff reconst", false);
+
+		for (size_t i = 0; i < size; ++i)
 		{
-			b[i].first = r[i].first;
-			b[i].second = r[i].second + diffReconst[i];
+			// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+			if ((diffReconst[i] & msb))
+			{
+				rmsb[i] = make_pair(0, 0); // w-->rmsb
+			}
+			else
+			{
+				rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+			}
 		}
+
+		if (partyNum == PARTY_A)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair((diffReconst[i] >> float_precision) + rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+			}
+		}
+		else if (partyNum == PARTY_C)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair(rmsb[i].first - r[i].first, (diffReconst[i] >> float_precision) + rmsb[i].second - r[i].second);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+			}
+		}
+
+		funcAddOneConst(b, bias2, size);
 	}
 }
 
@@ -2147,58 +2452,122 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	vector<elementType> diffReconst(size, 0);
 
 	// compute FXP(x/m)
-	// vector<elementType> temp3(size, 0), 
+	// vector<elementType> temp3(size, 0),
 	// for (size_t i = 0; i < size; i++)
 	// {
 	// 	temp3[i] = a[i].first;
 	// }
 
 	// TODO: perform truncation
-	Vec r(size), rPrime(size);
-	PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
-
-	Vec temp = a;
-	for (size_t i = 0; i < size; i++)
+	Vec r(size), rPrime(size), rmsb(size);
+	if (IS_FALCON)
 	{
-		// temp3[i] -= rPrime[i].first;
-		temp[i] =  temp[i] - rPrime[i];
-	}
-	funcReconstruct(temp, diffReconst, size, "Exp Truncation", false);
-
-	// funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
-	dividePlain(diffReconst, (1l << EXP_PRECISION));
-
-	// cout << "Reconstrut Exp Diff." << endl;
-	// for (size_t i = 0; i < size; i++) {
-	// 	print_linear(diffReconst[i], "FLOAT");
-	// }
-	// cout << endl;
-
-	// !!!!!!!!!!!!!!! Note: the below computes r + (x'-r')/2^d + 1. The last +1 operation is required to compute 1+x/m !!!!!!!!! 
-	if (partyNum == PARTY_A)
-	{
-		for (int i = 0; i < size; ++i)
+		if (OFFLINE_ON)
 		{
-			b[i].first = r[i].first + diffReconst[i] + (1 << float_precision);
-			b[i].second = r[i].second;
+			funcTruncationR<Vec, elementType>(rPrime, r, EXP_PRECISION, size);
+		}
+		// PrecomputeObject->getDividedShares(r, rPrime, (1 << EXP_PRECISION), size);
+
+		Vec temp = a;
+		for (size_t i = 0; i < size; i++)
+		{
+			// temp3[i] -= rPrime[i].first;
+			temp[i] = temp[i] - rPrime[i];
+		}
+		funcReconstruct(temp, diffReconst, size, "Exp Truncation", false);
+
+		// funcReconstruct3out3(temp3, diffReconst, size, "Exp Truncation", false);
+		dividePlain(diffReconst, (1l << EXP_PRECISION));
+
+		// cout << "Reconstrut Exp Diff." << endl;
+		// for (size_t i = 0; i < size; i++) {
+		// 	print_linear(diffReconst[i], "FLOAT");
+		// }
+		// cout << endl;
+
+		// !!!!!!!!!!!!!!! Note: the below computes r + (x'-r')/2^d + 1. The last +1 operation is required to compute 1+x/m !!!!!!!!!
+		if (partyNum == PARTY_A)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first + diffReconst[i] + (1 << float_precision);
+				b[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_B)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first;
+				b[i].second = r[i].second;
+			}
+		}
+
+		if (partyNum == PARTY_C)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				b[i].first = r[i].first;
+				b[i].second = r[i].second + diffReconst[i] + (1 << float_precision);
+			}
 		}
 	}
-
-	if (partyNum == PARTY_B)
+	else
 	{
-		for (int i = 0; i < size; ++i)
+		size_t k = sizeof(elementType) << 3;
+		size_t reall = k - EXP_PRECISION;
+		elementType bias1 = (1l << (k - 2));
+		elementType bias2 = -(1l << (k - 2 - EXP_PRECISION));
+		elementType msb = (1l << (k - 1));
+		if (OFFLINE_ON)
 		{
-			b[i].first = r[i].first;
-			b[i].second = r[i].second;
+			funcTruncationR<Vec, elementType>(rPrime, r, EXP_PRECISION, size);
 		}
-	}
 
-	if (partyNum == PARTY_C)
-	{
-		for (int i = 0; i < size; ++i)
+		Vec temp = a;
+		for (size_t i = 0; i < size; i++)
 		{
-			b[i].first = r[i].first;
-			b[i].second = r[i].second + diffReconst[i] + (1 << float_precision);
+			// temp3[i] -= rPrime[i].first;
+			temp[i] = temp[i] - rPrime[i];
+		}
+		funcAddOneConst(temp, bias2, size);
+
+		funcReconstruct(temp, diffReconst, size, "Exp Truncation", false);
+
+		for (size_t i = 0; i < size; ++i)
+		{
+			// wrap,  [w]k = [rk−1]k · ¬⌊z/2k−1⌋
+			if ((diffReconst[i] & msb))
+			{
+				rmsb[i] = make_pair(0, 0); // w-->rmsb
+			}
+			else
+			{
+				rmsb[i] = make_pair((rmsb[i].first << reall), (rmsb[i].second << reall));
+			}
+		}
+
+		if (partyNum == PARTY_A)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair((diffReconst[i] >> EXP_PRECISION) + rmsb[i].first - r[i].first + (1 << float_precision), rmsb[i].second - r[i].second);
+			}
+		}
+		else if (partyNum == PARTY_C)
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair(rmsb[i].first - r[i].first, (diffReconst[i] >> EXP_PRECISION) + rmsb[i].second - r[i].second + (1 << float_precision));
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				b[i] = make_pair(rmsb[i].first - r[i].first, rmsb[i].second - r[i].second);
+			}
 		}
 	}
 
@@ -2257,7 +2626,7 @@ void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			a[i].first = FLOAT_BIAS - 2 * b[i].first;
+			a[i].first = (1 << float_precision) - 2 * b[i].first;
 			a[i].second = -2 * b[i].second;
 		}
 	}
@@ -2266,7 +2635,7 @@ void funcReciprocal(VEC &a, const VEC &b, bool input_in_01,
 		for (size_t i = 0; i < size; i++)
 		{
 			a[i].first = -2 * b[i].first;
-			a[i].second = FLOAT_BIAS - 2 * b[i].second;
+			a[i].second = (1 << float_precision) - 2 * b[i].second;
 		}
 	}
 	else
@@ -2357,30 +2726,30 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 	// b = (1 - 2 * b)
 	// if (OFFLINE_ON)
 	// {
-		if (partyNum == PARTY_A)
+	if (partyNum == PARTY_A)
+	{
+		for (size_t i = 0; i < size; i++)
 		{
-			for (size_t i = 0; i < size; i++)
-			{
-				a[i].first = (1 << (float_precision - REC_INIT));
-				a[i].second = 0;
-			}
+			a[i].first = (1 << (float_precision - REC_INIT));
+			a[i].second = 0;
 		}
-		else if (partyNum == PARTY_C)
+	}
+	else if (partyNum == PARTY_C)
+	{
+		for (size_t i = 0; i < size; i++)
 		{
-			for (size_t i = 0; i < size; i++)
-			{
-				a[i].first = 0;
-				a[i].second = (1 << (float_precision - REC_INIT));
-			}
+			a[i].first = 0;
+			a[i].second = (1 << (float_precision - REC_INIT));
 		}
-		else
+	}
+	else
+	{
+		for (size_t i = 0; i < size; i++)
 		{
-			for (size_t i = 0; i < size; i++)
-			{
-				a[i].first = 0;
-				a[i].second = 0;
-			}
+			a[i].first = 0;
+			a[i].second = 0;
 		}
+	}
 	// }
 
 	// a = 3 * (1 - 2 * b).exp() + 0.003
@@ -2615,14 +2984,17 @@ void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
 	cout << "Private Inverse sqrt" << endl;
 	// inver Square Root
 	// https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
-	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value) {
+	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value)
+	{
 		cout << "Mixed-Precision Inverse Sqrt" << endl;
 		RSSVectorHighType highP_var_eps(size), highP_inv_sqrt(size);
 		funcMSExtension(highP_var_eps, input, size);
-		funcMulConst(highP_var_eps, highP_var_eps, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
-		funcInverseSqrt<RSSVectorHighType, highBit>(highP_inv_sqrt, highP_var_eps, size); // [1,D]
+		funcMulConst(highP_var_eps, highP_var_eps, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+		funcInverseSqrt<RSSVectorHighType, highBit>(highP_inv_sqrt, highP_var_eps, size);		 // [1,D]
 		funcTruncAndReduce(output, highP_inv_sqrt, (HIGH_PRECISION - LOW_PRECISION), size);
-	} else {
+	}
+	else
+	{
 		funcInverseSqrt<Vec, T>(output, input, size); // [1,D]
 	}
 }
@@ -2686,7 +3058,14 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 	// funcReconstruct(dividend, reconst_dividend, size, "dividend", true);
 
 	// compute the division
-	funcDivisionByNR(b, exp_elements, dividend, size);
+	if (IS_FALCON)
+	{
+		funcDivision(exp_elements, dividend, b, size);
+	}
+	else
+	{
+		funcDivisionByNR(b, exp_elements, dividend, size);
+	}
 }
 
 // Random shared bit [b] over ring of Vec, and b is 0/1;
@@ -2837,7 +3216,7 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias
 	Vec aRss(size);
 	Vec bRss(size);
 	Vec amulb(size);
-	T val = isbias ? FLOAT_BIAS : 1;
+	T val = isbias ? (1 << float_precision) : 1;
 	vector<T> a(size);
 	if (partyNum == PARTY_A)
 	{
@@ -2914,6 +3293,19 @@ void funcB2AbyXOR(Vec &result, RSSVectorBoolType &data, size_t size, bool isbias
 template <typename Vec, typename T>
 void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbias)
 {
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(data).name() << endl;
+	}
 	RSSVectorBoolType randB(size);
 	Vec randA(size);
 	if (OFFLINE_ON)
@@ -2935,7 +3327,7 @@ void funcB2A(Vec &result, const RSSVectorBoolType &data, size_t size, bool isbia
 	vector<bool> c(size);
 	funcBoolRev(c, cRss, size, "c plain", false);
 
-	T val = isbias ? FLOAT_BIAS : 1;
+	T val = isbias ? (1 << float_precision) : 1;
 
 	for (size_t i = 0; i < size; i++)
 	{
@@ -3023,7 +3415,6 @@ void funcShareAB(Vec &result1, const vector<T> &data1, const size_t size1, RSSVe
 		// thread *threads = new thread[2];
 		// threads[0] = thread(receiveBoolVector, ref(a1_xor_data), shareParty, size2); // receive a1+x
 		receiveVector<T>(receivedata, shareParty, size1 + plussize); // receive a1+x
-		// cout << "receive a1 xor data" << endl;
 
 		// printVector<T>(receivedata, "receive data", receivedata.size());
 		// threads[0].join();
@@ -3156,4 +3547,23 @@ void funcRandBitByXor(Vec &b, size_t size)
 	PrecomputeObject->getBPairRand(bRSS, size);
 
 	funcB2AbyXOR<Vec, T>(b, bRSS, size, false);
+}
+
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorBoolType &b, size_t size)
+{
+	PrecomputeObject->getB2ARand(b, size);
+	funcB2AbyXOR<Vec, T>(a, b, size, true);
+}
+
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorSmallType &b, size_t size)
+{
+	RSSVectorBoolType temp(size);
+	PrecomputeObject->getB2ARand(temp, size);
+	funcB2AbyXOR<Vec, T>(a, temp, size, true);
+	for (int i = 0; i < size; i++)
+	{
+		b[i] = make_pair(temp[i].first, temp[i].second);
+	}
 }

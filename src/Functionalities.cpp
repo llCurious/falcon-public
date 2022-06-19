@@ -16,7 +16,11 @@ void funcTruncate(RSSVectorMyType &a, size_t power, size_t size)
 
 	RSSVectorMyType r(size), rPrime(size);
 	vector<myType> reconst(size);
-	PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
+	if (OFFLINE_ON)
+	{
+		funcTruncationR<RSSVectorMyType, myType>(rPrime, r, power, size);
+	}
+	// PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -56,7 +60,11 @@ void funcTruncatePublic(RSSVectorMyType &a, size_t divisor, size_t size)
 
 	RSSVectorMyType r(size), rPrime(size);
 	vector<myType> reconst(size);
-	PrecomputeObject->getDividedShares(r, rPrime, divisor, size);
+	if (OFFLINE_ON)
+	{
+		funcTruncationR<RSSVectorMyType, myType>(rPrime, r, divisor, size);
+		// PrecomputeObject->getDividedShares(r, rPrime, divisor, size);
+	}
 	for (int i = 0; i < size; ++i)
 		a[i] = a[i] - rPrime[i];
 
@@ -1132,7 +1140,11 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 	RSSVectorSmallType c(size), bXORc(size);
 	RSSVectorHighType m_c(size);
 	vector<smallType> reconst_b(size);
-	PrecomputeObject->getSelectorBitShares(c, m_c, size);
+	if (OFFLINE_ON)
+	{
+		funcRandBandA<RSSVectorHighType, highBit>(m_c, c, size);
+		// PrecomputeObject->getSelectorBitShares(c, m_c, size);
+	}
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1177,7 +1189,11 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 	RSSVectorSmallType c(size), bXORc(size);
 	RSSVectorLowType m_c(size);
 	vector<smallType> reconst_b(size);
-	PrecomputeObject->getSelectorBitShares(c, m_c, size);
+	if (OFFLINE_ON)
+	{
+		funcRandBandA<RSSVectorLowType, lowBit>(m_c, c, size);
+	}
+	// PrecomputeObject->getSelectorBitShares(c, m_c, size);
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -1654,6 +1670,30 @@ void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, RSSVectorHig
 	funcReduction(am, an, size);
 }
 
+void funcMixedShareGen(RSSVectorHighType &an, RSSVectorLowType &am, size_t size)
+{
+	size_t lowsize = 32;
+	size_t bitsize = size * lowsize;
+	RSSVectorHighType anBit(bitsize);
+	funcRandBitByXor<RSSVectorHighType, highBit>(anBit, bitsize);
+
+	for (size_t i = 0; i < size; ++i)
+	{
+		highBit temp1 = 0;
+		highBit temp2 = 0;
+		RSSHighType bitrss;
+		for (size_t j = 0; j < lowsize; ++j)
+		{
+			bitrss = anBit[i * lowsize + j];
+			temp1 = (temp1 << 1) + bitrss.first;
+			temp2 = (temp2 << 1) + bitrss.second;
+		}
+		an[i] = make_pair(temp1, temp2);
+	}
+
+	funcReduction(am, an, size);
+}
+
 void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, size_t size)
 {
 	RSSVectorHighType rn(size);
@@ -2012,7 +2052,7 @@ void debugDivision()
 
 	funcGetShares(a, data_a);
 	funcGetShares(b, data_b);
-	// funcDivision(a, b, quotient, size);
+	funcDivision(a, b, quotient, size);
 
 #if (!LOG_DEBUG)
 	funcReconstruct(a, reconst, size, "a", true);

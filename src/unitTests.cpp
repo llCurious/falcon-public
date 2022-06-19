@@ -1,5 +1,109 @@
 #include "unitTests.h"
 
+void benchWCExtension()
+{
+	size_t dims[4] = {100, 1000, 10000, 100000};
+	int cnt = 20;
+	clock_t start, end;
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	commObject.setMeasurement(true);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		vector<lowBit> data(size);
+		RSSVectorLowType datalow(size);
+		RSSVectorHighType datahigh(size);
+		funcGetShares(datalow, data);
+
+		round = commObject.getRoundsRecv();
+		commsize = commObject.getRecv();
+
+		funcWCExtension(datahigh, datalow, size); // test function
+
+		cout << "round " << commObject.getRoundsRecv() - round << endl;
+		// cout << "send round " << commObject.getRoundsSent() << endl;
+		cout << "size " << commObject.getRecv() - commsize << endl;
+		// cout << "send size" << commObject.getSent() << endl;
+	}
+	commObject.setMeasurement(false);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		double time_sum = 0;
+		for (int j = 0; j < cnt; ++j)
+		{
+			vector<lowBit> data(size);
+			RSSVectorLowType datalow(size);
+			RSSVectorHighType datahigh(size);
+			funcGetShares(datalow, data);
+
+			start = clock();
+			funcWCExtension(datahigh, datalow, size); // test function
+			end = clock();
+			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			time_sum += dur;
+			// cout << j << " " << dur << endl;
+		}
+		cout << time_sum / cnt << endl;
+	}
+}
+
+void benchMSExtension()
+{
+	size_t dims[4] = {100, 1000, 10000, 100000};
+	int cnt = 20;
+	clock_t start, end;
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	commObject.setMeasurement(true);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		vector<lowBit> data(size);
+		RSSVectorLowType datalow(size);
+		RSSVectorHighType datahigh(size);
+		funcGetShares(datalow, data);
+
+		round = commObject.getRoundsRecv();
+		commsize = commObject.getRecv();
+
+		funcMSExtension(datahigh, datalow, size); // test function
+
+		cout << "round " << commObject.getRoundsRecv() - round << endl;
+		// cout << "send round " << commObject.getRoundsSent() << endl;
+		cout << "size " << commObject.getRecv() - commsize << endl;
+		// cout << "send size" << commObject.getSent() << endl;
+	}
+	commObject.setMeasurement(false);
+	for (int i = 0; i < 4; i++)
+	{
+		size_t size = dims[i];
+		cout << "dim " << size << endl;
+		double time_sum = 0;
+		for (int j = 0; j < cnt; ++j)
+		{
+			vector<lowBit> data(size);
+			RSSVectorLowType datalow(size);
+			RSSVectorHighType datahigh(size);
+			funcGetShares(datalow, data);
+
+			start = clock();
+			funcMSExtension(datahigh, datalow, size); // test function
+			end = clock();
+			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			time_sum += dur;
+			// cout << j << " " << dur << endl;
+		}
+		cout << time_sum / cnt << endl;
+	}
+}
+
 void debugPartySS()
 {
 	size_t size = 5;
@@ -307,7 +411,7 @@ void debugPosWrap()
 
 void debugWCExtension()
 {
-	cout << "Debug WC-Share Extension" << endl;
+	// cout << "Debug WC-Share Extension" << endl;
 	size_t size = 10240;
 	vector<lowBit> data(size);
 	size_t i = 0;
@@ -454,6 +558,64 @@ void debugTruncAndReduce()
 			// cout << (int(data[i]) >> trunc_bits) << " " << int(output_p[i]) << endl;
 		}
 	}
+}
+
+void debugBNLayer()
+{
+	cout << "Debug Batch Normalization Layer" << endl;
+	size_t B = 4, D = 5;
+	size_t size = B * D;
+
+	// Floating point representation
+	vector<float> x_raw = {
+		1, 2, 3, 4, 5,
+		1, 3, 5, 7, 8,
+		1, 2, 3, 6, 6,
+		1, 2, 4, 5, 6};
+
+	// vector<float> grad_raw = {
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1,
+	// 	1, 1, 1, 1, 1};
+	vector<float> grad_raw = {
+		1, 1, 1, 1, 1,
+		1, 2, 1, 1, 1,
+		2, 2, 1, 1, 2,
+		1, 2, 2, 1, 2};
+
+	// FXP representation
+	vector<highBit> x_p(size), grad_p(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		x_p[i] = x_raw[i] * (1 << FLOAT_PRECISION);
+		grad_p[i] = grad_raw[i] * (1 << FLOAT_PRECISION);
+	}
+
+	// Public to secret
+	RSSVectorHighType input_act(size), grad(size);
+	funcGetShares(input_act, x_p);
+	funcGetShares(grad, grad_p);
+
+	BNConfig *bn_conf = new BNConfig(D, B);
+	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+	layer->printLayer();
+
+	// Forward.
+	RSSVectorHighType forward_output(size), backward_output(size);
+	layer->forward(input_act);
+	forward_output = *layer->getActivation();
+	print_vector(forward_output, "FLOAT", "BN Forward", size);
+
+	// Backward.
+	RSSVectorHighType x_grad(size);
+	// layer->backward(grad);
+	*(layer->getDelta()) = grad;
+	layer->computeDelta(x_grad);
+	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
+
+	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
+	layer->updateEquations(input_act);
 }
 
 void runTest(string str, string whichTest, string &network)
@@ -702,6 +864,19 @@ void runTest(string str, string whichTest, string &network)
 		}
 		else
 			assert(false && "Unknown test mode selected");
+	}
+	else if (str.compare("Bench") == 0)
+	{
+		if (whichTest.compare("MSExtension") == 0)
+		{
+			network = "MSExtension";
+			benchMSExtension();
+		}
+		else if (whichTest.compare("WCExtension") == 0)
+		{
+			network = "WCExtension";
+			benchWCExtension();
+		}
 	}
 	else
 		assert(false && "Only Debug or Test mode supported");
