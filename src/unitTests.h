@@ -282,10 +282,10 @@ void debugBNLayer()
 		1, 2, 4, 5, 6};
 
 	vector<float> grad_raw = {
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1};
+		1, 2, 3, 4, 5,
+		1, 3, 5, 7, 8,
+		1, 2, 3, 6, 6,
+		1, 2, 4, 5, 6};
 
 	// FXP representation
 	vector<T> x_p(size), grad_p(size);
@@ -301,7 +301,7 @@ void debugBNLayer()
 	for (size_t i = 0; i < size; i++)
 	{
 		x_p[i] = x_raw[i] * (1 << float_precision);
-		grad_p[i] = grad_raw[i] * (1 << float_precision);
+		grad_p[i] = grad_raw[i] * (1 << (10 + float_precision));
 	}
 
 	// Public to secret
