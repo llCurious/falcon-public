@@ -204,7 +204,7 @@ void NeuralNetwork::predict(RSSVectorMyType &maxIndex)
 }
 
 /* new implementation, may still have bug and security flaws */
-void NeuralNetwork::getAccuracy()
+float NeuralNetwork::getAccuracy()
 {
 	vector<size_t> counter(2);
 	log_print("NN.getAccuracy");
@@ -251,10 +251,11 @@ void NeuralNetwork::getAccuracy()
 	// cout << endl;
 
 	cout << "Rolling accuracy: " << counter[0] << " out of " 
-		 << counter[1] << " (" << (counter[0]*100/counter[1]) << " %)" << endl;
+		 << counter[1] << " (" << (counter[0]*100.0/counter[1]) << " %)" << endl;
+	return (counter[0]*100.0/counter[1]);
 }
 
-void NeuralNetwork::getLoss() {
+float NeuralNetwork::getLoss() {
 	log_print("NN.getLoss");
 
 	size_t rows = MINI_BATCH_SIZE;
@@ -318,6 +319,7 @@ void NeuralNetwork::getLoss() {
 	}
 	string loss_func = USE_SOFTMAX_CE ? "Softmax+CE" : "MSE";
 	cout << loss_func << " Loss: " << loss << endl;
+	return loss;
 }
 
 // original implmentation of NeuralNetwork::getAccuracy(.)

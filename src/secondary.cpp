@@ -60,10 +60,14 @@ void parseInputs(int argc, char* argv[])
 		}
 }
 
-void train(NeuralNetwork* net)
+void train(NeuralNetwork* net, string network, string dataset)
 {
 	log_print("train");
 
+	float loss = 0, acc = 0;
+	string default_path = "output/" + network + "_" + dataset;
+	ofstream accF(default_path + "_acc.txt"), lossF(default_path + "_loss.txt");
+	cout << default_path + "_acc.txt" << endl;
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
 		cout << "----------------------------------" << endl;  
@@ -71,10 +75,13 @@ void train(NeuralNetwork* net)
 		readMiniBatch(net, "TRAINING");
 		net->forward();
 		net->backward();
-		net->getAccuracy();
-		net->getLoss();
+		acc = net->getAccuracy();
+		loss = net->getLoss();
+		accF << to_string(i) << "\t" << to_string(acc) + "\n"; accF.flush();
+		lossF << to_string(i) << "\t" << to_string(loss) + "\n"; lossF.flush();
 		// cout << "----------------------------------" << endl;  
 	}
+	accF.close(); lossF.close();
 }
 
 

@@ -8,7 +8,7 @@
 
 /******************* Main train and test functions *******************/
 void parseInputs(int argc, char* argv[]);
-void train(NeuralNetwork* net);
+void train(NeuralNetwork* net, string network, string dataset);
 void test(bool PRELOADING, string network, NeuralNetwork* net);
 // void generate_zeros(string name, size_t number, string network);
 void preload_network(bool PRELOADING, string network, string dataset, NeuralNetwork* net);
