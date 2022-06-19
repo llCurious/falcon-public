@@ -318,8 +318,8 @@ float NeuralNetwork::getLoss() {
 		}
 	}
 	string loss_func = USE_SOFTMAX_CE ? "Softmax+CE" : "MSE";
-	cout << loss_func << " Loss: " << loss << endl;
-	return loss;
+	cout << loss_func << " Loss: " << loss / MINI_BATCH_SIZE << endl;
+	return loss / MINI_BATCH_SIZE;
 }
 
 // original implmentation of NeuralNetwork::getAccuracy(.)
