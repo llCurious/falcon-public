@@ -22,6 +22,8 @@
 #include "connect.h"
 #include "globals.h"
 #include <bitset>
+#include <iostream>
+#include <fstream>
 
 extern int partyNum;
 
@@ -686,6 +688,38 @@ void copyVectors(const vector<T> &a, vector<T> &b, size_t size)
 	for (size_t i = 0; i < size; ++i)
 		b[i] = a[i];
 }
+
+template <typename T>
+void mat2file(const vector<T> &a, string filename, size_t size)
+{
+	assert(a.size() == size);
+	typedef typename std::conditional<std::is_same<T, lowBit>::value, int32_t, int64_t>::type computeType;
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<T, highBit>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<T, lowBit>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
+
+	ofstream f;
+	f.open(filename, ios::out | ios::app);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		f << (static_cast<computeType>(a[i])) / (float)(1 << float_precision) << " ";
+	}
+	f << "\n";
+	f.close();
+}
+
+void mat2file(const vector<float> &a, string filename, size_t size);
 
 #include <chrono>
 #include <utility>

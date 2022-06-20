@@ -2306,6 +2306,7 @@ void testReduction(size_t size)
 void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos)
 {
 	size_t temp_size = var.size();
+	cout << temp_size << endl;
 	vector<lowBit> b(temp_size);
 	funcReconstruct(var, b, temp_size, "anything", false);
 	cout << pre_text << endl;

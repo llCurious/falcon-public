@@ -10,6 +10,7 @@
 #include <time.h>
 #include "connect.h"
 #include "basicSockets.h"
+#include <cstdlib>
 
 extern CommunicationObject commObject;
 
