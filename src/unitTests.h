@@ -290,69 +290,64 @@ void debugBNLayer();
 template <typename Vec, typename T>
 void debugBNLayer()
 {
-    cout << "Debug Batch Normalization Layer" << endl;
-    size_t B = 4, D = 5;
-    size_t size = B * D;
+	cout << "Debug Batch Normalization Layer" << endl;
+	size_t B = 4, D = 5;
+	size_t size = B * D;
 
-    // Floating point representation
-    vector<float> x_raw = {
-        1, 2, 3, 4, 5,
-        1, 3, 5, 7, 8,
-        1, 2, 3, 6, 6,
-        1, 2, 4, 5, 6};
+	// Floating point representation
+	vector<float> x_raw = {
+		1, 2, 3, 4, 5,
+		1, 3, 5, 7, 8,
+		1, 2, 3, 6, 6,
+		1, 2, 4, 5, 6};
 
-    vector<float> grad_raw = {
-        1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1};
+	vector<float> grad_raw = {
+		1, 2, 3, 4, 5,
+		1, 3, 5, 7, 8,
+		1, 2, 3, 6, 6,
+		1, 2, 4, 5, 6};
 
-    // FXP representation
-    vector<T> x_p(size), grad_p(size);
+	// FXP representation
+	vector<T> x_p(size), grad_p(size);
     size_t float_precision = FLOAT_PRECISION;
-    if (std::is_same<T, highBit>::value)
-    {
-        float_precision = HIGH_PRECISION;
-    }
-    else if (std::is_same<T, lowBit>::value)
-    {
-        float_precision = LOW_PRECISION;
-    }
-    else
-    {
-        cout << "Not supported type" << typeid(x_p).name() << endl;
-    }
+	if (std::is_same<T, highBit>::value) {
+		float_precision = HIGH_PRECISION;
+	} else if (std::is_same<T, lowBit>::value) {
+		float_precision = LOW_PRECISION;
+	} else {
+		cout << "Not supported type" << typeid(x_p).name() << endl;
+	}
+    
+	for (size_t i = 0; i < size; i++)
+	{
+		x_p[i] = x_raw[i] * (1 << float_precision);
+		grad_p[i] = grad_raw[i] * (1 << (10 + float_precision));
+	}
 
-    for (size_t i = 0; i < size; i++)
-    {
-        x_p[i] = x_raw[i] * (1 << float_precision);
-        grad_p[i] = grad_raw[i] * (1 << float_precision);
-    }
+	// Public to secret
+	Vec input_act(size), grad(size);
+	funcGetShares(input_act, x_p);
+	funcGetShares(grad, grad_p);
 
-    // Public to secret
-    Vec input_act(size), grad(size);
-    funcGetShares(input_act, x_p);
-    funcGetShares(grad, grad_p);
+	BNConfig *bn_conf = new BNConfig(D, B);
+	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+	layer->printLayer();
 
-    BNConfig *bn_conf = new BNConfig(D, B);
-    BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
-    layer->printLayer();
+	// Forward.
+	Vec forward_output(size), backward_output(size);
+	layer->forward(input_act);
+	forward_output = *layer->getActivation();
+	print_vector(forward_output, "FLOAT", "BN Forward", size);
 
-    // Forward.
-    Vec forward_output(size), backward_output(size);
-    layer->forward(input_act);
-    forward_output = *layer->getActivation();
-    print_vector(forward_output, "FLOAT", "BN Forward", size);
+	// Backward.
+	Vec x_grad(size);
+	// layer->backward(grad);
+	*(layer->getDelta()) = grad;
+	layer->computeDelta(x_grad);
+	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
-    // Backward.
-    Vec x_grad(size);
-    // layer->backward(grad);
-    *(layer->getDelta()) = grad;
-    layer->computeDelta(x_grad);
-    print_vector(x_grad, "FLOAT", "BN Backward- X", size);
-
-    // Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-    layer->updateEquations(input_act);
+	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
+	layer->updateEquations(input_act);
 }
 
 #endif

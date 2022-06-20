@@ -43,6 +43,7 @@
 // Batch size has to be a power of two
 #define REC_ITERS 7
 #define REC_Y 6
+#define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
 #define INVSQRT_ITERS 3
 #define LOG_MINI_BATCH 2
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
@@ -96,11 +97,15 @@ operator<<(std::ostream &dest, longBit value);
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION false
-#define MP_FOR_INV_SQRT true
+#define MP_FOR_INV_SQRT false
+#define PLAINTEXT_INV_SQRT true
+#define PLAINTEXT_RECIPROCAL true
+#define USE_BN true
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
 #define OFFLINE_ON false
+#define PRE_LOAD true
 #define IS_FALCON false
 
 #endif

@@ -20,6 +20,6 @@ public:
 	void computeDelta();
 	void updateEquations();
 	void predict(RSSVectorMyType &maxIndex);
-	void getAccuracy();
-	void getLoss();
+	float getAccuracy();
+	float getLoss();
 };

@@ -84,7 +84,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
     // log
     vector<myType> plainsize(size);
-    funcReconstruct(x_mean, plainsize, size, "x_mean", true);
+    // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     RSSVectorMyType temp2(size);
@@ -98,7 +98,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
 
     // Compute (variance + epsilon)
     funcAddOneConst(var_eps, eps, m);
-    funcReconstruct(var_eps, plainm, m, "var_eps", true);
+    // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // inver Square Root
     // // https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
@@ -113,9 +113,9 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     //     funcInverseSqrt<RSSVectorMyType, myType>(inv_sqrt, var_eps, m); // [1,D]
     // }
     mixedPrecisionOp<decltype(var_eps), decltype(eps)>(inv_sqrt, var_eps, m);
-    print_vector(inv_sqrt, "FLOAT", "inv_sqrt", m);
-    // print_vector(var_eps, "FLOAT", "var_eps", m);
-    // print_vector(x_mean, "FLOAT", "x_mean", m);
+    // print_vector(inv_sqrt, "FLOAT", "inv_sqrt", 100);
+    // print_vector(var_eps, "FLOAT", "var_eps", 100);
+    // print_vector(x_mean, "FLOAT", "x_mean", 100);
 
     for (int i = 0; i < m; ++i) // compute norm_x
     {
@@ -274,6 +274,9 @@ void BNLayerOpt::computeDelta(RSSVectorMyType &prevDelta)
     // funcReconstruct(bdxhat, plainsize, size, "(--)", true);
     // self.inv_sqrt * ()/B
     funcDotProduct(inv_sqrt_rep, bdxhat, prevDelta, size, true, FLOAT_PRECISION + LOG_MINI_BATCH);
+    // print_vector(deltas, "FLOAT", "delta", 100);
+    // print_vector(prevDelta, "FLOAT", "x_grad", 100);
+    // prevDelta = deltas; // Test
 }
 
 void BNLayerOpt::updateEquations(const RSSVectorMyType &prevActivations)
@@ -294,7 +297,17 @@ void BNLayerOpt::updateEquations(const RSSVectorMyType &prevActivations)
     vector<myType> plainsize(size);
     // funcReconstruct(beta_grad, plainm, m, "beta_grad", true);
 
-    subtractVectors(beta, beta_grad, beta, m);
+    // print_vector(beta_grad_lr, "FLOAT", "beta_grad_lr", 100);
+
+    RSSVectorMyType beta_grad_lr(m);
+    funcProbTruncation<RSSVectorMyType, myType>(beta_grad_lr, beta_grad, LOG_LEARNING_RATE, m);
+    subtractVectors(beta, beta_grad_lr, beta, m);
+
+    // funcTruncate(beta_grad, LOG_LEARNING_RATE, m);
+    // subtractVectors(beta, beta_grad, beta, m);
+
+    // print_vector(beta_grad_lr, "FLOAT", "beta_grad_lr", 100);
+
 
     // Update gamma
     // self.gamma_grad = np.sum(self.norm_x * grad, axis=0)    # 1 multiplication
@@ -305,7 +318,10 @@ void BNLayerOpt::updateEquations(const RSSVectorMyType &prevActivations)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             gamma_grad[j] = gamma_grad[j] + temp[i * m + j];
-    // funcReconstruct(gamma_grad, plainm, m, "gamma_grad", true);
+    RSSVectorMyType gamma_grad_lr(m);
+    funcProbTruncation<RSSVectorMyType, myType>(gamma_grad_lr, gamma_grad, LOG_LEARNING_RATE, m);
+    // print_vector(gamma_grad, "FLOAT", "gamma_grad", 100);
+    // funcReconstruct(, plainm, m, "gamma_grad", true);
 
-    subtractVectors(gamma, gamma_grad, gamma, m);
+    subtractVectors(gamma, gamma_grad_lr, gamma, m);
 }

@@ -44,4 +44,8 @@ public:
     // Getters
     RSSVectorMyType *getActivation() { return &activations; };
     RSSVectorMyType *getDelta() { return &deltas; };
+    RSSVectorMyType* getGamma() {return &gamma;};
+	RSSVectorMyType* getBeta() {return &beta;};
+    RSSVectorMyType* getGammaGrad() {return &gamma_grad;};
+	RSSVectorMyType* getBetaGrad() {return &beta_grad;};
 };

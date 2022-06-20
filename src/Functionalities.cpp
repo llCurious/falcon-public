@@ -2161,11 +2161,11 @@ void debugMaxpool()
 
 void debugSquare()
 {
-	vector<lowBit> data_a{0, 2, 4, -5, 10, 7};
+	vector<highBit> data_a{0, 2, 4, -5, 10, 7};
 	size_t size = data_a.size();
 	for (size_t i = 0; i < size; i++)
-		data_a[i] = data_a[i] * (1 << LOW_PRECISION);
-	RSSVectorLowType a(size), b(size);
+		data_a[i] = data_a[i] * (1 << HIGH_PRECISION);
+	RSSVectorHighType a(size), b(size);
 
 	funcGetShares(a, data_a);
 	funcSquare(a, b, size);
