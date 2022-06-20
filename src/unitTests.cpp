@@ -104,6 +104,93 @@ void benchMSExtension()
 	}
 }
 
+void runBN(BNLayerOpt *layer, RSSVectorHighType forward_output, RSSVectorHighType back_output, RSSVectorHighType input_act, RSSVectorHighType grad, RSSVectorHighType x_grad)
+{
+	layer->forward(input_act);
+	forward_output = *layer->getActivation();
+
+	*(layer->getDelta()) = grad;
+	layer->computeDelta(x_grad);
+	layer->updateEquations(input_act);
+}
+
+void benchBN()
+{
+	size_t ds[2] = {10, 200};
+	// batch size: 32,64,128,256
+	size_t B = (1 << LOG_MINI_BATCH), D;
+	size_t size = B * D;
+	clock_t start, end;
+	double time_sum = 0;
+	int cnt = 20;
+
+	// Floating point representation
+	vector<float> x_raw(size);
+	vector<float> grad_raw(size);
+	for (size_t i = 0; i < B; i++)
+	{
+		for (size_t j = 0; j < D; j++)
+		{
+			x_raw[i * D + B] = rand() % 10;
+			grad_raw[i] = rand() % 3;
+		}
+	}
+
+	// FXP representation
+	vector<highBit> x_p(size), grad_p(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		x_p[i] = x_raw[i] * (1 << FLOAT_PRECISION);
+		grad_p[i] = grad_raw[i] * (1 << FLOAT_PRECISION);
+	}
+
+	// Public to secret
+	RSSVectorHighType input_act(size), grad(size);
+	funcGetShares(input_act, x_p);
+	funcGetShares(grad, grad_p);
+
+	BNConfig *bn_conf = new BNConfig(D, B);
+	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+
+	RSSVectorHighType forward_output(size), backward_output(size);
+	RSSVectorHighType x_grad(size);
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	for (size_t j = 0; j < 2; j++)
+	{
+		D = ds[j];
+		// acc test
+		runBN(layer, forward_output, backward_output, input_act, grad, x_grad);
+
+
+		// comm test
+		round = commObject.getRoundsRecv();
+		commsize = commObject.getRecv();
+		runBN(layer, forward_output, backward_output, input_act, grad, x_grad);
+		cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+		// time test
+		for (size_t i = 0; i < cnt; i++)
+		{
+			RSSVectorHighType forward_output(size), backward_output(size);
+			RSSVectorHighType x_grad(size);
+
+			start = clock();
+			runBN(layer, forward_output, backward_output, input_act, grad, x_grad);
+
+			end = clock();
+			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			time_sum += dur;
+		}
+		cout << B << " " << D << " " << time_sum / cnt << endl;
+	}
+}
+
+void benchSoftMax()
+{
+}
+
 void debugPartySS()
 {
 	size_t size = 5;
@@ -876,6 +963,16 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "WCExtension";
 			benchWCExtension();
+		}
+		else if (whichTest.compare("BN") == 0)
+		{
+			network = "BN";
+			benchBN();
+		}
+		else if (whichTest.compare("SoftMax") == 0)
+		{
+			network = "SoftMax";
+			benchSoftMax();
 		}
 	}
 	else
