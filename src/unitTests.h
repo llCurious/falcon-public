@@ -11,12 +11,18 @@
 #include "connect.h"
 #include "basicSockets.h"
 #include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cassert>
 
 extern CommunicationObject commObject;
 
 void benchWCExtension();
 void benchMSExtension();
 void benchBN();
+template <typename Vec, typename T>
+void benchBNAcc();
 void benchSoftMax();
 
 /************Debug****************/
@@ -335,20 +341,20 @@ void debugBNLayer()
 	layer->printLayer();
 
 	// Forward.
-	Vec forward_output(size), backward_output(size);
-	layer->forward(input_act);
-	forward_output = *layer->getActivation();
-	print_vector(forward_output, "FLOAT", "BN Forward", size);
+	// Vec forward_output(size), backward_output(size);
+	// layer->forward(input_act);
+	// forward_output = *layer->getActivation();
+	// print_vector(forward_output, "FLOAT", "BN Forward", size);
 
-	// Backward.
-	Vec x_grad(size);
-	// layer->backward(grad);
-	*(layer->getDelta()) = grad;
-	layer->computeDelta(x_grad);
-	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
+	// // Backward.
+	// Vec x_grad(size);
+	// // layer->backward(grad);
+	// *(layer->getDelta()) = grad;
+	// layer->computeDelta(x_grad);
+	// print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
-	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-	layer->updateEquations(input_act);
+	// // Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
+	// layer->updateEquations(input_act);
 }
 
 #endif

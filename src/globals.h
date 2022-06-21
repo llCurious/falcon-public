@@ -97,14 +97,14 @@ operator<<(std::ostream &dest, longBit value);
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION false
-#define MP_FOR_INV_SQRT false
+#define MP_FOR_INV_SQRT true
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL true
 #define USE_BN true
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-#define OFFLINE_ON false
+#define OFFLINE_ON true
 #define PRE_LOAD true
 #define IS_FALCON false
 

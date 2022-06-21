@@ -11,7 +11,9 @@ BNLayer::BNLayer(BNConfig *conf, int _layerNum)
 	  xhat(conf->numBatches * conf->inputSize),
 	  sigma(conf->numBatches),
 	  activations(conf->inputSize * conf->numBatches),
-	  deltas(conf->inputSize * conf->numBatches)
+	  deltas(conf->inputSize * conf->numBatches),
+	  gamma_grad(conf->inputSize),
+	  beta_grad(conf->inputSize)
 {
 	initialize();
 };
@@ -159,19 +161,24 @@ void BNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	size_t m = conf.inputSize;
 
 	// Update beta
-	RSSVectorMyType temp1(B, make_pair(0, 0));
+	// RSSVectorMyType temp1(B, make_pair(0, 0));
 	for (int i = 0; i < B; ++i)
 		for (int j = 0; j < m; ++j)
-			temp1[i] = temp1[i] + deltas[i * m + j];
+			beta_grad[i] = beta_grad[i] + deltas[i * m + j];
+	RSSVectorMyType beta_grad_lr(m);
+	funcProbTruncation<RSSVectorMyType, myType>(beta_grad_lr, beta_grad, LOG_LEARNING_RATE, m);
+	// subtractVectors(beta, beta_grad_lr, beta, m);
 
-	subtractVectors<RSSMyType>(beta, temp1, beta, B);
+	subtractVectors<RSSMyType>(beta, beta_grad_lr, beta, B);
 
 	// Update gamma
-	RSSVectorMyType temp2(B * m, make_pair(0, 0)), temp3(B, make_pair(0, 0));
+	RSSVectorMyType temp2(B * m, make_pair(0, 0));
 	funcDotProduct(xhat, deltas, temp2, B * m, true, FLOAT_PRECISION);
 	for (int i = 0; i < B; ++i)
 		for (int j = 0; j < m; ++j)
-			temp3[i] = temp3[i] + temp2[i * m + j];
+			gamma_grad[i] = gamma_grad[i] + temp2[i * m + j];
+	RSSVectorMyType gamma_grad_lr(m);
+	funcProbTruncation<RSSVectorMyType, myType>(gamma_grad_lr, gamma_grad, LOG_LEARNING_RATE, m);
 
-	subtractVectors<RSSMyType>(gamma, temp3, gamma, B);
+	subtractVectors<RSSMyType>(gamma, gamma_grad_lr, gamma, B);
 }

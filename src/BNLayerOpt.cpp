@@ -74,7 +74,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
     funcProbTruncation<RSSVectorMyType, myType>(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
 
     // log
-    vector<myType> plainm(m);
+    // vector<myType> plainm(m);
     // funcReconstruct(mu, plainm, m, "mean", true);
 
     // Compute x - mean
@@ -83,7 +83,7 @@ void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
         for (int j = 0; j < m; ++j)
             x_mean[i * m + j] = inputActivation[i * m + j] - mu[j];
     // log
-    vector<myType> plainsize(size);
+    // vector<myType> plainsize(size);
     // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
