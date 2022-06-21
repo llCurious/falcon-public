@@ -50,7 +50,7 @@
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 500
+#define NUM_ITERATIONS 2000
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -100,6 +100,7 @@ operator<<(std::ostream &dest, longBit value);
 #define MP_FOR_INV_SQRT true
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL true
+#define PLAINTEXT_EXP true
 #define USE_BN true
 
 /********************* DEBUG AND TEST *********************/

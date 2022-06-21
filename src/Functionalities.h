@@ -2449,6 +2449,23 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	if (PLAINTEXT_EXP) {
+		cout << "Plain text Exp" << endl;
+		vector<uint64_t> plain_input(size), plain_output(size);
+		funcReconstruct(a, plain_input, size, "plain-text divisor", false);
+
+		vector<float> pl_input_float(size);
+		for (size_t i = 0; i < size; i++) {
+			pl_input_float[i] = static_cast<int64_t>(plain_input[i]) * 1.0 / (1l << float_precision);
+			// cout << plain_input[i] << " : " << pl_input_float[i] << endl;;
+			pl_input_float[i] = exp(pl_input_float[i]);
+			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
+			// cout << pl_input_float[i] << " : " << plain_output[i] << ", ";
+		}
+		funcGetShares(b, plain_output);
+		return;
+	}
+	
 	vector<elementType> diffReconst(size, 0);
 
 	// compute FXP(x/m)

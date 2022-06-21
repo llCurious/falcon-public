@@ -772,6 +772,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 	{
 		if (dataset.compare("CIFAR10") == 0) {
 			string temp = "AlexNet_10";
+			int offset1 = USE_BN ? 0 : -1, offset2 = USE_BN ? 0 : -2;
 			/************************** Input **********************************/
 			// string path_input_1 = default_path+"input_"+to_string(partyNum);
 			// string path_input_2 = default_path+"input_"+to_string(nextParty(partyNum));
@@ -828,39 +829,42 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			}
 			print_vector((*((CNNLayer*)net->layers[0])->getBias()), "FLOAT", "CNN1 bias", 96);
 
-			/************************** BN1 gamma **********************************/
-			string path_bn1_gamma_1 = default_path+"bn1_gamma_"+to_string(partyNum);
-			string path_bn1_gamma_2 = default_path+"bn1_gamma_"+to_string(nextParty(partyNum));
-			ifstream f_bn1_gamma_1(path_bn1_gamma_1), f_bn1_gamma_2(path_bn1_gamma_2);
+			
+			if (USE_BN) {
+				/************************** BN1 gamma **********************************/
+				string path_bn1_gamma_1 = default_path+"bn1_gamma_"+to_string(partyNum);
+				string path_bn1_gamma_2 = default_path+"bn1_gamma_"+to_string(nextParty(partyNum));
+				ifstream f_bn1_gamma_1(path_bn1_gamma_1), f_bn1_gamma_2(path_bn1_gamma_2);
 
-			for (int i = 0; i < 96; ++i)
-			{
-				f_bn1_gamma_1 >> temp_next; f_bn1_gamma_2 >> temp_prev;
-				(*((BNLayerOpt*)net->layers[3])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
-			}
-			f_bn1_gamma_1.close(); f_bn1_gamma_2.close();
-			if (ZEROS)
-			{
-				generate_zeros("bn1_gamma_1", 96, temp);
-				generate_zeros("bn1_gamma_2", 96, temp);
-			}
-			print_vector((*((BNLayerOpt*)net->layers[3])->getGamma()), "FLOAT", "BN1 gamma", 96);
+				for (int i = 0; i < 96; ++i)
+				{
+					f_bn1_gamma_1 >> temp_next; f_bn1_gamma_2 >> temp_prev;
+					(*((BNLayerOpt*)net->layers[3])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+				f_bn1_gamma_1.close(); f_bn1_gamma_2.close();
+				if (ZEROS)
+				{
+					generate_zeros("bn1_gamma_1", 96, temp);
+					generate_zeros("bn1_gamma_2", 96, temp);
+				}
+				print_vector((*((BNLayerOpt*)net->layers[3])->getGamma()), "FLOAT", "BN1 gamma", 96);
 
-			/************************** BN1 beta **********************************/
-			string path_bn1_beta_1 = default_path+"bn1_beta_"+to_string(partyNum);
-			string path_bn1_beta_2 = default_path+"bn1_beta_"+to_string(nextParty(partyNum));
-			ifstream f_bn1_beta_1(path_bn1_beta_1), f_bn1_beta_2(path_bn1_beta_2);
+				/************************** BN1 beta **********************************/
+				string path_bn1_beta_1 = default_path+"bn1_beta_"+to_string(partyNum);
+				string path_bn1_beta_2 = default_path+"bn1_beta_"+to_string(nextParty(partyNum));
+				ifstream f_bn1_beta_1(path_bn1_beta_1), f_bn1_beta_2(path_bn1_beta_2);
 
-			for (int i = 0; i < 96; ++i)
-			{
-				f_bn1_beta_1 >> temp_next; f_bn1_beta_2 >> temp_prev;
-				(*((BNLayerOpt*)net->layers[3])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
-			}
-			f_bn1_beta_1.close(); f_bn1_beta_2.close();
-			if (ZEROS)
-			{
-				generate_zeros("bn1_beta_1", 96, temp);
-				generate_zeros("bn1_beta_2", 96, temp);
+				for (int i = 0; i < 96; ++i)
+				{
+					f_bn1_beta_1 >> temp_next; f_bn1_beta_2 >> temp_prev;
+					(*((BNLayerOpt*)net->layers[3])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+				f_bn1_beta_1.close(); f_bn1_beta_2.close();
+				if (ZEROS)
+				{
+					generate_zeros("bn1_beta_1", 96, temp);
+					generate_zeros("bn1_beta_2", 96, temp);
+				}
 			}
 
 			/************************** Weight2 **********************************/
@@ -872,7 +876,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int row = 0; row < 96*5*5*256; ++row)
 			{
 				f_weight2_1 >> temp_next; f_weight2_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[4])->getWeights())[row] = 
+				(*((CNNLayer*)net->layers[4+offset1])->getWeights())[row] = 
 						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_weight2_1.close(); f_weight2_2.close();
@@ -890,7 +894,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 256; ++i)
 			{
 				f_bias2_1 >> temp_next; f_bias2_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[4])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((CNNLayer*)net->layers[4+offset1])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_bias2_1.close(); f_bias2_2.close();
 			if (ZEROS)
@@ -898,40 +902,42 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				generate_zeros("cnn2_bias_1", 256, temp);
 				generate_zeros("cnn2_bias_2", 256, temp);
 			}
-			print_vector((*((CNNLayer*)net->layers[4])->getBias()), "FLOAT", "CNN2 bias", 256);
+			print_vector((*((CNNLayer*)net->layers[4+offset1])->getBias()), "FLOAT", "CNN2 bias", 256);
 
-			/************************** BN2 gamma **********************************/
-			string path_bn2_gamma_1 = default_path+"bn2_gamma_"+to_string(partyNum);
-			string path_bn2_gamma_2 = default_path+"bn2_gamma_"+to_string(nextParty(partyNum));
-			ifstream f_bn2_gamma_1(path_bn2_gamma_1), f_bn2_gamma_2(path_bn2_gamma_2);
+			if (USE_BN) {
+				/************************** BN2 gamma **********************************/
+				string path_bn2_gamma_1 = default_path+"bn2_gamma_"+to_string(partyNum);
+				string path_bn2_gamma_2 = default_path+"bn2_gamma_"+to_string(nextParty(partyNum));
+				ifstream f_bn2_gamma_1(path_bn2_gamma_1), f_bn2_gamma_2(path_bn2_gamma_2);
 
-			for (int i = 0; i < 256; ++i)
-			{
-				f_bn2_gamma_1 >> temp_next; f_bn2_gamma_2 >> temp_prev;
-				(*((BNLayerOpt*)net->layers[7])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
-			}
-			f_bn2_gamma_1.close(); f_bn2_gamma_2.close();
-			if (ZEROS)
-			{
-				generate_zeros("bn2_gamma_1", 256, temp);
-				generate_zeros("bn2_gamma_2", 256, temp);
-			}
+				for (int i = 0; i < 256; ++i)
+				{
+					f_bn2_gamma_1 >> temp_next; f_bn2_gamma_2 >> temp_prev;
+					(*((BNLayerOpt*)net->layers[7])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+				f_bn2_gamma_1.close(); f_bn2_gamma_2.close();
+				if (ZEROS)
+				{
+					generate_zeros("bn2_gamma_1", 256, temp);
+					generate_zeros("bn2_gamma_2", 256, temp);
+				}
 
-			/************************** BN2 beta **********************************/
-			string path_bn2_beta_1 = default_path+"bn2_beta_"+to_string(partyNum);
-			string path_bn2_beta_2 = default_path+"bn2_beta_"+to_string(nextParty(partyNum));
-			ifstream f_bn2_beta_1(path_bn2_beta_1), f_bn2_beta_2(path_bn2_beta_2);
+				/************************** BN2 beta **********************************/
+				string path_bn2_beta_1 = default_path+"bn2_beta_"+to_string(partyNum);
+				string path_bn2_beta_2 = default_path+"bn2_beta_"+to_string(nextParty(partyNum));
+				ifstream f_bn2_beta_1(path_bn2_beta_1), f_bn2_beta_2(path_bn2_beta_2);
 
-			for (int i = 0; i < 256; ++i)
-			{
-				f_bn2_beta_1 >> temp_next; f_bn2_beta_2 >> temp_prev;
-				(*((BNLayerOpt*)net->layers[7])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
-			}
-			f_bn2_beta_1.close(); f_bn2_beta_2.close();
-			if (ZEROS)
-			{
-				generate_zeros("bn2_beta_1", 256, temp);
-				generate_zeros("bn2_beta_2", 256, temp);
+				for (int i = 0; i < 256; ++i)
+				{
+					f_bn2_beta_1 >> temp_next; f_bn2_beta_2 >> temp_prev;
+					(*((BNLayerOpt*)net->layers[7])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+				f_bn2_beta_1.close(); f_bn2_beta_2.close();
+				if (ZEROS)
+				{
+					generate_zeros("bn2_beta_1", 256, temp);
+					generate_zeros("bn2_beta_2", 256, temp);
+				}
 			}
 
 			/************************** Weight3 **********************************/
@@ -942,7 +948,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int row = 0; row < 256*3*3*384; ++row)
 			{
 				f_weight3_1 >> temp_next; f_weight3_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[8])->getWeights())[row] = 
+				(*((CNNLayer*)net->layers[8+offset2])->getWeights())[row] = 
 						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_weight3_1.close(); f_weight3_2.close();
@@ -960,7 +966,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 384; ++i)
 			{
 				f_bias3_1 >> temp_next; f_bias3_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[8])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((CNNLayer*)net->layers[8+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_bias3_1.close(); f_bias3_2.close();
 			if (ZEROS)
@@ -977,7 +983,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int row = 0; row < 384*3*3*384; ++row)
 			{
 				f_weight4_1 >> temp_next; f_weight4_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[10])->getWeights())[row] = 
+				(*((CNNLayer*)net->layers[10+offset2])->getWeights())[row] = 
 						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_weight4_1.close(); f_weight4_2.close();
@@ -995,7 +1001,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 384; ++i)
 			{
 				f_bias4_1 >> temp_next; f_bias4_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[10])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((CNNLayer*)net->layers[10+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_bias4_1.close(); f_bias4_2.close();
 			if (ZEROS)
@@ -1012,7 +1018,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int row = 0; row < 384*3*3*256; ++row)
 			{
 				f_weight5_1 >> temp_next; f_weight5_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[12])->getWeights())[row] = 
+				(*((CNNLayer*)net->layers[12+offset2])->getWeights())[row] = 
 						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_weight5_1.close(); f_weight5_2.close();
@@ -1030,7 +1036,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 256; ++i)
 			{
 				f_bias5_1 >> temp_next; f_bias5_2 >> temp_prev;
-				(*((CNNLayer*)net->layers[12])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((CNNLayer*)net->layers[12+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_bias5_1.close(); f_bias5_2.close();
 			if (ZEROS)
@@ -1049,7 +1055,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				for (int row = 0; row < 256; ++row)
 				{
 					f_fc1_weight_1 >> temp_next; f_fc1_weight_2 >> temp_prev;
-					(*((FCLayer*)net->layers[14])->getWeights())[256*row + column] = 
+					(*((FCLayer*)net->layers[14+offset2])->getWeights())[256*row + column] = 
 							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 				}
 			}
@@ -1069,7 +1075,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 256; ++i)
 			{
 				f_fc1_bias_1 >> temp_next; f_fc1_bias_2 >> temp_prev;
-				(*((FCLayer*)net->layers[14])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((FCLayer*)net->layers[14+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_fc1_bias_1.close(); f_fc1_bias_2.close();
 			if (ZEROS)
@@ -1088,7 +1094,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				for (int row = 0; row < 256; ++row)
 				{
 					f_fc2_weight_1 >> temp_next; f_fc2_weight_2 >> temp_prev;
-					(*((FCLayer*)net->layers[16])->getWeights())[256*row + column] = 
+					(*((FCLayer*)net->layers[16+offset2])->getWeights())[256*row + column] = 
 							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 				}
 			}
@@ -1108,7 +1114,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 256; ++i)
 			{
 				f_fc2_bias_1 >> temp_next; f_fc2_bias_2 >> temp_prev;
-				(*((FCLayer*)net->layers[16])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((FCLayer*)net->layers[16+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_fc2_bias_1.close(); f_fc2_bias_2.close();
 			if (ZEROS)
@@ -1127,7 +1133,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				for (int row = 0; row < 256; ++row)
 				{
 					f_fc3_weight_1 >> temp_next; f_fc3_weight_2 >> temp_prev;
-					(*((FCLayer*)net->layers[18])->getWeights())[10*row + column] = 
+					(*((FCLayer*)net->layers[18+offset2])->getWeights())[10*row + column] = 
 							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 				}
 			}
@@ -1147,7 +1153,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			for (int i = 0; i < 10; ++i)
 			{
 				f_fc3_bias_1 >> temp_next; f_fc3_bias_2 >> temp_prev;
-				(*((FCLayer*)net->layers[18])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				(*((FCLayer*)net->layers[18+offset2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 			}
 			f_fc3_bias_1.close(); f_fc3_bias_2.close();
 			if (ZEROS)
@@ -1155,7 +1161,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				generate_zeros("fc3_bias_1", 10, temp);
 				generate_zeros("fc3_bias_2", 10, temp);
 			}
-			print_vector((*((FCLayer*)net->layers[18])->getBias()), "FLOAT", "FC3 bias", 10);
+			print_vector((*((FCLayer*)net->layers[18+offset2])->getBias()), "FLOAT", "FC3 bias", 10);
 		}
 		else if (dataset.compare("ImageNet") == 0) {
 
@@ -1469,7 +1475,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			assert(false && "No AlexNet on MNIST");
 		else if (dataset.compare("CIFAR10") == 0)
 		{
-			NUM_LAYERS = 19;
+			NUM_LAYERS = USE_BN ? 19 : 17;
 			// NUM_LAYERS = 18;		//Without BN
 			WITH_NORMALIZATION = false;
 			CNNConfig* l0 = new CNNConfig(32,32,3,96,11,4,9,MINI_BATCH_SIZE);
@@ -1500,11 +1506,11 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			config->addLayer(l0);
 			config->addLayer(l1);
 			config->addLayer(l2);
-			config->addLayer(l3);
+			if (USE_BN) config->addLayer(l3);
 			config->addLayer(l4);
 			config->addLayer(l5);
 			config->addLayer(l6);
-			config->addLayer(l7);
+			if (USE_BN) config->addLayer(l7);
 			config->addLayer(l8);
 			config->addLayer(l9);
 			config->addLayer(l10);
@@ -1520,7 +1526,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 		}
 		else if (dataset.compare("ImageNet") == 0)
 		{
-			NUM_LAYERS = 20;
+			NUM_LAYERS = USE_BN ? 20 : 18;
 			// NUM_LAYERS = 17;		//Without BN
 			WITH_NORMALIZATION = false;
 			// According to CryptGPU
@@ -1577,11 +1583,11 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			config->addLayer(l0);
 			config->addLayer(l1);
 			config->addLayer(l2);
-			config->addLayer(l3);
+			if (USE_BN) config->addLayer(l3);
 			config->addLayer(l4);
 			config->addLayer(l5);
 			config->addLayer(l6);
-			config->addLayer(l7);
+			if (USE_BN) config->addLayer(l7);
 			config->addLayer(l8);
 			config->addLayer(l9);
 			config->addLayer(l10);
