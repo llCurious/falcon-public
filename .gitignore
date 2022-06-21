@@ -3,3 +3,5 @@
 *.o
 .vscode
 Falcon.out
+
+scripts/log

@@ -115,15 +115,15 @@ int main(int argc, char **argv)
 	// Run training
 	cout << "----------------------------------------------" << endl;
 	cout << "-------------------Run Training---------------" << endl;
-	// network += " train";
-	// printNetwork(net);
-	// train(net);
+	network += " train";
+	printNetwork(net);
+	train(net, network, dataset);
 
 	// Run inference (possibly with preloading a network)
-	cout << "----------------------------------------------" << endl;
-	cout << "-------------------Run Inference---------------" << endl;
-	network += " test";
-	test(PRELOADING, network, net);
+	// cout << "----------------------------------------------" << endl;
+	// cout << "-------------------Run Inference---------------" << endl;
+	// network += " test";
+	// test(PRELOADING, network, net);
 
 	end_m(network);
 	cout << "----------------------------------------------" << endl;
