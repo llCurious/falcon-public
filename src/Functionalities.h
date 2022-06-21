@@ -2975,7 +2975,7 @@ void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 template<typename Vec, typename T>
 void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
 	if (PLAINTEXT_INV_SQRT) {
-		cout << "Plaintext Inverse sqrt" << endl;
+		// cout << "Plaintext Inverse sqrt" << endl;
 		vector<T> plain_input(size), plain_output(size);
 		funcReconstruct(input, plain_input, size, "mixed-preicision inverse sqrt", false);
 		vector<float> pl_input_float(size);
@@ -3000,7 +3000,7 @@ void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
 		funcGetShares(output, plain_output);
 		return;
 	}
-	cout << "Private Inverse sqrt" << endl;
+	// cout << "Private Inverse sqrt" << endl;
 	// inver Square Root
 	// https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
 	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value)

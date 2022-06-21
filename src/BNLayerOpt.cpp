@@ -56,7 +56,7 @@ void BNLayerOpt::printLayer()
  */
 void BNLayerOpt::forward(const RSSVectorMyType &inputActivation)
 {
-    cout << "forward... " << size << " " << m << " " << B << " " << endl;
+    // cout << "forward... " << size << " " << m << " " << B << " " << endl;
     myType eps = (1e-5) * (1l << FLOAT_PRECISION);
 
     RSSVectorMyType var_eps(m, make_pair(0, 0));
@@ -220,7 +220,7 @@ void BNLayerOpt::backward(const RSSVectorMyType &input_grad)
 // https://kevinzakka.github.io/2016/09/14/batch_normalization/
 void BNLayerOpt::computeDelta(RSSVectorMyType &prevDelta)
 {
-    cout << "BN.computeDelta" << endl;
+    // cout << "BN.computeDelta" << endl;
 
     //  dxhat = grad * self.gamma   # 1 multiplication
     RSSVectorMyType dxhat(size);

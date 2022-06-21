@@ -514,6 +514,20 @@ void print_vector(RSSVectorSmallType &var, string type, string pre_text, int pri
 	cout << endl;
 }
 
+void mat2file(const vector<float> &a, string filename, size_t size)
+{
+	assert(a.size() == size);
+	ofstream f;
+	f.open(filename, ios::out | ios::app);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		f << a[i] << " ";
+	}
+	f << "\n";
+	f.close();
+}
+
 // template<typename Vec, typename T>
 // void matrixMultRSS(const Vec &a, const Vec &b, vector<T> &temp3,
 // 					size_t rows, size_t common_dim, size_t columns,

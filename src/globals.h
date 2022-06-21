@@ -98,7 +98,7 @@ operator<<(std::ostream &dest, longBit value);
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION false
 #define MP_FOR_INV_SQRT false
-#define PLAINTEXT_INV_SQRT true
+#define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL true
 #define PLAINTEXT_EXP true
 #define USE_BN true

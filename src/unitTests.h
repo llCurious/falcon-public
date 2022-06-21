@@ -10,11 +10,14 @@
 #include <time.h>
 #include "connect.h"
 #include "basicSockets.h"
+#include <cstdlib>
 
 extern CommunicationObject commObject;
 
 void benchWCExtension();
 void benchMSExtension();
+void benchBN();
+void benchSoftMax();
 
 /************Debug****************/
 
@@ -39,7 +42,7 @@ template <typename VEC, typename T>
 void debugDivisionByNR();
 template <typename Vec, typename T>
 void debugInverseSqrt();
-template<typename Vec, typename T>
+template <typename Vec, typename T>
 void debugSoftmax();
 
 void runTest(string str, string whichTest, string &network);
@@ -181,13 +184,18 @@ void debugDivisionByNR()
     vector<T> que(size);
 
     size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<T, highBit>::value) {
-		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<T, lowBit>::value) {
-		float_precision = LOW_PRECISION;
-	} else {
-		cout << "Not supported type" << typeid(data).name() << endl;
-	}
+    if (std::is_same<T, highBit>::value)
+    {
+        float_precision = HIGH_PRECISION;
+    }
+    else if (std::is_same<T, lowBit>::value)
+    {
+        float_precision = LOW_PRECISION;
+    }
+    else
+    {
+        cout << "Not supported type" << typeid(data).name() << endl;
+    }
 
     for (size_t i = 0; i < size; i++)
     {
@@ -235,47 +243,52 @@ void debugInverseSqrt()
     printVectorReal<T>(result, "output", size);
 }
 
-template<typename Vec, typename T>
+template <typename Vec, typename T>
 void debugSoftmax()
 {
-	size_t rows = 3, cols = 10;
-	size_t size = rows * cols;
+    size_t rows = 3, cols = 10;
+    size_t size = rows * cols;
 
-	vector<float> data_raw = {
-		// 0.923921, 0.219685, -0.414526, 0.34122, -0.166053, -0.629501, 0.270858, 0.0569448, -0.283571, 0.261101,
-		// 0.342496, 0.491277, -0.405227, 0.104489, 0.0440607, -0.558957, 0.213509, 0.14997, -0.0229616, 0.318014,
-		// 0.394563, 0.396146, -0.558138, 0.357716, -0.0295143, -0.772969, 0.377216, 0.0590944, -0.0873451, 0.325517,
-		2.60365, -0.290006, -0.721366, 0.507656, -0.434107, -0.595984, 0.532808, -0.0694342, -0.377345, -0.0523729,
-		-0.124932, 0.807279, -0.534957, -0.0588999, 0.0464973, -0.855241, 0.116036, 0.219089, 0.0108147, 0.756191,
-		0.41907, 0.301184, -0.434992, 0.190973, 0.18747, -0.639831, 0.21955, 0.151983, -0.169142, 0.523242};
+    vector<float> data_raw = {
+        // 0.923921, 0.219685, -0.414526, 0.34122, -0.166053, -0.629501, 0.270858, 0.0569448, -0.283571, 0.261101,
+        // 0.342496, 0.491277, -0.405227, 0.104489, 0.0440607, -0.558957, 0.213509, 0.14997, -0.0229616, 0.318014,
+        // 0.394563, 0.396146, -0.558138, 0.357716, -0.0295143, -0.772969, 0.377216, 0.0590944, -0.0873451, 0.325517,
+        2.60365, -0.290006, -0.721366, 0.507656, -0.434107, -0.595984, 0.532808, -0.0694342, -0.377345, -0.0523729,
+        -0.124932, 0.807279, -0.534957, -0.0588999, 0.0464973, -0.855241, 0.116036, 0.219089, 0.0108147, 0.756191,
+        0.41907, 0.301184, -0.434992, 0.190973, 0.18747, -0.639831, 0.21955, 0.151983, -0.169142, 0.523242};
 
-	vector<T> data(size);
-	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<T, highBit>::value) {
-		float_precision = HIGH_PRECISION;
-	} else if (std::is_same<T, lowBit>::value) {
-		float_precision = LOW_PRECISION;
-	} else {
-		cout << "Not supported type" << typeid(data).name() << endl;
-	}
+    vector<T> data(size);
+    size_t float_precision = FLOAT_PRECISION;
+    if (std::is_same<T, highBit>::value)
+    {
+        float_precision = HIGH_PRECISION;
+    }
+    else if (std::is_same<T, lowBit>::value)
+    {
+        float_precision = LOW_PRECISION;
+    }
+    else
+    {
+        cout << "Not supported type" << typeid(data).name() << endl;
+    }
 
-	for (size_t i = 0; i < size; i++)
-		data[i] = data_raw[i] * (1 << float_precision);
+    for (size_t i = 0; i < size; i++)
+        data[i] = data_raw[i] * (1 << float_precision);
 
-	Vec a(size), b(size);
+    Vec a(size), b(size);
 
-	funcGetShares(a, data);
-	funcSoftmax(a, b, rows, cols, false);
+    funcGetShares(a, data);
+    funcSoftmax(a, b, rows, cols, false);
 
-	// #if (!LOG_DEBUG)
-	print_vector(a, "FLOAT", "a_data:", size);
-	print_vector(b, "FLOAT", "b_data:", size);
-	// #endif
+    // #if (!LOG_DEBUG)
+    print_vector(a, "FLOAT", "a_data:", size);
+    print_vector(b, "FLOAT", "b_data:", size);
+    // #endif
 }
 
-template<typename Vec, typename T>
+template <typename Vec, typename T>
 void debugBNLayer();
-template<typename Vec, typename T>
+template <typename Vec, typename T>
 void debugBNLayer()
 {
 	cout << "Debug Batch Normalization Layer" << endl;
