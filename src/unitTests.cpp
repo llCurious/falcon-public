@@ -263,40 +263,68 @@ void benchBN()
 		vector<float> x_raw(size);
 		vector<float> grad_raw(size);
 
-		Vec input_act(size), grad(size);
-
-		BNConfig *bn_conf = new BNConfig(D, B);
-		BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
-
 		Vec forward_output(size);
 		Vec x_grad(size);
 
-		getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
-
-		// comm test
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
-		runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
-		cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
-
-		for (size_t i = 0; i < cnt; i++)
+		Vec input_act(size), grad(size);
+		if (IS_FALCON)
 		{
+			BNConfig *bn_conf = new BNConfig(D, B);
+			BNLayer *layer = new BNLayer(bn_conf, 0);
+
 			getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
 
-			// time test
-			start = clock();
+			// comm test
+			round = commObject.getRoundsRecv();
+			commsize = commObject.getRecv();
 			runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
+			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
 
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
-			time_sum += dur;
+			for (size_t i = 0; i < cnt; i++)
+			{
+				getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
+
+				// time test
+				start = clock();
+				runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
+
+				end = clock();
+				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				time_sum += dur;
+			}
+		}
+		else
+		{
+			BNConfig *bn_conf = new BNConfig(D, B);
+			BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+
+			getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
+
+			// comm test
+			round = commObject.getRoundsRecv();
+			commsize = commObject.getRecv();
+			runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
+			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+			for (size_t i = 0; i < cnt; i++)
+			{
+				getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
+
+				// time test
+				start = clock();
+				runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
+
+				end = clock();
+				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				time_sum += dur;
+			}
 		}
 		cout << B << " " << D << " " << time_sum / cnt << endl;
 	}
 }
 
 template <typename Vec, typename T>
-void benchBNAcc(bool isfalcon)
+void benchBNAcc()
 {
 	// batch size: 32,64,128,256
 	size_t B = (1 << LOG_MINI_BATCH), D = 100;
@@ -320,7 +348,7 @@ void benchBNAcc(bool isfalcon)
 	Vec x_grad(size);
 	Vec gammagrad(D), betagrad(D);
 
-	if (isfalcon)
+	if (IS_FALCON)
 	{
 		BNConfig *bn_conf = new BNConfig(D, B);
 		BNLayer *layer = new BNLayer(bn_conf, 0);
@@ -1208,7 +1236,7 @@ void runTest(string str, string whichTest, string &network)
 			network = "BN";
 			benchBN<RSSVectorMyType, myType>();
 			// benchBNFalcon<RSSVectorMyType, myType>();
-			// benchBNAcc<RSSVectorMyType,myType>(true);
+			// benchBNAcc<RSSVectorMyType,myType>();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
