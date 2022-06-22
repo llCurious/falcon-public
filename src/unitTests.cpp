@@ -1122,7 +1122,7 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Softmax";
 			// debugSoftmax<RSSVectorHighType, highBit>();
-			debugSoftmax<RSSVectorLowType, lowBit>();
+			debugSoftmax<RSSVectorHighType, highBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{

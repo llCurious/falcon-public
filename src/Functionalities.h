@@ -1059,7 +1059,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	// TODO Scale up and complete this computation with fixed-point precision
 	vector<smallType> alpha_temp(size);
 	funcPow(b, alpha_temp, size);
-	cout <<"h1" << endl;
+	// cout <<"h1" << endl;
 
 	size_t alpha = alpha_temp[0];
 	size_t precision = alpha + 1;
@@ -1089,7 +1089,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	multiplyByScalar(b, 2, twoX);
 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
 	funcDotProduct(b, w0, xw0, size, true, precision);
-	cout <<"h2" << endl;
+	// cout <<"h2" << endl;
 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
 	if (PRECISE_DIVISION)
 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
@@ -1097,14 +1097,14 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	if (PRECISE_DIVISION)
 		addVectors(ones, epsilon1, termTwo, size);
 	funcDotProduct(w0, termOne, answer, size, true, precision);
-	cout <<"h3" << endl;
+	// cout <<"h3" << endl;
 	if (PRECISE_DIVISION)
 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-	cout <<"h5" << endl;
+	// cout <<"h5" << endl;
 }
 
 template <typename VEC>
@@ -2031,7 +2031,7 @@ void funcTruncationR(Vec &r, Vec &rtrunc, int trunc_bits, size_t size)
 {
 	size_t k = sizeof(T) << 3;
 	size_t reall = k - trunc_bits;
-	cout << k << " " << trunc_bits << " " << reall<< endl;
+	// cout << k << " " << trunc_bits << " " << reall<< endl;
 
 	Vec rbits(size * k);
 

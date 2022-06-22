@@ -45,12 +45,12 @@
 #define REC_Y 6
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
 #define INVSQRT_ITERS 3
-#define LOG_MINI_BATCH 8
+#define LOG_MINI_BATCH 5
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 2000
+#define NUM_ITERATIONS 1000
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -107,6 +107,6 @@ operator<<(std::ostream &dest, longBit value);
 #define DEBUG_ONLY true
 #define OFFLINE_ON true
 #define PRE_LOAD true
-#define IS_FALCON true
+#define IS_FALCON false
 
 #endif
