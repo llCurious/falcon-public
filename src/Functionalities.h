@@ -1059,6 +1059,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	// TODO Scale up and complete this computation with fixed-point precision
 	vector<smallType> alpha_temp(size);
 	funcPow(b, alpha_temp, size);
+	cout <<"h1" << endl;
 
 	size_t alpha = alpha_temp[0];
 	size_t precision = alpha + 1;
@@ -1088,6 +1089,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	multiplyByScalar(b, 2, twoX);
 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
 	funcDotProduct(b, w0, xw0, size, true, precision);
+	cout <<"h2" << endl;
 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
 	if (PRECISE_DIVISION)
 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
@@ -1095,12 +1097,14 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	if (PRECISE_DIVISION)
 		addVectors(ones, epsilon1, termTwo, size);
 	funcDotProduct(w0, termOne, answer, size, true, precision);
+	cout <<"h3" << endl;
 	if (PRECISE_DIVISION)
 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
+	cout <<"h5" << endl;
 }
 
 template <typename VEC>
@@ -1367,6 +1371,7 @@ void funcDotProduct(const T &a, const T &b,
 		{
 			if (OFFLINE_ON)
 			{
+				cout << "ppp " << precision << endl;
 				funcTruncationR<T, computeType>(rPrime, r, precision, size);
 			}
 			// PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
@@ -2026,10 +2031,12 @@ void funcTruncationR(Vec &r, Vec &rtrunc, int trunc_bits, size_t size)
 {
 	size_t k = sizeof(T) << 3;
 	size_t reall = k - trunc_bits;
+	cout << k << " " << trunc_bits << " " << reall<< endl;
 
 	Vec rbits(size * k);
 
 	funcRandBitByXor<Vec, T>(rbits, rbits.size());
+
 	T temp1;
 	T temp2;
 	for (size_t i = 0; i < size; ++i)
@@ -2039,6 +2046,7 @@ void funcTruncationR(Vec &r, Vec &rtrunc, int trunc_bits, size_t size)
 		size_t j;
 		for (j = 0; j < reall; ++j)
 		{
+			// cout << rbits[i * k + j].first << " " << rbits[i * k + j].second << endl;
 			temp1 = (temp1 << 1) + rbits[i * k + j].first;
 			temp2 = (temp2 << 1) + rbits[i * k + j].second;
 		}
@@ -2049,6 +2057,7 @@ void funcTruncationR(Vec &r, Vec &rtrunc, int trunc_bits, size_t size)
 			temp2 = (temp2 << 1) + rbits[i * k + j].second;
 		}
 		r[i] = make_pair(temp1, temp2);
+		// cout << temp1 << " " << temp2 << endl;
 	}
 }
 
@@ -2449,13 +2458,15 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
-	if (PLAINTEXT_EXP) {
+	if (PLAINTEXT_EXP)
+	{
 		cout << "Plain text Exp" << endl;
 		vector<uint64_t> plain_input(size), plain_output(size);
 		funcReconstruct(a, plain_input, size, "plain-text divisor", false);
 
 		vector<float> pl_input_float(size);
-		for (size_t i = 0; i < size; i++) {
+		for (size_t i = 0; i < size; i++)
+		{
 			pl_input_float[i] = static_cast<int64_t>(plain_input[i]) * 1.0 / (1l << float_precision);
 			// cout << plain_input[i] << " : " << pl_input_float[i] << endl;;
 			pl_input_float[i] = exp(pl_input_float[i]);
@@ -2465,7 +2476,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		funcGetShares(b, plain_output);
 		return;
 	}
-	
+
 	vector<elementType> diffReconst(size, 0);
 
 	// compute FXP(x/m)
@@ -2814,29 +2825,36 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	}
 	VEC q_rec(size);
 
-	if (PLAINTEXT_RECIPROCAL) {
+	if (PLAINTEXT_RECIPROCAL)
+	{
 		cout << "Plaintext Reciprocal" << endl;
 		vector<uint64_t> plain_input(size), plain_output(size);
 		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
 
 		vector<float> pl_input_float(size);
-		for (size_t i = 0; i < size; i++) {
+		for (size_t i = 0; i < size; i++)
+		{
 			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
 			pl_input_float[i] = 1. / pl_input_float[i];
 			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
 		}
 		funcGetShares(q_rec, plain_output);
 		// print_vector(q_rec, "FLOAT", "mixed-preicision reciprocal", size);
-	} else {
+	}
+	else
+	{
 		cout << "Private Reciprocal" << endl;
-		if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION) {
+		if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION)
+		{
 			cout << "Mixed-Precision Division" << endl;
 			RSSVectorHighType highP_dividend(size), highP_rec(size);
 			funcMSExtension(highP_dividend, quotient, size);
-			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size);	// maintain same precision
+			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
 			funcReciprocal2(highP_rec, highP_dividend, false, size);
 			funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
-		} else {
+		}
+		else
+		{
 			funcReciprocal2(q_rec, quotient, false, size);
 		}
 	}
@@ -2972,9 +2990,11 @@ void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 	}
 }
 
-template<typename Vec, typename T>
-void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
-	if (PLAINTEXT_INV_SQRT) {
+template <typename Vec, typename T>
+void mixedPrecisionOp(Vec &output, const Vec &input, size_t size)
+{
+	if (PLAINTEXT_INV_SQRT)
+	{
 		cout << "Plaintext Inverse sqrt" << endl;
 		vector<T> plain_input(size), plain_output(size);
 		funcReconstruct(input, plain_input, size, "mixed-preicision inverse sqrt", false);
@@ -2992,7 +3012,8 @@ void mixedPrecisionOp(Vec &output, const Vec &input, size_t size) {
 		{
 			cout << "Not supported type" << typeid(input).name() << endl;
 		}
-		for (size_t i = 0; i < size; i++) {
+		for (size_t i = 0; i < size; i++)
+		{
 			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
 			pl_input_float[i] = 1. / sqrt(pl_input_float[i]);
 			plain_output[i] = (T)(pl_input_float[i] * (1 << float_precision));

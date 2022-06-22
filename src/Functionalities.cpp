@@ -62,7 +62,8 @@ void funcTruncatePublic(RSSVectorMyType &a, size_t divisor, size_t size)
 	vector<myType> reconst(size);
 	if (OFFLINE_ON)
 	{
-		funcTruncationR<RSSVectorMyType, myType>(rPrime, r, divisor, size);
+		int logm = log2(divisor);
+		funcTruncationR<RSSVectorMyType, myType>(rPrime, r, logm, size);
 		// PrecomputeObject->getDividedShares(r, rPrime, divisor, size);
 	}
 	for (int i = 0; i < size; ++i)

@@ -5,6 +5,8 @@
 #include "tools.h"
 #include "connect.h"
 #include "globals.h"
+#include "math.h"
+
 using namespace std;
 
 class BNLayer : public Layer

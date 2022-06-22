@@ -121,7 +121,7 @@ void runBN(BNLayer *layer, Vec &forward_output, Vec &input_act, Vec &grad, Vec &
 {
 	layer->forward(input_act);
 	forward_output = *layer->getActivation();
-	// print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
+	print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
 
 	*(layer->getDelta()) = grad;
 	layer->computeDelta(x_grad);
@@ -163,7 +163,6 @@ void getBNInput(vector<float> &x_raw, vector<float> &grad_raw, Vec &input_act, V
 	{
 		x_p[i] = x_raw[i] * (1 << float_precision);
 		grad_p[i] = grad_raw[i] * (1 << float_precision);
-		// cout << x_p[i] << " " << grad_p[i] << " ";
 	}
 
 	funcGetShares(input_act, x_p);
