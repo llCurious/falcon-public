@@ -353,34 +353,81 @@ void benchBNAcc(bool isfalcon)
 	mat2file<T>(x_f, x_g, gamma_g, beta_g, outfile, B, D);
 }
 
-void benchSoftMax()
+template <typename Vec>
+void getSoftMaxInput(Vec &a, size_t size)
 {
-	size_t rows = 3, cols = 10;
-	size_t size = rows * cols;
+	size_t float_precision = FLOAT_PRECISION;
+	if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		float_precision = HIGH_PRECISION;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value)
+	{
+		float_precision = LOW_PRECISION;
+	}
+	else
+	{
+		cout << "Not supported type" << typeid(a).name() << endl;
+	}
 
-	vector<float> data_raw = {
-		// 0.923921, 0.219685, -0.414526, 0.34122, -0.166053, -0.629501, 0.270858, 0.0569448, -0.283571, 0.261101,
-		// 0.342496, 0.491277, -0.405227, 0.104489, 0.0440607, -0.558957, 0.213509, 0.14997, -0.0229616, 0.318014,
-		// 0.394563, 0.396146, -0.558138, 0.357716, -0.0295143, -0.772969, 0.377216, 0.0590944, -0.0873451, 0.325517,
-		2.60365, -0.290006, -0.721366, 0.507656, -0.434107, -0.595984, 0.532808, -0.0694342, -0.377345, -0.0523729,
-		-0.124932, 0.807279, -0.534957, -0.0588999, 0.0464973, -0.855241, 0.116036, 0.219089, 0.0108147, 0.756191,
-		0.41907, 0.301184, -0.434992, 0.190973, 0.18747, -0.639831, 0.21955, 0.151983, -0.169142, 0.523242};
-
+	vector<float> data_raw(size);
 	for (int i = 0; i < size; i++)
 	{
 		data_raw[i] = rand() % 10000 / 12300.0;
 	}
 
 	vector<highBit> data(size);
-	size_t float_precision = HIGH_PRECISION;
 
 	for (size_t i = 0; i < size; i++)
 		data[i] = data_raw[i] * (1 << float_precision);
 
+	funcGetShares(a, data);
+}
+
+void benchSoftMax()
+{
+	// d=10/200，batch=100/1000/10000/100000
+	size_t ds[2] = {10, 200};
+	size_t batchs[4] = {100, 1000, 10000, 100000};
+	size_t cnt = 10;
+
+	size_t rows, cols, size;
+
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	clock_t start, end;
+
 	RSSVectorHighType a(size), b(size);
 
-	funcGetShares(a, data);
-	funcSoftmax(a, b, rows, cols, false);
+	for (int d : ds)
+	{
+		for (int batch : batchs)
+		{
+			size = d * batch;
+			getSoftMaxInput(a, size);
+			// comm
+			round = commObject.getRoundsRecv();
+			commsize = commObject.getRecv();
+
+			funcSoftmax(a, b, batch, d, false);
+
+			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+			// time
+			double time_sum = 0;
+			for (size_t i = 0; i < cnt; i++)
+			{
+				start = clock();
+				funcSoftmax(a, b, batch, d, false);
+
+				end = clock();
+				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				time_sum += dur;
+			}
+			cout << batch << " " << d << " " << time_sum / cnt << endl;
+		}
+	}
 }
 
 void debugPartySS()

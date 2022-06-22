@@ -54,7 +54,7 @@
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
-typedef uint64_t myType;
+typedef uint32_t myType;
 typedef uint8_t smallType;
 typedef std::pair<myType, myType> RSSMyType;
 typedef std::pair<smallType, smallType> RSSSmallType;
@@ -100,13 +100,13 @@ operator<<(std::ostream &dest, longBit value);
 #define MP_FOR_INV_SQRT true
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL true
-#define PLAINTEXT_EXP true
+#define PLAINTEXT_EXP false
 #define USE_BN true
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-#define OFFLINE_ON true
+#define OFFLINE_ON false
 #define PRE_LOAD true
-#define IS_FALCON false
+#define IS_FALCON true
 
 #endif
