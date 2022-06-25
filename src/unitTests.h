@@ -351,20 +351,212 @@ void debugBNLayer()
     layer->printLayer();
 
     // Forward.
-    // Vec forward_output(size), backward_output(size);
-    // layer->forward(input_act);
-    // forward_output = *layer->getActivation();
+    Vec forward_output(size), backward_output(size);
+    layer->forward(input_act);
+    forward_output = *layer->getActivation();
     // print_vector(forward_output, "FLOAT", "BN Forward", size);
+    vector<T> xfp(size);
+    funcReconstruct(forward_output, xfp, size, "xgrad", true);
 
-    // // Backward.
-    // Vec x_grad(size);
-    // // layer->backward(grad);
-    // *(layer->getDelta()) = grad;
-    // layer->computeDelta(x_grad);
+    // Backward.
+    Vec x_grad(size);
+    // layer->backward(grad);
+    *(layer->getDelta()) = grad;
+    layer->computeDelta(x_grad);
+    vector<T> xgradp(size);
+    funcReconstruct(x_grad, xgradp, size, "xgrad", true);
     // print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
     // // Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
     // layer->updateEquations(input_act);
 }
 
+template <typename Vec>
+void getSoftMaxInput(Vec &a, size_t size)
+{
+    size_t float_precision = FLOAT_PRECISION;
+    if (std::is_same<Vec, RSSVectorHighType>::value)
+    {
+        float_precision = HIGH_PRECISION;
+    }
+    else if (std::is_same<Vec, RSSVectorLowType>::value)
+    {
+        float_precision = LOW_PRECISION;
+    }
+    else
+    {
+        cout << "Not supported type" << typeid(a).name() << endl;
+    }
+
+    vector<float> data_raw(size);
+    for (int i = 0; i < size; i++)
+    {
+        data_raw[i] = rand() % 10000 / 12300.0;
+    }
+
+    vector<highBit> data(size);
+
+    for (size_t i = 0; i < size; i++)
+        data[i] = data_raw[i] * (1 << float_precision);
+
+    funcGetShares(a, data);
+}
+
+template <typename Vec, typename T>
+void getSoftMaxInput(string filename, Vec &a, size_t B, size_t D)
+{
+    size_t size = B * D;
+    vector<T> x_raw(size);
+
+    size_t float_precision = FLOAT_PRECISION;
+    if (std::is_same<Vec, RSSVectorHighType>::value)
+    {
+        float_precision = HIGH_PRECISION;
+    }
+    else if (std::is_same<Vec, RSSVectorLowType>::value)
+    {
+        float_precision = LOW_PRECISION;
+    }
+    else
+    {
+        cout << "Not supported type" << typeid(x_raw).name() << endl;
+    }
+    cout << B << " " << D << " " << size << endl;
+
+    ifstream infile;
+    infile.open(filename.data());
+    assert(infile.is_open());
+    int i = 0, j = 0;
+    char buf[1048576] = {0};
+    cout << "read ";
+    while (infile >> buf)
+    {
+        x_raw[i * D + j] = stof(buf) * (1 << float_precision);
+        ;
+        // cout << i * D + j << " " << x_raw[i * D + j] << " " << stof(buf) << endl;
+
+        ++j;
+        if (j == D)
+        {
+            j = 0;
+            ++i;
+        }
+    }
+    cout << endl;
+    infile.close();
+
+    // for (size_t i = 0; i < size; i++)
+    // {
+    //     x_raw[i] = x_raw[i] * (1 << float_precision);
+    //     cout << x_raw[i] << " ";
+    // }
+    // cout << endl;
+
+    funcGetShares(a, x_raw);
+}
+
+template <typename Vec, typename T>
+void benchSoftMax()
+{
+    // d=10/200，batch=100/1000/10000/100000
+    size_t ds[2] = {10, 200};
+    size_t batchs[3] = {100, 1000, 10000};
+    // size_t ds[1] = {200};
+    // size_t batchs[1] = {10000};
+    size_t cnt = 4;
+
+    size_t size;
+
+    uint64_t round = 0;
+    uint64_t commsize = 0;
+
+    clock_t start, end;
+
+    for (int d : ds)
+    {
+        for (int batch : batchs)
+        {
+            size = d * batch;
+
+            Vec a(size), b(size);
+            getSoftMaxInput(a, size);
+
+            // comm
+            round = commObject.getRoundsRecv();
+            commsize = commObject.getRecv();
+
+            funcSoftmax<Vec>(a, b, batch, d, false);
+
+            cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+            // time
+            double time_sum = 0;
+            for (size_t i = 0; i < cnt; i++)
+            {
+                getSoftMaxInput(a, size);
+                start = clock();
+                funcSoftmax<Vec>(a, b, batch, d, false);
+
+                end = clock();
+                double dur = (double)(end - start) / CLOCKS_PER_SEC;
+                cout << dur << endl;
+                time_sum += dur;
+            }
+            cout << batch << " " << d << " " << time_sum / cnt << endl;
+        }
+    }
+}
+
+template <typename Vec, typename T>
+void benchSoftMaxAcc()
+{
+    size_t d = 10;
+    size_t batch = 3;
+    string inf = "./scripts/test_data/soft_input.csv";
+    string outf = "./scripts/test_data/";
+    if (std::is_same<T, lowBit>::value && MP_FOR_DIVISION && MP_FOR_INV_SQRT)
+    {
+        cout << "mix" << endl;
+        outf += "soft_output_mix.csv";
+    }
+    else if (std::is_same<T, lowBit>::value)
+    {
+        if (!MP_FOR_DIVISION && !MP_FOR_INV_SQRT)
+        {
+            cout << "lowbit" << endl;
+            outf += "soft_output_l.csv";
+        }
+        else
+        {
+            cout << "global conf error" << endl;
+            return;
+        }
+    }
+    else
+    {
+        cout << "highbit" << endl;
+        outf += "soft_output_h.csv";
+    }
+
+    size_t size;
+
+    uint64_t round = 0;
+    uint64_t commsize = 0;
+
+    clock_t start, end;
+
+    size = d * batch;
+
+    Vec a(size), b(size);
+
+    getSoftMaxInput<Vec, T>(inf, a, batch, d);
+
+    funcSoftmax<Vec>(a, b, batch, d, false);
+
+    vector<T> result(size);
+    funcReconstruct(b, result, size, "result", false);
+    mat2file<T>(result, outf, batch, d);
+
+    // record output
+}
 #endif

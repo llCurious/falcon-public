@@ -222,9 +222,6 @@ void getBNInput(string filename, vector<float> &x_raw, vector<float> &grad_raw, 
 	}
 	infile.close();
 
-	// printVector(x_raw, "x", size);
-	// printVector(grad_raw, "grad", size);
-
 	// FXP representation
 	vector<highBit> x_p(size), grad_p(size);
 	for (size_t i = 0; i < size; i++)
@@ -330,8 +327,8 @@ void benchBNAcc()
 	clock_t start, end;
 	double time_sum = 0;
 
-	string infile = "./scripts/test_data/input.csv";
-	string outfile = "./scripts/test_data/output2.csv";
+	string infile = "./scripts/test_data/input_bn.csv";
+	string outfile = "./scripts/test_data/output_bn_mix.csv";
 
 	uint64_t round = 0;
 	uint64_t commsize = 0;
@@ -380,59 +377,30 @@ void benchBNAcc()
 	mat2file<T>(x_f, x_g, gamma_g, beta_g, outfile, B, D);
 }
 
-template <typename Vec>
-void getSoftMaxInput(Vec &a, size_t size)
-{
-	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<Vec, RSSVectorHighType>::value)
-	{
-		float_precision = HIGH_PRECISION;
-	}
-	else if (std::is_same<Vec, RSSVectorLowType>::value)
-	{
-		float_precision = LOW_PRECISION;
-	}
-	else
-	{
-		cout << "Not supported type" << typeid(a).name() << endl;
-	}
-
-	vector<float> data_raw(size);
-	for (int i = 0; i < size; i++)
-	{
-		data_raw[i] = rand() % 10000 / 12300.0;
-	}
-
-	vector<highBit> data(size);
-
-	for (size_t i = 0; i < size; i++)
-		data[i] = data_raw[i] * (1 << float_precision);
-
-	funcGetShares(a, data);
-}
-
 void benchSoftMax()
 {
 	// d=10/200，batch=100/1000/10000/100000
 	size_t ds[2] = {10, 200};
-	size_t batchs[4] = {100, 1000, 10000, 100000};
-	size_t cnt = 10;
+	size_t batchs[3] = {100, 1000, 10000};
+	// size_t ds[1] = {200};
+	// size_t batchs[1] = {10000};
+	size_t cnt = 4;
 
-	size_t rows, cols, size;
+	size_t size;
 
 	uint64_t round = 0;
 	uint64_t commsize = 0;
 
 	clock_t start, end;
 
-	RSSVectorHighType a(size), b(size);
-
 	for (int d : ds)
 	{
 		for (int batch : batchs)
 		{
 			size = d * batch;
-			getSoftMaxInput(a, size);
+
+			RSSVectorHighType a(size), b(size);
+
 			// comm
 			round = commObject.getRoundsRecv();
 			commsize = commObject.getRecv();
@@ -450,6 +418,7 @@ void benchSoftMax()
 
 				end = clock();
 				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				cout << dur << endl;
 				time_sum += dur;
 			}
 			cout << batch << " " << d << " " << time_sum / cnt << endl;
@@ -1127,8 +1096,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BNLayer") == 0)
 		{
 			network = "BNLayer";
-			debugBNLayer<RSSVectorHighType, highBit>();
-			// debugBNLayer<RSSVectorLowType, lowBit>();
+			debugBNLayer<RSSVectorMyType, myType>();
+			/// debugBNLayer<RSSVectorLowType, lowBit>();
 		}
 		else
 			assert(false && "Unknown debug mode selected");
@@ -1233,14 +1202,14 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BN") == 0)
 		{
 			network = "BN";
-			benchBN<RSSVectorMyType, myType>();
-			// benchBNFalcon<RSSVectorMyType, myType>();
-			// benchBNAcc<RSSVectorMyType,myType>();
+			// benchBN<RSSVectorMyType, myType>();
+			benchBNAcc<RSSVectorMyType, myType>();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
-			benchSoftMax();
+			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
 		}
 	}
 	else

@@ -954,14 +954,22 @@ void funcRELU(const VEC &a, RSSVectorSmallType &temp, VEC &b, size_t size)
 	VEC m_c(size);
 	vector<smallType> reconst_b(size);
 
+	// vector<computeType> plain(size);
+	// funcReconstruct(a, plain, size, "a plain", true);
+
 	// cout << "ReLU': \t\t" << funcTime(funcRELUPrime, a, temp, size) << endl;
 	funcRELUPrime(a, temp, size);
 
+	// vector<smallType> plainsmall(size);
+	// funcReconstruct(temp, plainsmall, size, "temp plain", true);
+
+	// funcReconstruct(a, plain, size, "plain", true);
+
 	if (OFFLINE_ON)
 	{
-		typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
-		funcRandBandA<VEC, computeType>(m_c, c, size);
-		// PrecomputeObject->getSelectorBitShares(c, m_c, size);
+		// typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+		// funcRandBandA<VEC, computeType>(m_c, c, size);
+		PrecomputeObject->getSelectorBitShares(c, m_c, size);
 	}
 
 	for (int i = 0; i < size; ++i)
@@ -971,6 +979,9 @@ void funcRELU(const VEC &a, RSSVectorSmallType &temp, VEC &b, size_t size)
 	}
 
 	funcReconstructBit(bXORc, reconst_b, size, "bXORc", false);
+
+	// computeType val = isbias ? (1 << float_precision) : 1;
+
 	if (partyNum == PARTY_A)
 		for (int i = 0; i < size; ++i)
 			if (reconst_b[i] == 0)
@@ -997,7 +1008,10 @@ void funcRELU(const VEC &a, RSSVectorSmallType &temp, VEC &b, size_t size)
 
 	// vector<computeType> reconst_m_c(size);
 	// funcReconstruct(m_c, reconst_m_c, size, "m_c", true);
+	// funcReconstruct(a, reconst_m_c, size, "a", true);
 	funcDotProduct(a, m_c, b, size, false, 0);
+	// vector<computeType> bplain(size);
+	// funcReconstruct(b, bplain, size, "b plain", true);
 }
 
 // TODO
@@ -1089,7 +1103,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	multiplyByScalar(b, 2, twoX);
 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
 	funcDotProduct(b, w0, xw0, size, true, precision);
-	// cout <<"h2" << endl;
+	cout <<"h2" << endl;
 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
 	if (PRECISE_DIVISION)
 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
@@ -1097,14 +1111,15 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	if (PRECISE_DIVISION)
 		addVectors(ones, epsilon1, termTwo, size);
 	funcDotProduct(w0, termOne, answer, size, true, precision);
-	// cout <<"h3" << endl;
+	cout <<"h3" << endl;
 	if (PRECISE_DIVISION)
 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
+	// falcon-error
 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-	// cout <<"h5" << endl;
+	cout <<"h5" << endl;
 }
 
 template <typename VEC>
@@ -1204,12 +1219,18 @@ void funcMaxpool(VEC &a, VEC &max, RSSVectorSmallType &maxPrime,
 
 		funcRELU(diff, rp, max, rows);
 		funcSelectBitShares(maxPrime, dmpIndexShares, rp, temp, rows, columns, i);
+		// typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+		// vector<computeType> plain(rows);
+		// funcReconstruct(diff, plain, rows, "diff plain", true);
+		// funcReconstruct(max, plain, rows, "max plain", true);
 
 		for (size_t i = 0; i < size; ++i)
 			maxPrime[i] = temp[i];
 
 		for (size_t j = 0; j < rows; ++j)
 			max[j] = max[j] + a[j * columns + i];
+
+		// vector<computeType> plain(rows);
 	}
 }
 
@@ -1371,7 +1392,7 @@ void funcDotProduct(const T &a, const T &b,
 		{
 			if (OFFLINE_ON)
 			{
-				cout << "ppp " << precision << endl;
+				// cout << "ppp " << precision << endl;
 				funcTruncationR<T, computeType>(rPrime, r, precision, size);
 			}
 			// PrecomputeObject->getDividedShares(r, rPrime, (1 << precision), size);
@@ -1424,6 +1445,7 @@ void funcDotProduct(const T &a, const T &b,
 			if (OFFLINE_ON)
 			{
 				funcTruncationR<T, computeType>(rPrime, r, rmsb, precision, size);
+				// PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
 			}
 
 			for (int i = 0; i < size; ++i)
@@ -1617,6 +1639,7 @@ void funcDotProduct(const Vec &a, const Vec &b,
 			if (OFFLINE_ON)
 			{
 				funcTruncationR<Vec, T>(rPrime, r, rmsb, precision, size);
+				// PrecomputeObject->getDividedShares(r, rPrime, (1l << precision), size);
 			}
 
 			for (int i = 0; i < size; ++i)
@@ -2386,12 +2409,13 @@ void funcSquare(const Vec &a, Vec &b, size_t size)
 		}
 		for (size_t i = 0; i < size; i++)
 		{
-			temp3[i] -= rPrime[i].first;
+			temp3[i] += rPrime[i].first;
 		}
 		if (partyNum == PARTY_A)
 		{
 			for (int i = 0; i < size; ++i)
 			{
+				// temp3[i] = temp3[i] - rPrime[i].first + bias1;
 				temp3[i] += bias1;
 			}
 		}
@@ -2557,7 +2581,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		for (size_t i = 0; i < size; i++)
 		{
 			// temp3[i] -= rPrime[i].first;
-			temp[i] = temp[i] - rPrime[i];
+			temp[i] = temp[i] + rPrime[i];
 		}
 		funcAddOneConst(temp, bias1, size);
 
@@ -2792,7 +2816,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 	for (size_t j = 0; j < REC_Y; ++j)
 	{
 		funcSquare(a, temp, size);									// temp = a*a
-		funcDotProduct(temp, b, temp, size, true, FLOAT_PRECISION); // temp = a*a*b
+		funcDotProduct(temp, b, temp, size, true, float_precision); // temp = a*a*b
 		for (size_t i = 0; i < size; ++i)
 		{
 			a[i].first = (a[i].first << 1) - temp[i].first;
@@ -2827,7 +2851,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 
 	if (PLAINTEXT_RECIPROCAL)
 	{
-		cout << "Plaintext Reciprocal" << endl;
+		// cout << "Plaintext Reciprocal" << endl;
 		vector<uint64_t> plain_input(size), plain_output(size);
 		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
 
@@ -2843,10 +2867,10 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	}
 	else
 	{
-		cout << "Private Reciprocal" << endl;
+		// cout << "Private Reciprocal" << endl;
 		if constexpr (std::is_same<VEC, RSSVectorLowType>::value && MP_FOR_DIVISION)
 		{
-			cout << "Mixed-Precision Division" << endl;
+			// cout << "Mixed-Precision Division" << endl;
 			RSSVectorHighType highP_dividend(size), highP_rec(size);
 			funcMSExtension(highP_dividend, quotient, size);
 			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
@@ -3055,6 +3079,9 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 
 	temp = a;
 	funcMaxpool(temp, max, maxPrime, rows, cols);
+
+	// printRssVector(temp, "temp", size);
+	// printRssVector(maxPrime, "maxPrime", size);
 
 	// vector<elementType> temp_reconst(rows);
 	// funcReconstruct(max, temp_reconst, rows, "Softmax Log", true);
@@ -3603,6 +3630,25 @@ void funcRandBandA(Vec &a, RSSVectorSmallType &b, size_t size)
 	RSSVectorBoolType temp(size);
 	PrecomputeObject->getB2ARand(temp, size);
 	funcB2AbyXOR<Vec, T>(a, temp, size, true);
+	for (int i = 0; i < size; i++)
+	{
+		b[i] = make_pair(temp[i].first, temp[i].second);
+	}
+}
+
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorBoolType &b, size_t size, bool isbias)
+{
+	PrecomputeObject->getB2ARand(b, size);
+	funcB2AbyXOR<Vec, T>(a, b, size, isbias);
+}
+
+template <typename Vec, typename T>
+void funcRandBandA(Vec &a, RSSVectorSmallType &b, size_t size, bool isbias)
+{
+	RSSVectorBoolType temp(size);
+	PrecomputeObject->getB2ARand(temp, size);
+	funcB2AbyXOR<Vec, T>(a, temp, size, isbias);
 	for (int i = 0; i < size; i++)
 	{
 		b[i] = make_pair(temp[i].first, temp[i].second);

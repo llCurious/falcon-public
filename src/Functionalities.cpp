@@ -18,6 +18,7 @@ void funcTruncate(RSSVectorMyType &a, size_t power, size_t size)
 	vector<myType> reconst(size);
 	if (OFFLINE_ON)
 	{
+		// PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
 		funcTruncationR<RSSVectorMyType, myType>(rPrime, r, power, size);
 	}
 	// PrecomputeObject->getDividedShares(r, rPrime, (1 << power), size);
@@ -1143,7 +1144,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 	vector<smallType> reconst_b(size);
 	if (OFFLINE_ON)
 	{
-		funcRandBandA<RSSVectorHighType, highBit>(m_c, c, size);
+		funcRandBandA<RSSVectorHighType, highBit>(m_c, c, size, false);
 		// PrecomputeObject->getSelectorBitShares(c, m_c, size);
 	}
 
@@ -1192,7 +1193,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 	vector<smallType> reconst_b(size);
 	if (OFFLINE_ON)
 	{
-		funcRandBandA<RSSVectorLowType, lowBit>(m_c, c, size);
+		funcRandBandA<RSSVectorLowType, lowBit>(m_c, c, size, false);
 	}
 	// PrecomputeObject->getSelectorBitShares(c, m_c, size);
 

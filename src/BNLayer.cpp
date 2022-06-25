@@ -30,7 +30,7 @@ void BNLayer::printLayer()
 void BNLayer::forward(const RSSVectorMyType &inputActivation)
 {
 	log_print("BN.forward");
-	cout << "bn.for" << endl;
+	cout << "bn.for2" << endl;
 
 	size_t B = conf.numBatches;
 	size_t m = conf.inputSize;
@@ -72,7 +72,7 @@ void BNLayer::forward(const RSSVectorMyType &inputActivation)
 	funcGetShares(epsilon, eps);
 	addVectors<RSSMyType>(temp3, epsilon, temp3, B);
 
-	// cout << "bn.for1" << endl;
+	cout << "bn.for1" << endl;
 
 	// Square Root
 	funcGetShares(sigma, initG);
@@ -92,7 +92,7 @@ void BNLayer::forward(const RSSVectorMyType &inputActivation)
 		funcTruncatePublic(sigma, 2, B);
 	}
 
-	// cout << "bn.for4" << endl;
+	cout << "bn.for4" << endl;
 
 	// Normalized x (xhat)
 	funcBatchNorm(temp1, sigma, xhat, m, B);

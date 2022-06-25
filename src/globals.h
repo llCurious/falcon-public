@@ -35,7 +35,7 @@
 #define PARTY_C 2
 #define USING_EIGEN false
 #define PRIME_NUMBER 67
-#define FLOAT_PRECISION 20
+#define FLOAT_PRECISION 13
 #define FLOAT_BIAS (1 << FLOAT_PRECISION)
 #define PRECISE_DIVISION false
 
@@ -54,7 +54,7 @@
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
-typedef uint64_t myType;
+typedef uint32_t myType;
 typedef uint8_t smallType;
 typedef std::pair<myType, myType> RSSMyType;
 typedef std::pair<smallType, smallType> RSSSmallType;
@@ -96,7 +96,7 @@ operator<<(std::ostream &dest, longBit value);
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
-#define MP_FOR_DIVISION false
+#define MP_FOR_DIVISION true
 #define MP_FOR_INV_SQRT true
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL false
@@ -106,7 +106,7 @@ operator<<(std::ostream &dest, longBit value);
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
 #define OFFLINE_ON true
-#define PRE_LOAD true
+#define PRE_LOAD false
 #define IS_FALCON false
 
 #endif
