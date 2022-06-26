@@ -12,8 +12,9 @@ class MaxpoolLayer : public Layer
 {
 private:
 	MaxpoolConfig conf;
-	RSSVectorMyType activations;
-	RSSVectorMyType deltas;
+	ForwardVecorType activations;
+	BackwardVectorType high_activations;
+	BackwardVectorType deltas;
 	RSSVectorSmallType maxPrime;
 
 public:
@@ -22,11 +23,16 @@ public:
 
 	//Functions
 	void printLayer() override;
-	void forward(const RSSVectorMyType& inputActivation) override;
-	void computeDelta(RSSVectorMyType& prevDelta) override;
-	void updateEquations(const RSSVectorMyType& prevActivations) override;
+	void forward(const ForwardVecorType& inputActivation) override;
+	void computeDelta(BackwardVectorType& prevDelta) override;
+	void updateEquations(const BackwardVectorType& prevActivations) override;
+
+	// Mixed-precision funcs
+	void weight_reduction() override;
+	void activation_extension() override;
+	void weight_extension() override;
 
 	//Getters
-	RSSVectorMyType* getActivation() {return &activations;};
-	RSSVectorMyType* getDelta() {return &deltas;};
+	ForwardVecorType* getActivation() {return &activations;};
+	BackwardVectorType* getDelta() {return &deltas;};
 };

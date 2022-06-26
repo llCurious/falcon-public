@@ -23,8 +23,9 @@ extern smallType additionModPrime[PRIME_NUMBER][PRIME_NUMBER];
 extern smallType subtractModPrime[PRIME_NUMBER][PRIME_NUMBER];
 extern smallType multiplicationModPrime[PRIME_NUMBER][PRIME_NUMBER];
 
-RSSVectorMyType trainData, testData;
-RSSVectorMyType trainLabels, testLabels;
+BackwardVectorType trainData, testData;
+ForwardVecorType low_trainData, low_testData;
+BackwardVectorType trainLabels, testLabels;
 size_t trainDataBatchCounter = 0;
 size_t trainLabelsBatchCounter = 0;
 size_t testDataBatchCounter = 0;
@@ -73,7 +74,10 @@ void train(NeuralNetwork* net, string network, string dataset)
 		cout << "----------------------------------" << endl;  
 		cout << "Iteration " << i << endl;
 		readMiniBatch(net, "TRAINING");
+		net->weight_reduction();
 		net->forward();
+		net->activation_extension();
+		net->weight_extension();
 		net->backward();
 		acc = net->getAccuracy();
 		loss = net->getLoss();
@@ -94,15 +98,22 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 
 	//counter[0]: Correct samples, counter[1]: total samples
 	vector<size_t> counter(2,0);
-	RSSVectorMyType maxIndex(MINI_BATCH_SIZE);
 
 	for (int i = 0; i < 2; ++i)
 	{
 		// if (!PRELOADING)
 			readMiniBatch(net, "TESTING");
 
+		net->weight_reduction();
 		net->forward();
-		// net->predict(maxIndex);
+
+		/**
+		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		 * Note that: This two lines shall be commented out when performing inference
+		 * efficiency experiments.
+		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		 * **/
+		net->layers[NUM_LAYERS-1]->activation_extension();
 		net->getAccuracy();
 	}
 	// print_vector((*(net->layers[NUM_LAYERS-1])->getActivation()), "FLOAT", "MPC Output over uint32_t:", 1280);
@@ -113,8 +124,8 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 		ofstream data_file;
 		data_file.open("files/preload/"+which_network(network)+"/"+which_network(network)+".txt");
 		
-		vector<myType> b(MINI_BATCH_SIZE * LAST_LAYER_SIZE);
-		funcReconstruct((*(net->layers[NUM_LAYERS-1])->getActivation()), b, MINI_BATCH_SIZE * LAST_LAYER_SIZE, "anything", false);
+		vector<BackwardType> b(MINI_BATCH_SIZE * LAST_LAYER_SIZE);
+		funcReconstruct((*(net->layers[NUM_LAYERS-1])->getHighActivation()), b, MINI_BATCH_SIZE * LAST_LAYER_SIZE, "anything", false);
 		for (int i = 0; i < MINI_BATCH_SIZE; ++i)
 		{
 			for (int j = 0; j < LAST_LAYER_SIZE; ++j)
@@ -1284,7 +1295,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TRAINING_DATA_SIZE * INPUT_SIZE; ++i)
 	{
 		f_next >> temp_next; f_prev >> temp_prev;
-		trainData.push_back(std::make_pair(floatToMyType(temp_next/255.0), floatToMyType(temp_prev/255.0)));
+		trainData.push_back(std::make_pair(floatToBackwardType(temp_next/255.0), floatToBackwardType(temp_prev/255.0)));
 	}
 	f_next.close(); f_prev.close();
 
@@ -1293,7 +1304,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TRAINING_DATA_SIZE * LAST_LAYER_SIZE; ++i)
 	{
 		g_next >> temp_next; g_prev >> temp_prev;
-		trainLabels.push_back(std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev)));
+		trainLabels.push_back(std::make_pair(floatToBackwardType(temp_next), floatToBackwardType(temp_prev)));
 	}
 	g_next.close(); g_prev.close();
 
@@ -1302,7 +1313,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TEST_DATA_SIZE * INPUT_SIZE; ++i)
 	{
 		h_next >> temp_next; h_prev >> temp_prev;
-		testData.push_back(std::make_pair(floatToMyType(temp_next/255.0), floatToMyType(temp_prev/255.0)));
+		testData.push_back(std::make_pair(floatToBackwardType(temp_next/255.0), floatToBackwardType(temp_prev/255.0)));
 	}
 	h_next.close(); h_prev.close();
 
@@ -1311,7 +1322,7 @@ void loadData(string net, string dataset)
 	for (int i = 0; i < TEST_DATA_SIZE * LAST_LAYER_SIZE; ++i)
 	{
 		k_next >> temp_next; k_prev >> temp_prev;
-		testLabels.push_back(std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev)));
+		testLabels.push_back(std::make_pair(floatToBackwardType(temp_next), floatToBackwardType(temp_prev)));
 	}
 	k_next.close(); k_prev.close();		
 
@@ -1789,7 +1800,7 @@ void runOnly(NeuralNetwork* net, size_t l, string what, string& network)
 	if (what.compare("F") == 0)
 	{
 		if (l == 0)
-			net->layers[0]->forward(net->inputData);
+			net->layers[0]->forward(net->low_inputData);
 		else
 			net->layers[l]->forward(*(net->layers[l-1]->getActivation()));
 	}
@@ -1803,7 +1814,7 @@ void runOnly(NeuralNetwork* net, size_t l, string what, string& network)
 		if (l == 0)
 			net->layers[0]->updateEquations(net->inputData);
 		else
-			net->layers[l]->updateEquations(*(net->layers[l-1]->getActivation()));
+			net->layers[l]->updateEquations(*(net->layers[l-1]->getHighActivation()));
 	}
 	else
 		assert(false && "Only F,D or U allowed in runOnly");

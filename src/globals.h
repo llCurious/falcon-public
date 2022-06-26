@@ -11,13 +11,15 @@
 #include <bitset>
 #include <iostream>
 
+#define MP_TRAINING true
+
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
 #define _aligned_free free
 #define getrandom(min, max) ((rand() % (int)(((max) + 1) - (min))) + (min))
 #define floatToMyType(a) ((myType)(int)floor(a * (1 << FLOAT_PRECISION)))
-#define floatToLowType(a) ((lowBit)(int)floor(a * (1 << LOW_PRECISION)))
-#define floatToHighType(a) ((highBit)(long)floor(a * (1 << HIGH_PRECISION)))
+#define floatToLowType(a) ((lowBit)(int)floor(a * (1l << LOW_PRECISION)))
+#define floatToHighType(a) ((highBit)(long)floor(a * (1l << HIGH_PRECISION)))
 
 /********************* AES and other globals *********************/
 #define LOG_DEBUG false
@@ -44,7 +46,7 @@
 #define REC_ITERS 7
 #define REC_Y 6
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
-#define INVSQRT_ITERS 3
+#define INVSQRT_ITERS 6
 #define LOG_MINI_BATCH 5
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
@@ -96,12 +98,33 @@ operator<<(std::ostream &dest, longBit value);
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
-#define MP_FOR_DIVISION false
-#define MP_FOR_INV_SQRT false
+#define MP_FOR_DIVISION (true && MP_TRAINING)
+#define MP_FOR_INV_SQRT (true && MP_TRAINING)
 #define PLAINTEXT_INV_SQRT false
-#define PLAINTEXT_RECIPROCAL true
-#define PLAINTEXT_EXP true
+#define PLAINTEXT_RECIPROCAL false
+#define PLAINTEXT_EXP false
 #define USE_BN true
+// denote whether use Mixed-Share Extension or Wrap-Count extension
+#define MIXED_SHARE_EXTENSION true
+
+/********************* Mixed-Precision Training Types *********************/
+typedef typename std::conditional<MP_TRAINING, RSSVectorHighType, RSSVectorMyType>::type BackwardVectorType;
+typedef typename std::conditional<MP_TRAINING, RSSVectorLowType, RSSVectorMyType>::type ForwardVecorType;
+typedef typename std::conditional<MP_TRAINING, highBit, myType>::type BackwardType;
+typedef typename std::conditional<MP_TRAINING, lowBit, myType>::type ForwardType;
+typedef typename std::conditional<MP_TRAINING, RSSHighType, RSSMyType>::type RSSBackwardType;
+typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSForwardType;
+#if MP_TRAINING
+    #define floatToForwardType(a) floatToLowType(a)
+    #define floatToBackwardType(a) floatToHighType(a)
+    #define FORWARD_PRECISION LOW_PRECISION
+    #define BACKWARD_PRECISION HIGH_PRECISION
+#else
+    #define floatToForwardType(a) floatToMyType(a)
+    #define floatToBackwardType(a) floatToMyType(a)
+    #define FORWARD_PRECISION FLOAT_PRECISION
+    #define BACKWARD_PRECISION FLOAT_PRECISION
+#endif
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true

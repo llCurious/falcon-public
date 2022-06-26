@@ -14,11 +14,13 @@ class FCLayer : public Layer
 {
 private:
 	FCConfig conf;
-	RSSVectorMyType activations;
-	RSSVectorMyType deltas;
-	RSSVectorMyType weights;
-	RSSVectorMyType biases;
-
+	ForwardVecorType low_weights;
+	ForwardVecorType low_biases;
+	ForwardVecorType activations;
+	BackwardVectorType high_activations;
+	BackwardVectorType weights;
+	BackwardVectorType biases;
+	BackwardVectorType deltas;
 
 public:
 	//Constructor and initializer
@@ -27,13 +29,19 @@ public:
 
 	//Functions
 	void printLayer() override;
-	void forward(const RSSVectorMyType& inputActivation) override;
-	void computeDelta(RSSVectorMyType& prevDelta) override;
-	void updateEquations(const RSSVectorMyType& prevActivations) override;
+	void forward(const ForwardVecorType& inputActivation) override;
+	void computeDelta(BackwardVectorType& prevDelta) override;
+	void updateEquations(const BackwardVectorType& prevActivations) override;
+
+	// Mixed-precision funcs
+	void weight_reduction() override;
+	void activation_extension() override;
+	void weight_extension() override;
 
 	//Getters
-	RSSVectorMyType* getActivation() {return &activations;};
-	RSSVectorMyType* getDelta() {return &deltas;};
-	RSSVectorMyType* getWeights() {return &weights;};
-	RSSVectorMyType* getBias() {return &biases;};
+	ForwardVecorType* getActivation() {return &activations;};
+	BackwardVectorType* getHighActivation() {return &high_activations;};
+	BackwardVectorType* getDelta() {return &deltas;};
+	BackwardVectorType* getWeights() {return &weights;};
+	BackwardVectorType* getBias() {return &biases;};
 };

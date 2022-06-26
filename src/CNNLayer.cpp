@@ -12,7 +12,12 @@ CNNLayer::CNNLayer(CNNConfig *conf, int _layerNum)
 		   conf->padding, conf->batchSize),
 	  weights(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters),
 	  biases(conf->filters),
+	  low_weights(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters),
+	  low_biases(conf->filters),
 	  activations(conf->batchSize * conf->filters *
+				  (((conf->imageWidth - conf->filterSize + 2 * conf->padding) / conf->stride) + 1) *
+				  (((conf->imageHeight - conf->filterSize + 2 * conf->padding) / conf->stride) + 1)),
+	  high_activations(conf->batchSize * conf->filters *
 				  (((conf->imageWidth - conf->filterSize + 2 * conf->padding) / conf->stride) + 1) *
 				  (((conf->imageHeight - conf->filterSize + 2 * conf->padding) / conf->stride) + 1)),
 	  deltas(conf->batchSize * conf->filters *
@@ -38,18 +43,18 @@ void CNNLayer::initialize()
 	 * The problem seems to be the initialization to myType has bugs.
 	 * TODO: We shall look at this. Since we need both master weights and forward weights.
 	 * */
-	RSSVectorMyType temp(size);
+	// RSSVectorMyType temp(size);
 	srand(10);
 	if (partyNum == PARTY_A)
 	{
 		for (size_t i = 0; i < size; ++i)
 		{
-			weights[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			weights[i].first = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			weights[i].second = 0;
 		}
 		for (size_t i = 0; i < biases.size(); ++i)
 		{
-			biases[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			biases[i].first = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			biases[i].second = 0;
 		}
 	}
@@ -70,12 +75,12 @@ void CNNLayer::initialize()
 	{
 		for (size_t i = 0; i < size; ++i)
 		{
-			weights[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			weights[i].second = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			weights[i].first = 0;
 		}
 		for (size_t i = 0; i < biases.size(); ++i)
 		{
-			biases[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			biases[i].second = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			biases[i].first = 0;
 		}
 	}
@@ -98,7 +103,7 @@ void CNNLayer::printLayer()
 		 << conf.filters << " \t(Output)" << endl;
 }
 
-void CNNLayer::forward(const RSSVectorMyType &inputActivation)
+void CNNLayer::forward(const ForwardVecorType &inputActivation)
 {
 	log_print("CNN.forward");
 
@@ -114,14 +119,14 @@ void CNNLayer::forward(const RSSVectorMyType &inputActivation)
 	size_t oh = (((ih - f + 2 * P) / S) + 1);
 
 	// Reshape activations
-	RSSVectorMyType temp1((iw + 2 * P) * (ih + 2 * P) * Din * B, make_pair(0, 0));
+	ForwardVecorType temp1((iw + 2 * P) * (ih + 2 * P) * Din * B, make_pair(0, 0));
 	// if (FUNCTION_TIME)
 	// 	cout << "ZP: \t" << funcTime(zeroPad, inputActivation, temp1, iw, ih, P, Din, B) << endl;
 	// else
 	zeroPad(inputActivation, temp1, iw, ih, P, Din, B);
 
 	// Reshape for convolution
-	RSSVectorMyType temp2((f * f * Din) * (ow * oh * B));
+	ForwardVecorType temp2((f * f * Din) * (ow * oh * B));
 	// if (FUNCTION_TIME)
 	// 	cout << "convToMult: " << funcTime(convToMult, temp1, temp2, (iw+2*P), (ih+2*P), f, Din, S, B) << endl;
 	// else
@@ -145,22 +150,22 @@ void CNNLayer::forward(const RSSVectorMyType &inputActivation)
 	}
 
 	// Perform the multiplication.
-	RSSVectorMyType temp3(Dout * (ow * oh * B));
+	ForwardVecorType temp3(Dout * (ow * oh * B));
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, weights, temp2, temp3, Dout, (f * f * Din), (ow * oh * B), 0, 0, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<ForwardVecorType>, low_weights, temp2, temp3, Dout, (f * f * Din), (ow * oh * B), 0, 0, FORWARD_PRECISION) << endl;
 	else
-		funcMatMul(weights, temp2, temp3, Dout, (f * f * Din), (ow * oh * B), 0, 0, FLOAT_PRECISION);
+		funcMatMul(low_weights, temp2, temp3, Dout, (f * f * Din), (ow * oh * B), 0, 0, FORWARD_PRECISION);
 
 	// Add biases and meta-transpose
 	size_t tempSize = ow * oh;
 	for (size_t i = 0; i < B; ++i)
 		for (size_t j = 0; j < Dout; ++j)
 			for (size_t k = 0; k < tempSize; ++k)
-				activations[i * Dout * tempSize + j * tempSize + k] = temp3[j * B * tempSize + i * tempSize + k] + biases[j];
+				activations[i * Dout * tempSize + j * tempSize + k] = temp3[j * B * tempSize + i * tempSize + k] + low_biases[j];
 }
 
 // TODO: Recheck backprop after forward bug fixed.
-void CNNLayer::computeDelta(RSSVectorMyType &prevDelta)
+void CNNLayer::computeDelta(BackwardVectorType &prevDelta)
 {
 	log_print("CNN.computeDelta");
 
@@ -175,7 +180,7 @@ void CNNLayer::computeDelta(RSSVectorMyType &prevDelta)
 	size_t ow = (((iw - f + 2 * P) / S) + 1);
 	size_t oh = (((ih - f + 2 * P) / S) + 1);
 
-	RSSVectorMyType temp1((f * f * Dout) * (iw * ih * B), make_pair(0, 0));
+	BackwardVectorType temp1((f * f * Dout) * (iw * ih * B), make_pair(0, 0));
 	{
 		size_t x, y;
 		size_t sizeDeltaBeta = iw;
@@ -207,7 +212,7 @@ void CNNLayer::computeDelta(RSSVectorMyType &prevDelta)
 								}
 	}
 
-	RSSVectorMyType temp2((Din) * (f * f * Dout), make_pair(0, 0));
+	BackwardVectorType temp2((Din) * (f * f * Dout), make_pair(0, 0));
 	{
 		size_t sizeQ = f;
 		size_t sizeR = sizeQ * f;
@@ -227,12 +232,12 @@ void CNNLayer::computeDelta(RSSVectorMyType &prevDelta)
 					}
 	}
 
-	RSSVectorMyType temp3((Din) * (iw * ih * B), make_pair(0, 0));
+	BackwardVectorType temp3((Din) * (iw * ih * B), make_pair(0, 0));
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, temp2, temp1, temp3, Din, (f * f * Dout), (iw * ih * B), 0, 0, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, temp2, temp1, temp3, Din, (f * f * Dout), (iw * ih * B), 0, 0, BACKWARD_PRECISION) << endl;
 	else
-		funcMatMul(temp2, temp1, temp3, Din, (f * f * Dout), (iw * ih * B), 0, 0, FLOAT_PRECISION);
+		funcMatMul(temp2, temp1, temp3, Din, (f * f * Dout), (iw * ih * B), 0, 0, BACKWARD_PRECISION);
 
 	{
 		size_t sizeDeltaBeta = iw;
@@ -254,7 +259,7 @@ void CNNLayer::computeDelta(RSSVectorMyType &prevDelta)
 	}
 }
 
-void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
+void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
 {
 	log_print("CNN.updateEquations");
 
@@ -271,7 +276,7 @@ void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 
 	/********************** Bias update **********************/
 	// Bias update
-	RSSVectorMyType temp1(Dout, make_pair(0, 0));
+	BackwardVectorType temp1(Dout, make_pair(0, 0));
 	{
 		size_t sizeY = ow;
 		size_t sizeD = sizeY * oh;
@@ -288,13 +293,13 @@ void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	}
 	else
 	{
-		funcProbTruncation<RSSVectorMyType, myType>(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
+		funcProbTruncation<BackwardVectorType, BackwardType>(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
 	}
-	subtractVectors<RSSMyType>(biases, temp1, biases, Dout);
+	subtractVectors(biases, temp1, biases, Dout);
 
 	/********************** Weights update **********************/
 	// Reshape activations
-	RSSVectorMyType temp3((f * f * Din) * (ow * oh * B));
+	BackwardVectorType temp3((f * f * Din) * (ow * oh * B));
 	{
 		size_t sizeY = ow;
 		size_t sizeB = sizeY * oh;
@@ -323,7 +328,7 @@ void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	}
 
 	// Reshape delta
-	RSSVectorMyType temp2((Dout) * (ow * oh * B));
+	BackwardVectorType temp2((Dout) * (ow * oh * B));
 	{
 		size_t sizeY = ow;
 		size_t sizeD = sizeY * oh;
@@ -338,13 +343,27 @@ void CNNLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	}
 
 	// Compute product, truncate and subtract
-	RSSVectorMyType temp4((Dout) * (f * f * Din));
+	BackwardVectorType temp4((Dout) * (f * f * Din));
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, temp2, temp3, temp4, (Dout), (ow * oh * B), (f * f * Din), 0, 1, FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, temp2, temp3, temp4, (Dout), (ow * oh * B), (f * f * Din), 0, 1, BACKWARD_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE) << endl;
 	else
 		funcMatMul(temp2, temp3, temp4, (Dout), (ow * oh * B), (f * f * Din), 0, 1,
-				   FLOAT_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE);
+				   BACKWARD_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE);
 
+	// print_vector(temp4, "FLOAT", "CNN weight_grad", 100);
 	subtractVectors(weights, temp4, weights, f * f * Din * Dout);
 	// print_vector(temp4, "FLOAT", "deltaWeight", 100);
+}
+
+void CNNLayer::weight_reduction() {
+	funcWeightReduction(low_weights, weights, weights.size());
+	funcWeightReduction(low_biases, biases, biases.size());
+}
+
+void CNNLayer::activation_extension() {
+	funcActivationExtension(high_activations, activations, activations.size());
+}
+
+void CNNLayer::weight_extension() {
+	cout << "Not implemented weight extension" << endl;
 }
