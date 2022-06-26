@@ -44,6 +44,7 @@ template <typename Vec, typename T>
 void debugInverseSqrt();
 template <typename Vec, typename T>
 void debugSoftmax();
+void debugMPBNLayer();
 
 void runTest(string str, string whichTest, string &network);
 
@@ -336,6 +337,7 @@ void debugBNLayer()
 
 	// Forward.
 	Vec forward_output(size), backward_output(size);
+    layer->weight_reduction();
 	layer->forward(input_act);
 	forward_output = *layer->getActivation();
 	print_vector(forward_output, "FLOAT", "BN Forward", size);
@@ -344,6 +346,7 @@ void debugBNLayer()
 	Vec x_grad(size);
 	// layer->backward(grad);
 	*(layer->getDelta()) = grad;
+    layer->activation_extension();
 	layer->computeDelta(x_grad);
 	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
