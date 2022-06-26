@@ -11,7 +11,9 @@
 // 	  xhat(conf->numBatches * conf->inputSize),
 // 	  sigma(conf->numBatches),
 // 	  activations(conf->inputSize * conf->numBatches),
-// 	  deltas(conf->inputSize * conf->numBatches)
+// 	  deltas(conf->inputSize * conf->numBatches),
+// 	  gamma_grad(conf->inputSize),
+// 	  beta_grad(conf->inputSize)
 // {
 // 	initialize();
 // };
@@ -28,6 +30,7 @@
 // void BNLayer::forward(const RSSVectorMyType &inputActivation)
 // {
 // 	log_print("BN.forward");
+// 	cout << "bn.for2" << endl;
 
 // 	size_t B = conf.numBatches;
 // 	size_t m = conf.inputSize;
@@ -42,8 +45,13 @@
 
 // 	// Compute mean
 // 	for (int i = 0; i < B; ++i)
+// 	{
 // 		for (int j = 0; j < m; ++j)
+// 		{
 // 			mu[i] = mu[i] + inputActivation[i * m + j];
+// 		}
+// 	}
+
 // 	funcTruncatePublic(mu, m, B);
 
 // 	// Compute x - mean
@@ -64,12 +72,15 @@
 // 	funcGetShares(epsilon, eps);
 // 	addVectors<RSSMyType>(temp3, epsilon, temp3, B);
 
+// 	cout << "bn.for1" << endl;
+
 // 	// Square Root
 // 	funcGetShares(sigma, initG);
 // 	for (int i = 0; i < SQRT_ROUNDS; ++i)
 // 	{
 // 		if (IS_FALCON)
 // 		{
+// 			// cout << i << endl;
 // 			funcDivision(temp3, sigma, b, B);
 // 		}
 // 		else
@@ -77,8 +88,11 @@
 // 			funcDivisionByNR(b, temp3, sigma, B);
 // 		}
 // 		addVectors<RSSMyType>(sigma, b, sigma, B);
+// 		cout << i << endl;
 // 		funcTruncatePublic(sigma, 2, B);
 // 	}
+
+// 	cout << "bn.for4" << endl;
 
 // 	// Normalized x (xhat)
 // 	funcBatchNorm(temp1, sigma, xhat, m, B);
@@ -159,31 +173,24 @@
 // 	size_t m = conf.inputSize;
 
 // 	// Update beta
-// 	RSSVectorMyType temp1(B, make_pair(0, 0));
+// 	// RSSVectorMyType temp1(B, make_pair(0, 0));
 // 	for (int i = 0; i < B; ++i)
 // 		for (int j = 0; j < m; ++j)
-// 			temp1[i] = temp1[i] + deltas[i * m + j];
+// 			beta_grad[i] = beta_grad[i] + deltas[i * m + j];
+// 	RSSVectorMyType beta_grad_lr(m);
+// 	funcProbTruncation<RSSVectorMyType, myType>(beta_grad_lr, beta_grad, LOG_LEARNING_RATE, m);
+// 	// subtractVectors(beta, beta_grad_lr, beta, m);
 
-// 	subtractVectors<RSSMyType>(beta, temp1, beta, B);
+// 	subtractVectors<RSSMyType>(beta, beta_grad_lr, beta, B);
 
 // 	// Update gamma
-// 	RSSVectorMyType temp2(B * m, make_pair(0, 0)), temp3(B, make_pair(0, 0));
+// 	RSSVectorMyType temp2(B * m, make_pair(0, 0));
 // 	funcDotProduct(xhat, deltas, temp2, B * m, true, FLOAT_PRECISION);
 // 	for (int i = 0; i < B; ++i)
 // 		for (int j = 0; j < m; ++j)
-// 			temp3[i] = temp3[i] + temp2[i * m + j];
+// 			gamma_grad[i] = gamma_grad[i] + temp2[i * m + j];
+// 	RSSVectorMyType gamma_grad_lr(m);
+// 	funcProbTruncation<RSSVectorMyType, myType>(gamma_grad_lr, gamma_grad, LOG_LEARNING_RATE, m);
 
-// 	subtractVectors<RSSMyType>(gamma, temp3, gamma, B);
-// }
-
-// void BNLayer::weight_reduction() {
-// 	cout << "Not implemented weight reduction" << endl;
-// }
-
-// void BNLayer::activation_extension() {
-// 	cout << "Not implemented activation extension" << endl;
-// }
-
-// void BNLayer::weight_extension() {
-// 	cout << "Not implemented weight extension" << endl;
+// 	subtractVectors<RSSMyType>(gamma, gamma_grad_lr, gamma, B);
 // }

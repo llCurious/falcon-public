@@ -117,7 +117,8 @@ void MaxpoolLayer::computeDelta(BackwardVectorType& prevDelta)
 	}
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(funcSelectShares, temp2, temp1, prevDelta, iw*ih*Din*B) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void(*)(const BackwardVectorType &, const RSSVectorSmallType &,
+					  BackwardVectorType &, size_t)>(funcSelectShares), temp2, temp1, prevDelta, iw*ih*Din*B) << endl;
 	else
 		funcSelectShares(temp2, temp1, prevDelta, iw*ih*Din*B);
 }

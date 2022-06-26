@@ -46,7 +46,8 @@ void ReLULayer::computeDelta(BackwardVectorType& prevDelta)
 	size_t size = rows*columns;
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(funcSelectShares, deltas, reluPrime, prevDelta, size) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void(*)(const BackwardVectorType &, const RSSVectorSmallType &,
+					  BackwardVectorType &, size_t)>(funcSelectShares), deltas, reluPrime, prevDelta, size) << endl;
 	else
 		funcSelectShares(deltas, reluPrime, prevDelta, size);
 	// print_vector(deltas, "FLOAT", "deltas-ReLU", 100);

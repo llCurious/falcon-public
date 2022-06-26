@@ -528,6 +528,61 @@ void mat2file(const vector<float> &a, string filename, size_t size)
 	f.close();
 }
 
+void mat2file(const vector<ForwardType> &a, const vector<BackwardType> &b, const vector<BackwardType> &c, const vector<BackwardType> &d, string filename, size_t row, size_t col)
+{
+	assert(a.size() == row * col);
+	// typedef typename std::conditional<std::is_same<T, lowBit>::value, int32_t, int64_t>::type computeType;
+	// size_t float_precision = FLOAT_PRECISION;
+	// if (std::is_same<T, highBit>::value)
+	// {
+	// 	float_precision = HIGH_PRECISION;
+	// }
+	// else if (std::is_same<T, lowBit>::value)
+	// {
+	// 	float_precision = LOW_PRECISION;
+	// }
+	// else
+	// {
+	// 	cout << "Not supported type" << typeid(a).name() << endl;
+	// }
+
+	ofstream f;
+	f.open(filename, ios::out);
+
+	// cout << row << " " << col << endl;
+	for (size_t i = 0; i < row; ++i)
+	{
+		f << ((static_cast<ForwardType>(a[i * col])) / (float)(1 << FORWARD_PRECISION));
+		for (size_t j = 1; j < col; ++j)
+		{
+			f << "," << ((static_cast<ForwardType>(a[i * col + j])) / (float)(1l << FORWARD_PRECISION));
+		}
+		f << "\n";
+	}
+	for (size_t i = 0; i < row; ++i)
+	{
+		f << ((static_cast<BackwardType>(b[i * col])) / (float)(1 << BACKWARD_PRECISION));
+		for (size_t j = 1; j < col; ++j)
+		{
+			f << "," << ((static_cast<BackwardType>(b[i * col + j])) / (float)(1l << BACKWARD_PRECISION));
+		}
+		f << "\n";
+	}
+	f << (static_cast<BackwardType>(c[0])) / (float)(1 << BACKWARD_PRECISION);
+	for (size_t i = 1; i < col; i++)
+	{
+		f << "," << (static_cast<BackwardType>(c[i])) / (float)(1 << BACKWARD_PRECISION);
+	}
+	f << "\n";
+	f << (static_cast<BackwardType>(d[0])) / (float)(1 << BACKWARD_PRECISION);
+	for (size_t i = 1; i < col; i++)
+	{
+		f << "," << (static_cast<BackwardType>(d[i])) / (float)(1 << BACKWARD_PRECISION);
+	}
+	f << "\n";
+	f.close();
+}
+
 // template<typename Vec, typename T>
 // void matrixMultRSS(const Vec &a, const Vec &b, vector<T> &temp3,
 // 					size_t rows, size_t common_dim, size_t columns,

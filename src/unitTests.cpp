@@ -104,7 +104,8 @@ void benchMSExtension()
 	}
 }
 
-void runBN(BNLayerOpt *layer, ForwardVecorType &forward_output, ForwardVecorType &input_act, BackwardVectorType &grad, BackwardVectorType &x_grad)
+template <typename VecLow, typename VecHigh>
+void runBN(BNLayerOpt *layer, VecLow &forward_output, VecLow &input_act, VecHigh &grad, VecHigh &x_grad)
 {
 	layer->weight_reduction();
 	layer->forward(input_act);
@@ -119,8 +120,35 @@ void runBN(BNLayerOpt *layer, ForwardVecorType &forward_output, ForwardVecorType
 	layer->updateEquations(high_input_act);
 }
 
+// template <typename Vec>
+// void runBN(BNLayer *layer, Vec &forward_output, Vec &input_act, Vec &grad, Vec &x_grad)
+// {
+// 	layer->forward(input_act);
+// 	forward_output = *layer->getActivation();
+// 	print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
+
+// 	*(layer->getDelta()) = grad;
+// 	layer->computeDelta(x_grad);
+// 	layer->updateEquations(input_act);
+// }
+
+// template <typename VecLow, typename VecHigh, typename T>
 void getBNInput(vector<float> &x_raw, vector<float> &grad_raw, ForwardVecorType &input_act, BackwardVectorType &grad, size_t B, size_t D)
 {
+	// size_t float_precision = FLOAT_PRECISION;
+	// if (std::is_same<Vec, RSSVectorHighType>::value)
+	// {
+	// 	float_precision = HIGH_PRECISION;
+	// }
+	// else if (std::is_same<Vec, RSSVectorLowType>::value)
+	// {
+	// 	float_precision = LOW_PRECISION;
+	// }
+	// else
+	// {
+	// 	cout << "Not supported type" << typeid(x_raw).name() << endl;
+	// }
+
 	size_t size = B * D;
 	for (size_t i = 0; i < B; i++)
 	{
@@ -140,6 +168,72 @@ void getBNInput(vector<float> &x_raw, vector<float> &grad_raw, ForwardVecorType 
 	{
 		x_p[i] = x_raw[i] * (1 << FORWARD_PRECISION);
 		grad_p[i] = grad_raw[i] * (1 << BACKWARD_PRECISION);
+	}
+
+	funcGetShares(input_act, x_p);
+	funcGetShares(grad, grad_p);
+}
+
+/**
+ * @brief get bn input from file
+ *
+ * @param x_raw
+ * @param grad_raw
+ * @param input_act
+ * @param grad
+ * @param B
+ * @param D
+ */
+// template <typename Vec, typename T>
+void getBNInput(string filename, vector<float> &x_raw, vector<float> &grad_raw, ForwardVecorType &input_act, BackwardVectorType &grad, size_t B, size_t D)
+{
+	size_t size = B * D;
+
+	// size_t float_precision = FLOAT_PRECISION;
+	// if (std::is_same<Vec, RSSVectorHighType>::value)
+	// {
+	// 	float_precision = HIGH_PRECISION;
+	// }
+	// else if (std::is_same<Vec, RSSVectorLowType>::value)
+	// {
+	// 	float_precision = LOW_PRECISION;
+	// }
+	// else
+	// {
+	// 	cout << "Not supported type" << typeid(x_raw).name() << endl;
+	// }
+
+	ifstream infile;
+	infile.open(filename.data());
+	assert(infile.is_open());
+	int i = 0, j = 0;
+	char buf[1024] = {0};
+	while (infile >> buf)
+	{
+		if (i < B)
+		{
+			x_raw[i * D + j] = stof(buf);
+		}
+		else
+		{
+			grad_raw[(i - B) * D + j] = stof(buf);
+		}
+		++j;
+		if (j == D)
+		{
+			j = 0;
+			++i;
+		}
+	}
+	infile.close();
+
+	// FXP representation
+	vector<ForwardType> x_p(size);
+	vector<BackwardType> grad_p(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		x_p[i] = x_raw[i] * (1 << FORWARD_PRECISION);
+		grad_p[i] = grad_raw[i] * (1 << BACKWARD_PRECISION);
 		// cout << x_p[i] << " " << grad_p[i] << " ";
 	}
 
@@ -147,6 +241,7 @@ void getBNInput(vector<float> &x_raw, vector<float> &grad_raw, ForwardVecorType 
 	funcGetShares(grad, grad_p);
 }
 
+// template <typename Vec, typename T>
 void benchBN()
 {
 	size_t ds[2] = {100, 1000};
@@ -156,8 +251,8 @@ void benchBN()
 	double time_sum = 0;
 	int cnt = 10;
 
-	string infile = "./scripts/test_data/input.txt";
-	string outfile = "./scripts/test_data/output.txt";
+	// string infile = "./scripts/test_data/input.csv";
+	// string outfile = "./scripts/test_data/output.csv";
 
 	uint64_t round = 0;
 	uint64_t commsize = 0;
@@ -170,60 +265,174 @@ void benchBN()
 		vector<float> x_raw(size);
 		vector<float> grad_raw(size);
 
-		ForwardVecorType input_act(size);
-		BackwardVectorType grad(size);
-
-		BNConfig *bn_conf = new BNConfig(D, B);
-		BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
-
 		ForwardVecorType forward_output(size);
 		BackwardVectorType x_grad(size);
 
-		getBNInput(x_raw, grad_raw, input_act, grad, B, D);
-
-		// comm test
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
-		runBN(layer, forward_output, input_act, grad, x_grad);
-		cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
-
-		for (size_t i = 0; i < cnt; i++)
+		ForwardVecorType input_act(size);
+		BackwardVectorType grad(size);
+		if (IS_FALCON)
 		{
+			// BNConfig *bn_conf = new BNConfig(D, B);
+			// BNLayer *layer = new BNLayer(bn_conf, 0);
+
+			// getBNInput(x_raw, grad_raw, input_act, grad, B, D);
+
+			// // comm test
+			// round = commObject.getRoundsRecv();
+			// commsize = commObject.getRecv();
+			// runBN(layer, forward_output, input_act, grad, x_grad);
+			// cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+			// for (size_t i = 0; i < cnt; i++)
+			// {
+			// 	getBNInput(x_raw, grad_raw, input_act, grad, B, D);
+
+			// 	// time test
+			// 	start = clock();
+			// 	runBN(layer, forward_output, input_act, grad, x_grad);
+
+			// 	end = clock();
+			// 	double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			// 	time_sum += dur;
+			// }
+		}
+		else
+		{
+			BNConfig *bn_conf = new BNConfig(D, B);
+			BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+
 			getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
-			// time test
-			start = clock();
+			// comm test
+			round = commObject.getRoundsRecv();
+			commsize = commObject.getRecv();
 			runBN(layer, forward_output, input_act, grad, x_grad);
+			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
 
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
-			time_sum += dur;
+			for (size_t i = 0; i < cnt; i++)
+			{
+				getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
-			// acc test
-			// record input
-			mat2file(x_raw, infile, size);
-			mat2file(grad_raw, infile, size);
-			// record output, x_forward, x_grad, gamma_grad, beta_grad
-			vector<ForwardType> x_f(size);
-			vector<BackwardType> x_g(size), gamma_g(D), beta_g(D);
-			BackwardVectorType gammagrad(D), betagrad(D);
-			gammagrad = *layer->getGammaGrad();
-			betagrad = *layer->getBetaGrad();
-			funcReconstruct(forward_output, x_f, size, "x_forward", false);
-			funcReconstruct(x_grad, x_g, size, "x_grad", false);
-			funcReconstruct(gammagrad, gamma_g, D, "gamma_grad", false);
-			funcReconstruct(betagrad, beta_g, D, "beta_grad", false);
-			mat2file<ForwardType>(x_f, outfile, size);
-			mat2file<BackwardType>(x_g, outfile, size);
-			mat2file<BackwardType>(gamma_g, outfile, D);
-			mat2file<BackwardType>(beta_g, outfile, D);
+				// time test
+				start = clock();
+				runBN(layer, forward_output, input_act, grad, x_grad);
+
+				end = clock();
+				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				time_sum += dur;
+			}
 		}
 		cout << B << " " << D << " " << time_sum / cnt << endl;
 	}
 }
 
+// template <typename Vec, typename T>
+void benchBNAcc()
+{
+	// batch size: 32,64,128,256
+	size_t B = (1 << LOG_MINI_BATCH), D = 100;
+	clock_t start, end;
+	double time_sum = 0;
+
+	string infile = "./scripts/test_data/input_bn.csv";
+	string outfile = "./scripts/test_data/output_bn_mix.csv";
+
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	size_t size = B * D;
+
+	vector<float> x_raw(size);
+	vector<float> grad_raw(size);
+
+	ForwardVecorType input_act(size);
+	BackwardVectorType grad(size);
+
+	ForwardVecorType forward_output(size);
+	BackwardVectorType x_grad(size);
+	BackwardVectorType gammagrad(D), betagrad(D);
+
+	if (IS_FALCON)
+	{
+		// BNConfig *bn_conf = new BNConfig(D, B);
+		// BNLayer *layer = new BNLayer(bn_conf, 0);
+
+		// getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
+		// runBN(layer, forward_output, input_act, grad, x_grad);
+
+		// gammagrad = *layer->getGammaGrad();
+		// betagrad = *layer->getBetaGrad();
+	}
+	else
+	{
+		BNConfig *bn_conf = new BNConfig(D, B);
+		BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+
+		getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
+		runBN(layer, forward_output, input_act, grad, x_grad);
+
+		gammagrad = *layer->getGammaGrad();
+		betagrad = *layer->getBetaGrad();
+	}
+
+	// record output, x_forward, x_grad, gamma_grad, beta_grad
+	vector<ForwardType> x_f(size);
+	vector<BackwardType> x_g(size), gamma_g(D), beta_g(D);
+	funcReconstruct(forward_output, x_f, size, "x_forward", false);
+	funcReconstruct(x_grad, x_g, size, "x_grad", false);
+	funcReconstruct(gammagrad, gamma_g, D, "gamma_grad", false);
+	funcReconstruct(betagrad, beta_g, D, "beta_grad", false);
+
+	mat2file(x_f, x_g, gamma_g, beta_g, outfile, B, D);
+}
+
 void benchSoftMax()
 {
+	// d=10/200，batch=100/1000/10000/100000
+	size_t ds[2] = {10, 200};
+	size_t batchs[3] = {100, 1000, 10000};
+	// size_t ds[1] = {200};
+	// size_t batchs[1] = {10000};
+	size_t cnt = 4;
+
+	size_t size;
+
+	uint64_t round = 0;
+	uint64_t commsize = 0;
+
+	clock_t start, end;
+
+	for (int d : ds)
+	{
+		for (int batch : batchs)
+		{
+			size = d * batch;
+
+			RSSVectorHighType a(size), b(size);
+
+			// comm
+			round = commObject.getRoundsRecv();
+			commsize = commObject.getRecv();
+
+			funcSoftmax(a, b, batch, d, false);
+
+			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+
+			// time
+			double time_sum = 0;
+			for (size_t i = 0; i < cnt; i++)
+			{
+				start = clock();
+				funcSoftmax(a, b, batch, d, false);
+
+				end = clock();
+				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				cout << dur << endl;
+				time_sum += dur;
+			}
+			cout << batch << " " << d << " " << time_sum / cnt << endl;
+		}
+	}
 }
 
 void debugPartySS()
@@ -898,12 +1107,13 @@ void runTest(string str, string whichTest, string &network)
 		{
 			network = "Softmax";
 			// debugSoftmax<RSSVectorHighType, highBit>();
-			debugSoftmax<RSSVectorLowType, lowBit>();
+			debugSoftmax<RSSVectorHighType, highBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{
 			network = "BNLayer";
 			debugMPBNLayer();
+			// debugBNLayer<RSSVectorMyType, myType>();
 			// debugBNLayer<RSSVectorHighType, highBit>();
 			// debugBNLayer<RSSVectorLowType, lowBit>();
 		}
@@ -1010,12 +1220,16 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BN") == 0)
 		{
 			network = "BN";
+			// benchBN<RSSVectorMyType, myType>();
 			benchBN();
+			// benchBNAcc<RSSVectorMyType();
+			benchBNAcc();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
-			benchSoftMax();
+			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
 		}
 	}
 	else

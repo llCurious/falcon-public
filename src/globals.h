@@ -52,7 +52,7 @@
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 2000
+#define NUM_ITERATIONS 1000
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -128,8 +128,8 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-#define OFFLINE_ON false
-#define PRE_LOAD true
+#define OFFLINE_ON true
+#define PRE_LOAD false
 #define IS_FALCON false
 
 #endif
