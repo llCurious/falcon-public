@@ -2880,11 +2880,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 			// cout << "Mixed-Precision Division" << endl;
 			RSSVectorHighType highP_dividend(size), highP_rec(size);
 			funcMSExtension(highP_dividend, quotient, size);
-			vector<elementType> plain_quotient(size);
-			vector<highBit> plain_high_dividend(size);
-			funcReconstruct(quotient, plain_quotient, quotient.size(), "quotient", true);
 			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
-			funcReconstruct(highP_dividend, plain_high_dividend, plain_high_dividend.size(), "plain_high_dividend", true);
 			funcReciprocal2(highP_rec, highP_dividend, false, size);
 			funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
 		}
