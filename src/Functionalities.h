@@ -2485,19 +2485,20 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_EXP)
 	{
 		cout << "Plain text Exp" << endl;
-		vector<uint64_t> plain_input(size), plain_output(size);
+		vector<elementType> plain_input(size), plain_output(size);
 		funcReconstruct(a, plain_input, size, "plain-text divisor", false);
 
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++)
 		{
-			pl_input_float[i] = static_cast<int64_t>(plain_input[i]) * 1.0 / (1l << float_precision);
+			pl_input_float[i] = static_cast<realValueType>(plain_input[i]) * 1.0 / (1l << float_precision);
 			// cout << plain_input[i] << " : " << pl_input_float[i] << endl;;
 			pl_input_float[i] = exp(pl_input_float[i]);
-			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
+			plain_output[i] = (elementType)(pl_input_float[i] * (1 << float_precision));
 			// cout << pl_input_float[i] << " : " << plain_output[i] << ", ";
 		}
 		funcGetShares(b, plain_output);
@@ -2852,18 +2853,21 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	}
 	VEC q_rec(size);
 
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_RECIPROCAL)
 	{
 		// cout << "Plaintext Reciprocal" << endl;
-		vector<uint64_t> plain_input(size), plain_output(size);
+		vector<elementType> plain_input(size), plain_output(size);
 		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
 
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++)
 		{
-			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
+			pl_input_float[i] = static_cast<realValueType>(plain_input[i]) * 1.0 / (1 << float_precision);
 			pl_input_float[i] = 1. / pl_input_float[i];
-			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
+			cout << pl_input_float[i] << endl;
+			plain_output[i] = (elementType)(pl_input_float[i] * (1 << float_precision));
 		}
 		funcGetShares(q_rec, plain_output);
 		// print_vector(q_rec, "FLOAT", "mixed-preicision reciprocal", size);
@@ -2876,7 +2880,11 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 			// cout << "Mixed-Precision Division" << endl;
 			RSSVectorHighType highP_dividend(size), highP_rec(size);
 			funcMSExtension(highP_dividend, quotient, size);
+			vector<elementType> plain_quotient(size);
+			vector<highBit> plain_high_dividend(size);
+			funcReconstruct(quotient, plain_quotient, quotient.size(), "quotient", true);
 			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+			funcReconstruct(highP_dividend, plain_high_dividend, plain_high_dividend.size(), "plain_high_dividend", true);
 			funcReciprocal2(highP_rec, highP_dividend, false, size);
 			funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
 		}

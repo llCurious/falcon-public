@@ -1704,7 +1704,7 @@ void funcMSExtension(RSSVectorHighType &output, const RSSVectorLowType &input, s
 	RSSVectorLowType input2(size);
 	vector<highBit> ymsb(size);
 	vector<lowBit> y(size);
-	highBit msb = 1l << 63;
+	lowBit msb = 1l << 31;
 	highBit m = 32;
 	lowBit bias1 = (1l << 30);
 	highBit bias2 = -(1l << 30);
