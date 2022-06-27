@@ -15,6 +15,7 @@
 #include <fstream>
 #include <string>
 #include <cassert>
+#include <chrono>
 
 extern CommunicationObject commObject;
 
@@ -528,8 +529,10 @@ void benchSoftMaxAcc()
         }
         else
         {
-            cout << "global conf error" << endl;
-            return;
+            outf += "soft_output_temp.csv";
+            cout << MP_FOR_DIVISION << " " << MP_FOR_INV_SQRT << endl;
+            // cout << "global conf error" << endl;
+            // return;
         }
     }
     else

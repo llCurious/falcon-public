@@ -2,32 +2,32 @@
 
 void benchWCExtension()
 {
+	cout << "wc-extension" << endl;
 	size_t dims[4] = {100, 1000, 10000, 100000};
 	int cnt = 20;
-	clock_t start, end;
 	uint64_t round = 0;
 	uint64_t commsize = 0;
 
-	commObject.setMeasurement(true);
-	for (int i = 0; i < 4; i++)
-	{
-		size_t size = dims[i];
-		cout << "dim " << size << endl;
-		vector<lowBit> data(size);
-		RSSVectorLowType datalow(size);
-		RSSVectorHighType datahigh(size);
-		funcGetShares(datalow, data);
+	// commObject.setMeasurement(true);
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	size_t size = dims[i];
+	// 	cout << "dim " << size << endl;
+	// 	vector<lowBit> data(size);
+	// 	RSSVectorLowType datalow(size);
+	// 	RSSVectorHighType datahigh(size);
+	// 	funcGetShares(datalow, data);
 
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
+	// 	round = commObject.getRoundsRecv();
+	// 	commsize = commObject.getRecv();
 
-		funcWCExtension(datahigh, datalow, size); // test function
+	// 	funcWCExtension(datahigh, datalow, size); // test function
 
-		cout << "round " << commObject.getRoundsRecv() - round << endl;
-		// cout << "send round " << commObject.getRoundsSent() << endl;
-		cout << "size " << commObject.getRecv() - commsize << endl;
-		// cout << "send size" << commObject.getSent() << endl;
-	}
+	// 	cout << "round " << commObject.getRoundsRecv() - round << endl;
+	// 	// cout << "send round " << commObject.getRoundsSent() << endl;
+	// 	cout << "size " << commObject.getRecv() - commsize << endl;
+	// 	// cout << "send size" << commObject.getSent() << endl;
+	// }
 	commObject.setMeasurement(false);
 	for (int i = 0; i < 4; i++)
 	{
@@ -41,10 +41,10 @@ void benchWCExtension()
 			RSSVectorHighType datahigh(size);
 			funcGetShares(datalow, data);
 
-			start = clock();
+			auto start = std::chrono::system_clock::now();
 			funcWCExtension(datahigh, datalow, size); // test function
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			auto end = std::chrono::system_clock::now();
+			double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 			time_sum += dur;
 			// cout << j << " " << dur << endl;
 		}
@@ -54,32 +54,32 @@ void benchWCExtension()
 
 void benchMSExtension()
 {
+	cout << "ms-extension" << endl;
 	size_t dims[4] = {100, 1000, 10000, 100000};
 	int cnt = 20;
-	clock_t start, end;
 	uint64_t round = 0;
 	uint64_t commsize = 0;
 
-	commObject.setMeasurement(true);
-	for (int i = 0; i < 4; i++)
-	{
-		size_t size = dims[i];
-		cout << "dim " << size << endl;
-		vector<lowBit> data(size);
-		RSSVectorLowType datalow(size);
-		RSSVectorHighType datahigh(size);
-		funcGetShares(datalow, data);
+	// commObject.setMeasurement(true);
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	size_t size = dims[i];
+	// 	cout << "dim " << size << endl;
+	// 	vector<lowBit> data(size);
+	// 	RSSVectorLowType datalow(size);
+	// 	RSSVectorHighType datahigh(size);
+	// 	funcGetShares(datalow, data);
 
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
+	// 	round = commObject.getRoundsRecv();
+	// 	commsize = commObject.getRecv();
 
-		funcMSExtension(datahigh, datalow, size); // test function
+	// 	funcMSExtension(datahigh, datalow, size); // test function
 
-		cout << "round " << commObject.getRoundsRecv() - round << endl;
-		// cout << "send round " << commObject.getRoundsSent() << endl;
-		cout << "size " << commObject.getRecv() - commsize << endl;
-		// cout << "send size" << commObject.getSent() << endl;
-	}
+	// 	cout << "round " << commObject.getRoundsRecv() - round << endl;
+	// 	// cout << "send round " << commObject.getRoundsSent() << endl;
+	// 	cout << "size " << commObject.getRecv() - commsize << endl;
+	// 	// cout << "send size" << commObject.getSent() << endl;
+	// }
 	commObject.setMeasurement(false);
 	for (int i = 0; i < 4; i++)
 	{
@@ -93,10 +93,10 @@ void benchMSExtension()
 			RSSVectorHighType datahigh(size);
 			funcGetShares(datalow, data);
 
-			start = clock();
+			auto start = std::chrono::system_clock::now();
 			funcMSExtension(datahigh, datalow, size); // test function
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			auto end = std::chrono::system_clock::now();
+			double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 			time_sum += dur;
 			// cout << j << " " << dur << endl;
 		}
@@ -800,24 +800,31 @@ void debugMixedShareGen()
 
 void debugMSExtension()
 {
-	size_t size = 100;
+	size_t size = 30;
+	vector<float> data_row = {1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373};
 	vector<lowBit> data(size);
-	size_t i = 0;
-	data[i] = -(1 << 30);
-	// cout << bitset<32>(data[i]) << endl;
-	i++;
-	for (; i < size / 2; i++)
+	for (size_t i = 0; i < size; i++)
 	{
-		data[i] = data[i - 1] + 1;
+		data[i] = data_row[i] * (1l << LOW_PRECISION);
 	}
-	data[i] = (1 << 30) - 1;
-	i++;
-	for (; i < size; i++)
-	{
-		data[i] = data[i - 1] - 1;
-	}
+
+	// size_t i = 0;
+	// data[i] = -(1 << 30);
+	// // cout << bitset<32>(data[i]) << endl;
+	// i++;
+	// for (; i < size / 2; i++)
+	// {
+	// 	data[i] = data[i - 1] + 1;
+	// }
+	// data[i] = (1 << 30) - 1;
+	// i++;
+	// for (; i < size; i++)
+	// {
+	// 	data[i] = data[i - 1] - 1;
+	// }
 	// printLowBitVec(data, "input", size);
 	// printVector<lowBit>(data, "input", size);
+	printVectorReal<lowBit>(data, "input", size);
 
 	int checkParty = PARTY_B;
 
@@ -830,12 +837,13 @@ void debugMSExtension()
 	// printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
 	vector<highBit> plain_high(size);
 	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", false);
-	// printHighBitVec(plain_high, "", size);
+	// printVector<highBit>(plain_high, "", size);
+	printVectorReal<highBit>(plain_high, "output", size);
 
 	for (size_t i = 0; i < size; i++)
 	{
 		// cout << (int)plain_high[i] << " " << (int)data[i] << endl;
-		assert((int)plain_high[i] == (int)(highBit)data[i]);
+		assert((int)plain_high[i] == (int)data[i]);
 	}
 }
 
@@ -1090,8 +1098,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("Softmax") == 0)
 		{
 			network = "Softmax";
-			// debugSoftmax<RSSVectorHighType, highBit>();
 			debugSoftmax<RSSVectorHighType, highBit>();
+			// debugSoftmax<RSSVectorHighType, highBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{
@@ -1202,14 +1210,14 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BN") == 0)
 		{
 			network = "BN";
-			// benchBN<RSSVectorMyType, myType>();
-			benchBNAcc<RSSVectorMyType, myType>();
+			benchBN<RSSVectorMyType, myType>();
+			// benchBNAcc<RSSVectorMyType, myType>();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
-			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
 			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
+			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
 		}
 	}
 	else

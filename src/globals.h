@@ -54,7 +54,7 @@
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
-typedef uint32_t myType;
+typedef uint64_t myType;
 typedef uint8_t smallType;
 typedef std::pair<myType, myType> RSSMyType;
 typedef std::pair<smallType, smallType> RSSSmallType;
@@ -105,7 +105,7 @@ operator<<(std::ostream &dest, longBit value);
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-#define OFFLINE_ON true
+#define OFFLINE_ON false
 #define PRE_LOAD false
 #define IS_FALCON false
 
