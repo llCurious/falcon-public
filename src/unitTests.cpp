@@ -243,7 +243,27 @@ void benchBN()
 	size_t B = (1 << LOG_MINI_BATCH), D;
 	clock_t start, end;
 	double time_sum = 0;
-	int cnt = 10;
+	int cnt = 5;
+	if (IS_FALCON)
+	{
+		cout << "falcon ";
+	}
+	else
+	{
+		cout << "ours ";
+	}
+	if (std::is_same<Vec, RSSVectorLowType>::value && MP_FOR_DIVISION && MP_FOR_INV_SQRT)
+	{
+		cout << "mix " << OFFLINE_ON << endl;
+	}
+	else if (std::is_same<Vec, RSSVectorHighType>::value)
+	{
+		cout << "high " << OFFLINE_ON << endl;
+	}
+	else if (std::is_same<Vec, RSSVectorLowType>::value && !MP_FOR_DIVISION && !MP_FOR_INV_SQRT)
+	{
+		cout << "low " << OFFLINE_ON << endl;
+	}
 
 	// string infile = "./scripts/test_data/input.csv";
 	// string outfile = "./scripts/test_data/output.csv";
@@ -281,11 +301,11 @@ void benchBN()
 				getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
 
 				// time test
-				start = clock();
+				auto start = std::chrono::system_clock::now();
 				runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
 
-				end = clock();
-				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				auto end = std::chrono::system_clock::now();
+				double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 				time_sum += dur;
 			}
 		}
@@ -307,11 +327,12 @@ void benchBN()
 				getBNInput<Vec, T>(x_raw, grad_raw, input_act, grad, B, D);
 
 				// time test
-				start = clock();
+				auto start = std::chrono::system_clock::now();
+
 				runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
 
-				end = clock();
-				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				auto end = std::chrono::system_clock::now();
+				double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 				time_sum += dur;
 			}
 		}
@@ -377,54 +398,54 @@ void benchBNAcc()
 	mat2file<T>(x_f, x_g, gamma_g, beta_g, outfile, B, D);
 }
 
-void benchSoftMax()
-{
-	// d=10/200，batch=100/1000/10000/100000
-	size_t ds[2] = {10, 200};
-	size_t batchs[3] = {100, 1000, 10000};
-	// size_t ds[1] = {200};
-	// size_t batchs[1] = {10000};
-	size_t cnt = 4;
+// void benchSoftMax()
+// {
+// 	// d=10/200，batch=100/1000/10000/100000
+// 	size_t ds[2] = {10, 200};
+// 	size_t batchs[3] = {100, 1000, 10000};
+// 	// size_t ds[1] = {200};
+// 	// size_t batchs[1] = {10000};
+// 	size_t cnt = 4;
 
-	size_t size;
+// 	size_t size;
 
-	uint64_t round = 0;
-	uint64_t commsize = 0;
+// 	uint64_t round = 0;
+// 	uint64_t commsize = 0;
 
-	clock_t start, end;
+// 	clock_t start, end;
 
-	for (int d : ds)
-	{
-		for (int batch : batchs)
-		{
-			size = d * batch;
+// 	for (int d : ds)
+// 	{
+// 		for (int batch : batchs)
+// 		{
+// 			size = d * batch;
 
-			RSSVectorHighType a(size), b(size);
+// 			RSSVectorHighType a(size), b(size);
 
-			// comm
-			round = commObject.getRoundsRecv();
-			commsize = commObject.getRecv();
+// 			// comm
+// 			// round = commObject.getRoundsRecv();
+// 			// commsize = commObject.getRecv();
 
-			funcSoftmax(a, b, batch, d, false);
+// 			// funcSoftmax(a, b, batch, d, false);
 
-			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+// 			// cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
 
-			// time
-			double time_sum = 0;
-			for (size_t i = 0; i < cnt; i++)
-			{
-				start = clock();
-				funcSoftmax(a, b, batch, d, false);
+// 			// time
+// 			double time_sum = 0;
+// 			for (size_t i = 0; i < cnt; i++)
+// 			{
+// 				auto start = std::chrono::system_clock::now();
+// 				funcSoftmax(a, b, batch, d, false);
 
-				end = clock();
-				double dur = (double)(end - start) / CLOCKS_PER_SEC;
-				cout << dur << endl;
-				time_sum += dur;
-			}
-			cout << batch << " " << d << " " << time_sum / cnt << endl;
-		}
-	}
-}
+// 				auto end = std::chrono::system_clock::now();
+// 				double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+// 				cout << dur << endl;
+// 				time_sum += dur;
+// 			}
+// 			cout << batch << " " << d << " " << time_sum / cnt << endl;
+// 		}
+// 	}
+// }
 
 void debugPartySS()
 {
@@ -1210,14 +1231,25 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BN") == 0)
 		{
 			network = "BN";
+			// benchBN<RSSVectorHighType, highBit>();
 			benchBN<RSSVectorMyType, myType>();
+			// benchBN<RSSVectorLowType, lowBit>();
 			// benchBNAcc<RSSVectorMyType, myType>();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
+			benchSoftMax<RSSVectorHighType, highBit>();
+			// benchSoftMax<RSSVectorLowType, lowBit>();
 			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
-			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+			// benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+		}
+		else if (whichTest.compare("Trunc") == 0)
+		{
+			network = "Trunc";
+			// benchTrunc<RSSVectorHighType, highBit>();
+			// benchTrunc<RSSVectorLowType, lowBit>();
+			benchTrunc<RSSVectorMyType, myType>();
 		}
 	}
 	else

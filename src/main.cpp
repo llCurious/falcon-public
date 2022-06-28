@@ -90,7 +90,8 @@ int main(int argc, char **argv)
 	// runTest("Debug", "BNLayer", network);
 	// runTest("Bench", "MSExtension", network);
 	// runTest("Bench", "WCExtension", network);
-	runTest("Bench", "BN", network);
+	// runTest("Bench", "BN", network);
+	runTest("Bench", "Trunc", network);
 	// runTest("Bench", "SoftMax", network);
 	// runTest("Debug", "Square", network);
 	// runTest("Debug", "Exp", network);

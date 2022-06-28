@@ -24,6 +24,7 @@ void benchMSExtension();
 void benchBN();
 template <typename Vec, typename T>
 void benchBNAcc();
+template <typename Vec, typename T>
 void benchSoftMax();
 
 /************Debug****************/
@@ -51,6 +52,8 @@ template <typename Vec, typename T>
 void debugInverseSqrt();
 template <typename Vec, typename T>
 void debugSoftmax();
+template <typename Vec, typename T>
+void benchTrunc();
 
 void runTest(string str, string whichTest, string &network);
 
@@ -459,19 +462,29 @@ void getSoftMaxInput(string filename, Vec &a, size_t B, size_t D)
 template <typename Vec, typename T>
 void benchSoftMax()
 {
+    if (std::is_same<T, lowBit>::value && MP_FOR_DIVISION && MP_FOR_INV_SQRT)
+    {
+        cout << "mix" << endl;
+    }
+    else if (std::is_same<T, highBit>::value)
+    {
+        cout << "high" << endl;
+    }
+    else if (std::is_same<T, lowBit>::value && !MP_FOR_DIVISION && !MP_FOR_INV_SQRT)
+    {
+        cout << "low" << endl;
+    }
     // d=10/200，batch=100/1000/10000/100000
     size_t ds[2] = {10, 200};
     size_t batchs[3] = {100, 1000, 10000};
     // size_t ds[1] = {200};
     // size_t batchs[1] = {10000};
-    size_t cnt = 4;
+    size_t cnt = 3;
 
     size_t size;
 
     uint64_t round = 0;
     uint64_t commsize = 0;
-
-    clock_t start, end;
 
     for (int d : ds)
     {
@@ -480,7 +493,7 @@ void benchSoftMax()
             size = d * batch;
 
             Vec a(size), b(size);
-            getSoftMaxInput(a, size);
+            // getSoftMaxInput(a, size);
 
             // comm
             round = commObject.getRoundsRecv();
@@ -495,11 +508,10 @@ void benchSoftMax()
             for (size_t i = 0; i < cnt; i++)
             {
                 getSoftMaxInput(a, size);
-                start = clock();
+                auto start = std::chrono::system_clock::now();
                 funcSoftmax<Vec>(a, b, batch, d, false);
-
-                end = clock();
-                double dur = (double)(end - start) / CLOCKS_PER_SEC;
+                auto end = std::chrono::system_clock::now();
+                double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
                 cout << dur << endl;
                 time_sum += dur;
             }
@@ -561,5 +573,102 @@ void benchSoftMaxAcc()
     mat2file<T>(result, outf, batch, d);
 
     // record output
+}
+
+template <typename T>
+void truncInput(vector<T> &data, size_t size)
+{
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = rand();
+    }
+}
+
+template <typename Vec, typename T>
+void benchTrunc()
+{
+    if (IS_FALCON)
+    {
+        cout << "falcon ";
+    }
+    else
+    {
+        cout << "ours ";
+    }
+    int trunc_bits = 13;
+    if (std::is_same<T, lowBit>::value)
+    {
+        cout << "trunc 32" << endl;
+    }
+    else if (std::is_same<T, highBit>::value)
+    {
+        trunc_bits = 20;
+        cout << "trunc 64" << endl;
+    }
+    else
+    {
+        cout << "not support" << endl;
+    }
+    size_t dims[4] = {100, 1000, 10000, 100000};
+    int cnt = 10;
+    uint64_t round = 0;
+    uint64_t commsize = 0;
+
+    commObject.setMeasurement(true);
+    for (int i = 0; i < 4; i++)
+    {
+        size_t size = dims[i];
+        cout << "dim " << size << endl;
+
+        vector<T> data(size);
+        truncInput<T>(data, size);
+        Vec input(size), output(size);
+        funcGetShares<Vec, T>(input, data);
+
+        round = commObject.getRoundsRecv();
+        commsize = commObject.getRecv();
+        if (IS_FALCON)
+        {
+            funcTruncatePublic(input, trunc_bits, size);
+        }
+        else
+        {
+            funcProbTruncation<Vec, T>(output, input, trunc_bits, size);
+        }
+
+        cout << "round " << commObject.getRoundsRecv() - round << endl;
+        // cout << "send round " << commObject.getRoundsSent() << endl;
+        cout << "size " << commObject.getRecv() - commsize << endl;
+        // cout << "send size" << commObject.getSent() << endl;
+    }
+    commObject.setMeasurement(false);
+    for (int i = 0; i < 4; i++)
+    {
+        size_t size = dims[i];
+        cout << "dim " << size << endl;
+        double time_sum = 0;
+        for (int j = 0; j < cnt; ++j)
+        {
+            vector<T> data(size);
+            truncInput<T>(data, size);
+            Vec input(size), output(size);
+            funcGetShares<Vec, T>(input, data);
+
+            auto start = std::chrono::system_clock::now();
+            if (IS_FALCON)
+            {
+                funcTruncatePublic(input, trunc_bits, size);
+            }
+            else
+            {
+                funcProbTruncation<Vec, T>(output, input, trunc_bits, size);
+            }
+            auto end = std::chrono::system_clock::now();
+            double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+            time_sum += dur;
+            // cout << j << " " << dur << endl;
+        }
+        cout << time_sum / cnt << endl;
+    }
 }
 #endif

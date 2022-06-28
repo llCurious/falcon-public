@@ -107,6 +107,6 @@ operator<<(std::ostream &dest, longBit value);
 #define DEBUG_ONLY true
 #define OFFLINE_ON false
 #define PRE_LOAD false
-#define IS_FALCON false
+#define IS_FALCON true
 
 #endif
