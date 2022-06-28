@@ -8,9 +8,12 @@ FCLayer::FCLayer(FCConfig *conf, int _layerNum)
 	: Layer(_layerNum),
 	  conf(conf->inputDim, conf->batchSize, conf->outputDim),
 	  activations(conf->batchSize * conf->outputDim),
+	  high_activations(conf->batchSize * conf->outputDim),
 	  deltas(conf->batchSize * conf->outputDim),
 	  weights(conf->inputDim * conf->outputDim),
-	  biases(conf->outputDim)
+	  low_weights(conf->inputDim * conf->outputDim),
+	  biases(conf->outputDim),
+	  low_biases(conf->outputDim)
 {
 	initialize();
 }
@@ -51,18 +54,18 @@ void FCLayer::initialize()
 	 * The problem seems to be the initialization to myType has bugs.
 	 * TODO: We shall look at this. Since we need both master weights and forward weights.
 	 * */
-	RSSVectorMyType temp(size);
+	// RSSVectorMyType temp(size);
 	srand(10);
 	if (partyNum == PARTY_A)
 	{
 		for (size_t i = 0; i < size; ++i)
 		{
-			weights[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			weights[i].first = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			weights[i].second = 0;
 		}
 		for (size_t i = 0; i < biases.size(); ++i)
 		{
-			biases[i].first = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			biases[i].first = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			biases[i].second = 0;
 		}
 	}
@@ -83,12 +86,12 @@ void FCLayer::initialize()
 	{
 		for (size_t i = 0; i < size; ++i)
 		{
-			weights[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			weights[i].second = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			weights[i].first = 0;
 		}
 		for (size_t i = 0; i < biases.size(); ++i)
 		{
-			biases[i].second = floatToMyType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
+			biases[i].second = floatToBackwardType(((float)(rand() % (higher - lower)) - (higher - lower) / 2) / decimation);
 			biases[i].first = 0;
 		}
 	}
@@ -102,7 +105,7 @@ void FCLayer::printLayer()
 		 << conf.batchSize << "\t\t (Batch Size)" << endl;
 }
 
-void FCLayer::forward(const RSSVectorMyType &inputActivation)
+void FCLayer::forward(const ForwardVecorType &inputActivation)
 {
 	log_print("FC.forward");
 
@@ -112,22 +115,22 @@ void FCLayer::forward(const RSSVectorMyType &inputActivation)
 	size_t size = rows * columns;
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, inputActivation, weights, activations, rows, common_dim, columns, 0, 0, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<ForwardVecorType>, inputActivation, low_weights, activations, rows, common_dim, columns, 0, 0, FORWARD_PRECISION) << endl;
 	else
-		funcMatMul(inputActivation, weights, activations, rows, common_dim, columns, 0, 0, FLOAT_PRECISION);
+		funcMatMul(inputActivation, low_weights, activations, rows, common_dim, columns, 0, 0, FORWARD_PRECISION);
 
 	for (size_t r = 0; r < rows; ++r)
 		for (size_t c = 0; c < columns; ++c)
-			activations[r * columns + c] = activations[r * columns + c] + biases[c];
+			activations[r * columns + c] = activations[r * columns + c] + low_biases[c];
 
-	RSSVectorMyType a = inputActivation;
+	// ForwardVecorType a = inputActivation;
 	// print_vector(a, "FLOAT", "input_act", 100);
 	// print_vector(weights, "FLOAT", "weights", 100);
 	// print_vector(biases, "FLOAT", "biases", biases.size());
 	// print_vector(activations, "FLOAT", "out_activations", 100);
 }
 
-void FCLayer::computeDelta(RSSVectorMyType &prevDelta)
+void FCLayer::computeDelta(BackwardVectorType &prevDelta)
 {
 	log_print("FC.computeDelta");
 
@@ -137,14 +140,14 @@ void FCLayer::computeDelta(RSSVectorMyType &prevDelta)
 	size_t common_dim = conf.outputDim;
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, FLOAT_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION) << endl;
 	else
-		funcMatMul(deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, FLOAT_PRECISION);
+		funcMatMul(deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION);
 	// print_vector(deltas, "FLOAT", "deltas-" + to_string(deltas.size()), deltas.size());
 	// print_vector(prevDelta, "FLOAT", "prevDelta", prevDelta.size());
 }
 
-void FCLayer::updateEquations(const RSSVectorMyType &prevActivations)
+void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 {
 	log_print("FC.updateEquations");
 
@@ -152,7 +155,7 @@ void FCLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	size_t columns = conf.outputDim;
 	size_t common_dim = conf.inputDim;
 	size_t size = rows * columns;
-	RSSVectorMyType temp(columns, std::make_pair(0, 0));
+	BackwardVectorType temp(columns, std::make_pair(0, 0));
 
 	// Update Biases
 	for (size_t i = 0; i < rows; ++i)
@@ -165,28 +168,42 @@ void FCLayer::updateEquations(const RSSVectorMyType &prevActivations)
 	}
 	else
 	{
-		funcProbTruncation<RSSVectorMyType, myType>(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
+		funcProbTruncation<BackwardVectorType, BackwardType>(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
 	}
-	subtractVectors<RSSMyType>(biases, temp, biases, columns);
+	subtractVectors(biases, temp, biases, columns);
 
 	// Update Weights
 	rows = conf.inputDim;
 	columns = conf.outputDim;
 	common_dim = conf.batchSize;
 	size = rows * columns;
-	RSSVectorMyType deltaWeight(size);
+	BackwardVectorType deltaWeight(size);
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<RSSVectorMyType>, prevActivations, deltas, deltaWeight, rows, common_dim, columns, 1, 0, FLOAT_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, prevActivations, deltas, deltaWeight, rows, common_dim, columns, 1, 0, BACKWARD_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH) << endl;
 	else
 		funcMatMul(prevActivations, deltas, deltaWeight, rows, common_dim, columns, 1, 0,
-				   FLOAT_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH);
+				   BACKWARD_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH);
 
 	subtractVectors(weights, deltaWeight, weights, size);
 	cout << "===============================" << endl;
-	RSSVectorMyType xx = prevActivations;
+	// RSSVectorMyType xx = prevActivations;
 	// print_vector(xx, "FLOAT", "prevActivations", 100);
 	// print_vector(deltas, "FLOAT", "deltas-FC", 100);
 	// print_vector(deltaWeight, "FLOAT", "deltaWeight-FC", 100);
 	// print_vector(temp, "FLOAT", "deltaBias", temp.size());
+}
+
+
+void FCLayer::weight_reduction() {
+	funcWeightReduction(low_weights, weights, weights.size());
+	funcWeightReduction(low_biases, biases, biases.size());
+}
+
+void FCLayer::activation_extension() {
+	funcActivationExtension(high_activations, activations, activations.size());
+}
+
+void FCLayer::weight_extension() {
+	cout << "Not implemented weight extension" << endl;
 }

@@ -8,6 +8,7 @@ ReLULayer::ReLULayer(ReLUConfig* conf, int _layerNum)
 :Layer(_layerNum),
  conf(conf->inputDim, conf->batchSize),
  activations(conf->batchSize * conf->inputDim), 
+ high_activations(conf->batchSize * conf->inputDim), 
  deltas(conf->batchSize * conf->inputDim),
  reluPrime(conf->batchSize * conf->inputDim)
 {}
@@ -20,7 +21,7 @@ void ReLULayer::printLayer()
 }
 
 
-void ReLULayer::forward(const RSSVectorMyType &inputActivation)
+void ReLULayer::forward(const ForwardVecorType &inputActivation)
 {
 	log_print("ReLU.forward");
 
@@ -29,13 +30,13 @@ void ReLULayer::forward(const RSSVectorMyType &inputActivation)
 	size_t size = rows*columns;
 
 	if (FUNCTION_TIME)
-		cout << "funcRELU: " << funcTime(funcRELU<RSSVectorMyType>, inputActivation, reluPrime, activations, size) << endl;
+		cout << "funcRELU: " << funcTime(funcRELU<ForwardVecorType>, inputActivation, reluPrime, activations, size) << endl;
 	else
 		funcRELU(inputActivation, reluPrime, activations, size);
 }
 
 
-void ReLULayer::computeDelta(RSSVectorMyType& prevDelta)
+void ReLULayer::computeDelta(BackwardVectorType& prevDelta)
 {
 	log_print("ReLU.computeDelta");
 
@@ -45,14 +46,29 @@ void ReLULayer::computeDelta(RSSVectorMyType& prevDelta)
 	size_t size = rows*columns;
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(funcSelectShares, deltas, reluPrime, prevDelta, size) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void(*)(const BackwardVectorType &, const RSSVectorSmallType &,
+					  BackwardVectorType &, size_t)>(funcSelectShares), deltas, reluPrime, prevDelta, size) << endl;
 	else
 		funcSelectShares(deltas, reluPrime, prevDelta, size);
 	// print_vector(deltas, "FLOAT", "deltas-ReLU", 100);
 }
 
 
-void ReLULayer::updateEquations(const RSSVectorMyType& prevActivations)
+void ReLULayer::updateEquations(const BackwardVectorType& prevActivations)
 {
 	log_print("ReLU.updateEquations");
+}
+
+void ReLULayer::weight_reduction() {
+	// funcWeightReduction(low_weights, weights, weights.size());
+	// funcWeightReduction(low_biases, biases, biases.size());
+}
+
+void ReLULayer::activation_extension() {
+	// cout << "<<< ReLU >>> No need to perform activation extension." << endl;
+	// funcActivationExtension(high_activations, activations, activations.size());
+}
+
+void ReLULayer::weight_extension() {
+	// cout << "Not implemented weight extension" << endl;
 }

@@ -17,6 +17,7 @@ void readMiniBatch(NeuralNetwork* net, string phase);
 void printNetwork(NeuralNetwork* net);
 void selectNetwork(string network, string dataset, string security, NeuralNetConfig* config);
 void runOnly(NeuralNetwork* net, size_t l, string what, string& network);
+void runOnlyLayer(NeuralNetwork* net, size_t l, string& network, size_t count);
 
 /********************* COMMUNICATION AND HELPERS *********************/
 void start_m();

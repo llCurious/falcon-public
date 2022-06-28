@@ -8,9 +8,10 @@ using namespace std;
 class NeuralNetwork
 {
 public:
-	RSSVectorMyType inputData;
-	RSSVectorMyType outputData;
-	RSSVectorMyType softmax_output;
+	BackwardVectorType inputData;
+	ForwardVecorType low_inputData;
+	BackwardVectorType outputData;
+	BackwardVectorType softmax_output;
 	vector<Layer*> layers;
 
 	NeuralNetwork(NeuralNetConfig* config);
@@ -22,4 +23,9 @@ public:
 	void predict(RSSVectorMyType &maxIndex);
 	float getAccuracy();
 	float getLoss();
+
+	// Mixed-precision funcs
+	void weight_reduction();
+	void activation_extension();
+	void weight_extension();
 };

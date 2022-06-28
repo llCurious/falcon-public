@@ -11,20 +11,26 @@ class BNLayerOpt : public Layer
 {
 private:
     BNConfig conf;
-    // RSSVectorMyType activations;
-    RSSVectorMyType deltas;
+    ForwardVecorType activations;
+    ForwardVecorType low_gamma;
+    ForwardVecorType low_beta;
+    ForwardVecorType inv_sqrt;
+    ForwardVecorType norm_x;
+
+
+    BackwardVectorType high_activations;
+    BackwardVectorType deltas;
     // RSSVectorMyType gamma;
     // RSSVectorMyType beta;
     // RSSVectorMyType xhat;
     // RSSVectorMyType sigma;
-    RSSVectorMyType gamma;
-    RSSVectorMyType beta;
-    RSSVectorMyType inv_sqrt;
-    RSSVectorMyType inv_sqrt_rep;
-    RSSVectorMyType norm_x;
-    RSSVectorMyType beta_grad;
-    RSSVectorMyType gamma_grad;
-    RSSVectorMyType activations;
+    BackwardVectorType gamma;
+    BackwardVectorType beta;
+    BackwardVectorType high_inv_sqrt;
+    BackwardVectorType high_norm_x;
+    BackwardVectorType beta_grad;
+    BackwardVectorType gamma_grad;
+    
     size_t B;
     size_t m;
     size_t size;
@@ -36,16 +42,22 @@ public:
 
     // Functions
     void printLayer() override;
-    void forward(const RSSVectorMyType &input_act) override;
-    void backward(const RSSVectorMyType &input_grad);
-    void computeDelta(RSSVectorMyType &prevDelta) override;
-    void updateEquations(const RSSVectorMyType &prevActivations) override;
+    void forward(const ForwardVecorType &input_act) override;
+    void backward(const BackwardVectorType &input_grad);
+    void computeDelta(BackwardVectorType &prevDelta) override;
+    void updateEquations(const BackwardVectorType &prevActivations) override;
+
+    // Mixed-precision funcs
+	void weight_reduction() override;
+	void activation_extension() override;
+	void weight_extension() override;
 
     // Getters
-    RSSVectorMyType *getActivation() { return &activations; };
-    RSSVectorMyType *getDelta() { return &deltas; };
-    RSSVectorMyType* getGamma() {return &gamma;};
-	RSSVectorMyType* getBeta() {return &beta;};
-    RSSVectorMyType* getGammaGrad() {return &gamma_grad;};
-	RSSVectorMyType* getBetaGrad() {return &beta_grad;};
+    ForwardVecorType *getActivation() { return &activations; };
+    BackwardVectorType* getHighActivation() {return &high_activations;};
+    BackwardVectorType *getDelta() { return &deltas; };
+    BackwardVectorType* getGamma() {return &gamma;};
+	BackwardVectorType* getBeta() {return &beta;};
+    BackwardVectorType* getGammaGrad() {return &gamma_grad;};
+	BackwardVectorType* getBetaGrad() {return &beta_grad;};
 };

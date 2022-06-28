@@ -917,7 +917,10 @@ void funcWrap(const VEC &a, RSSVectorSmallType &theta, size_t size)
 	}
 }
 
-void funcSelectShares(const RSSVectorMyType &a, const RSSVectorSmallType &b, RSSVectorMyType &selected, size_t size);
+void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
+					  RSSVectorHighType &selected, size_t size);
+void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
+					  RSSVectorLowType &selected, size_t size);
 void funcSelectBitShares(const RSSVectorSmallType &a0, const RSSVectorSmallType &a1,
 						 const RSSVectorSmallType &b, RSSVectorSmallType &answer,
 						 size_t rows, size_t columns, size_t loopCounter);
@@ -2485,6 +2488,7 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	// vector<elementType> plain_input(size), plain_output(size);
 	// funcReconstruct(a, plain_input, size, "exp plain-text divisor", true);
 
+	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_EXP)
 	{
 		cout << "Plain text Exp" << endl;
@@ -2495,10 +2499,10 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++)
 		{
-			pl_input_float[i] = (static_cast<computeType>(plain_input[i])) / (float)(1l << float_precision);
-			// cout << plain_input[i] << " : " << pl_input_float[i] << " " << (static_cast<elementType>(plain_input[i]))<< endl;
+			pl_input_float[i] = static_cast<realValueType>(plain_input[i]) * 1.0 / (1l << float_precision);
+			// cout << plain_input[i] << " : " << pl_input_float[i] << endl;;
 			pl_input_float[i] = exp(pl_input_float[i]);
-			plain_output[i] = (pl_input_float[i] * (1 << float_precision));
+			plain_output[i] = (elementType)(pl_input_float[i] * (1 << float_precision));
 			// cout << pl_input_float[i] << " : " << plain_output[i] << ", ";
 		}
 		funcGetShares(b, plain_output);
@@ -2853,26 +2857,21 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	}
 	VEC q_rec(size);
 
-	// typedef typename std::conditional<std::is_same<VEC, RSSVectorLowType>::value, lowBit, highBit>::type computeType;
-	// vector<computeType> plain_input(size), plain_output(size);
-	// funcReconstruct(quotient, plain_input, size, "quotient", true);
-
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_RECIPROCAL)
 	{
 		// cout << "Plaintext Reciprocal" << endl;
-		typedef typename std::conditional<std::is_same<VEC, RSSVectorLowType>::value, lowBit, highBit>::type computeType;
-		vector<computeType> plain_input(size), plain_output(size);
-		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", true);
+		vector<elementType> plain_input(size), plain_output(size);
+		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
 
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++)
 		{
-			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
-			// cout << pl_input_float[i] << " ";
+			pl_input_float[i] = static_cast<realValueType>(plain_input[i]) * 1.0 / (1 << float_precision);
 			pl_input_float[i] = 1. / pl_input_float[i];
-			// cout << pl_input_float[i] << " ";
-			plain_output[i] = (uint64_t)(pl_input_float[i] * (1 << float_precision));
-			// cout << plain_input[i] << " ";
+			cout << pl_input_float[i] << endl;
+			plain_output[i] = (elementType)(pl_input_float[i] * (1 << float_precision));
 		}
 		funcGetShares(q_rec, plain_output);
 		// print_vector(q_rec, "FLOAT", "mixed-preicision reciprocal", size);
@@ -3043,57 +3042,135 @@ void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 	}
 }
 
-template <typename Vec, typename T>
-void mixedPrecisionOp(Vec &output, const Vec &input, size_t size)
-{
-	if (PLAINTEXT_INV_SQRT)
-	{
+template<typename VecLow, typename VecHigh>
+void mixedPrecisionOp(VecLow &output, VecHigh &high_output, const VecLow &input, size_t size) {
+	if (PLAINTEXT_INV_SQRT) {
 		cout << "Plaintext Inverse sqrt" << endl;
-		vector<T> plain_input(size), plain_output(size);
+		vector<ForwardType> plain_input(size), plain_output(size);
+		vector<BackwardType> plain_high_output(size);
 		funcReconstruct(input, plain_input, size, "mixed-preicision inverse sqrt", false);
+		vector<float> pl_input_float(size);
 
-		typedef typename std::conditional<std::is_same<Vec, RSSVectorLowType>::value, int32_t, int64_t>::type computeType;
-		vector<computeType> pl_input_float(size);
-		size_t float_precision = FLOAT_PRECISION;
-		if (std::is_same<T, highBit>::value)
-		{
-			float_precision = HIGH_PRECISION;
-		}
-		else if (std::is_same<T, lowBit>::value)
-		{
-			float_precision = LOW_PRECISION;
-		}
-		else
-		{
-			cout << "Not supported type" << typeid(input).name() << endl;
-		}
-		for (size_t i = 0; i < size; i++)
-		{
-			pl_input_float[i] = plain_input[i] * 1.0 / (1 << float_precision);
+		for (size_t i = 0; i < size; i++) {
+			pl_input_float[i] = plain_input[i] * 1.0 / (1 << FORWARD_PRECISION);
 			pl_input_float[i] = 1. / sqrt(pl_input_float[i]);
-			plain_output[i] = (T)(pl_input_float[i] * (1 << float_precision));
+			plain_high_output[i] = (BackwardType)(pl_input_float[i] * (1 << BACKWARD_PRECISION));
+			plain_output[i] = (ForwardType)(pl_input_float[i] * (1 << FORWARD_PRECISION));
 		}
+		funcGetShares(high_output, plain_high_output);
 		funcGetShares(output, plain_output);
 		return;
 	}
 	// cout << "Private Inverse sqrt" << endl;
 	// inver Square Root
 	// https://stackoverflow.com/questions/63469333/why-does-the-false-branch-of-if-constexpr-get-compiled
-	if constexpr (MP_FOR_INV_SQRT && std::is_same<Vec, RSSVectorLowType>::value)
+	if constexpr (MP_FOR_INV_SQRT && std::is_same<VecLow, RSSVectorLowType>::value)
 	{
 		// cout << "Mixed-Precision Inverse Sqrt" << endl;
-		RSSVectorHighType highP_var_eps(size), highP_inv_sqrt(size);
+		RSSVectorHighType highP_var_eps(size);
 		funcMSExtension(highP_var_eps, input, size);
 		funcMulConst(highP_var_eps, highP_var_eps, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
-		funcInverseSqrt<RSSVectorHighType, highBit>(highP_inv_sqrt, highP_var_eps, size);		 // [1,D]
-		funcTruncAndReduce(output, highP_inv_sqrt, (HIGH_PRECISION - LOW_PRECISION), size);
+		funcInverseSqrt<RSSVectorHighType, highBit>(high_output, highP_var_eps, size);		 // [1,D]
+		funcTruncAndReduce(output, high_output, (HIGH_PRECISION - LOW_PRECISION), size);
 	}
 	else
 	{
-		// cout << "high" << endl;
-		funcInverseSqrt<Vec, T>(output, input, size); // [1,D]
+		typedef typename std::conditional<std::is_same<VecHigh, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+		funcInverseSqrt<VecHigh, elementType>(high_output, input, size); // [1,D]
+		output = high_output;
 	}
 }
+
+// template<typename VecLow, typename VecHigh>
+// void funcMPBatchNorm(const VecLow &input, VecHigh &norm_x, VecHigh &inv_sqrt, VecHigh &gamma, VecHigh &beta, VecLow &forward_output, size_t B, size_t m) {
+// 	// cout << "forward... " << size << " " << m << " " << B << " " << endl;
+// 	size_t size = B * m;
+// 	typedef typename std::conditional<std::is_same<VecHigh, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
+// 	VecHigh high_input(size);
+	
+//     VecHigh eps = (1e-5) * (1l << BACKWARD_PRECISION);
+
+// 	// Whether the input should be promoted
+// 	if (std::is_same<VecLow, RSSVectorLowType>::value) {
+// 		if (MIXED_SHARE_EXTENSION)
+// 			funcMSExtension(high_input, input, size);
+// 		else
+// 			funcWCExtension(high_input, input, size);
+// 	} else {
+// 		high_input = input;
+// 	}
+	
+// 	funcMulConst(high_input, high_input, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+    
+// 	VecHigh var_eps(m, make_pair(0, 0));
+// 	// VecHigh inv_sqrt(m);
+//     VecHigh mu(m);
+
+//     // Compute mean
+//     for (int i = 0; i < B; ++i)
+//     {
+//         for (int j = 0; j < m; ++j)
+//         {
+//             mu[j] = mu[j] + high_input[i * m + j];
+//         }
+//     }
+//     funcProbTruncation(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
+
+//     // log
+//     // vector<ForwardType> plainm(m);
+//     // funcReconstruct(mu, plainm, m, "mean", true);
+
+//     // Compute x - mean
+//     VecHigh x_mean(size);
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < m; ++j)
+//             x_mean[i * m + j] = high_input[i * m + j] - mu[j];
+//     // log
+//     // vector<myType> plainsize(size);
+//     // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
+
+//     // Compute (x-mean)^2
+//     ForwardVecorType temp2(size);
+//     funcDotProduct(x_mean, x_mean, temp2, size, true, BACKWARD_PRECISION + LOG_MINI_BATCH);
+
+//     // mean((x-mean)^2)
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < m; ++j)
+//             var_eps[j] = var_eps[j] + temp2[i * m + j];
+//     // funcReconstruct(var_eps, plainm, m, "var_eps", true);
+
+//     // Compute (variance + epsilon)
+//     funcAddOneConst(var_eps, eps, m);
+//     // funcReconstruct(var_eps, plainm, m, "var_eps", true);
+
+// 	funcInverseSqrt<VecHigh, computeType>(inv_sqrt, var_eps, m); // [1,D]
+
+// 	VecHigh inv_sqrt_rep(size);
+//     for (int i = 0; i < m; ++i) // compute norm_x
+//     {
+//         for (int j = 0; j < B; ++j)
+//             inv_sqrt_rep[j * m + i] = inv_sqrt[i];
+//     }
+//     funcDotProduct<VecHigh, computeType>(inv_sqrt_rep, x_mean, norm_x, size, true, BACKWARD_PRECISION); // [B, D] * [1, D]
+
+// 	// self.gamma * self.norm_x + self.beta
+//     // Scaling
+//     VecHigh g_repeat(size), high_forward_output(size);
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < m; ++j)
+//             g_repeat[i * m + j] = gamma[j];
+//     funcDotProduct(g_repeat, norm_x, high_forward_output, size, true, BACKWARD_PRECISION);
+//     // funcReconstruct(activations, plainsize, size, "self.gamma * self.norm_x ", true);
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < m; ++j)
+//             high_forward_output[i * m + j] = high_forward_output[i * m + j] + beta[j];
+	
+// 	if (std::is_same::<VecLow, RSSVectorLowType>::value) {
+// 		funcTruncAndReduce(forward_output, high_forward_output);
+// 	} else {
+// 		forward_output = high_forward_output;
+// 	}
+// }
 
 // Reference from CryptGPU:https://eprint.iacr.org/2021/533.pdf
 template <typename Vec>
@@ -3667,6 +3744,57 @@ void funcRandBandA(Vec &a, RSSVectorSmallType &b, size_t size)
 	for (int i = 0; i < size; i++)
 	{
 		b[i] = make_pair(temp[i].first, temp[i].second);
+	}
+}
+
+template<typename VecLow, typename VecHigh>
+void funcWeightReduction(VecLow &output, VecHigh &input, size_t size) {
+	if constexpr (!MP_TRAINING) {
+		output = input;
+	} else {
+		if constexpr (std::is_same<VecLow, RSSVectorLowType>::value && 
+		std::is_same<VecHigh, RSSVectorHighType>::value) {
+			funcTruncAndReduce(output, input, BACKWARD_PRECISION - FORWARD_PRECISION, size);
+		} else {
+			cout << "Not supported weight reduction operands" << endl;
+		}
+	}
+	
+}
+
+template<typename VecLow, typename VecHigh>
+void funcActivationExtension(VecHigh &output, VecLow &input, size_t size) {
+	if constexpr (!MP_TRAINING) {
+		output = input;
+	} else {
+		if constexpr (std::is_same<VecLow, RSSVectorLowType>::value && 
+		std::is_same<VecHigh, RSSVectorHighType>::value) {
+			if (MIXED_SHARE_EXTENSION)
+				funcMSExtension(output, input, size);
+			else
+				funcWCExtension(output, input, size);
+			funcMulConst(output, output, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+		} else {
+			cout << "Not supported activation extension operands" << endl;
+		}
+	}
+}
+
+template<typename VecLow, typename VecHigh>
+void funcWeightExtension(VecHigh &output, VecLow &input, size_t size) {
+	if constexpr (!MP_TRAINING) {
+		output = input;
+	} else {
+		if constexpr (std::is_same<VecLow, RSSVectorLowType>::value && 
+		std::is_same<VecHigh, RSSVectorHighType>::value) {
+			if (MIXED_SHARE_EXTENSION)
+				funcMSExtension(output, input, size);
+			else
+				funcWCExtension(output, input, size);
+			funcMulConst(output, output, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+		} else {
+			cout << "Not supported weight extension operands" << endl;
+		}
 	}
 }
 

@@ -31,7 +31,7 @@ void MaxpoolLayer::printLayer()
 		 << conf.features << " x " << (((conf.imageWidth - conf.poolSize)/conf.stride) + 1) << " x " << (((conf.imageHeight - conf.poolSize)/conf.stride) + 1) << "\t(Output)" << endl;
 }
 
-void MaxpoolLayer::forward(const RSSVectorMyType& inputActivation)
+void MaxpoolLayer::forward(const ForwardVecorType& inputActivation)
 {
 	log_print("Maxpool.forward");
 
@@ -44,7 +44,7 @@ void MaxpoolLayer::forward(const RSSVectorMyType& inputActivation)
 	size_t ow 	= (((iw-f)/S)+1);
 	size_t oh	= (((ih-f)/S)+1);
 
-	RSSVectorMyType temp1(ow*oh*Din*B*f*f);
+	ForwardVecorType temp1(ow*oh*Din*B*f*f);
 	{
 		size_t sizeBeta = iw;
 		size_t sizeD 	= sizeBeta*ih;
@@ -65,14 +65,14 @@ void MaxpoolLayer::forward(const RSSVectorMyType& inputActivation)
 
 	//Pooling operation
 	if (FUNCTION_TIME)
-		cout << "funcMaxpool: " << funcTime(funcMaxpool<RSSVectorMyType>, temp1, activations, maxPrime, ow*oh*Din*B, f*f) << endl;
+		cout << "funcMaxpool: " << funcTime(funcMaxpool<ForwardVecorType>, temp1, activations, maxPrime, ow*oh*Din*B, f*f) << endl;
 	else
 		funcMaxpool(temp1, activations, maxPrime, ow*oh*Din*B, f*f);
 	
 }
 
 
-void MaxpoolLayer::computeDelta(RSSVectorMyType& prevDelta)
+void MaxpoolLayer::computeDelta(BackwardVectorType& prevDelta)
 {
 	log_print("Maxpool.computeDelta");
 
@@ -86,7 +86,7 @@ void MaxpoolLayer::computeDelta(RSSVectorMyType& prevDelta)
 	size_t oh	= (((ih-f)/S)+1);
 
 	RSSVectorSmallType temp1(iw*ih*Din*B);	//Contains maxPrime reordered
-	RSSVectorMyType temp2(iw*ih*Din*B);		//Contains Delta reordered
+	BackwardVectorType temp2(iw*ih*Din*B);		//Contains Delta reordered
 	{
 		size_t sizeY 	= iw;
 		size_t sizeD 	= sizeY*ih;
@@ -117,12 +117,26 @@ void MaxpoolLayer::computeDelta(RSSVectorMyType& prevDelta)
 	}
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(funcSelectShares, temp2, temp1, prevDelta, iw*ih*Din*B) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void(*)(const BackwardVectorType &, const RSSVectorSmallType &,
+					  BackwardVectorType &, size_t)>(funcSelectShares), temp2, temp1, prevDelta, iw*ih*Din*B) << endl;
 	else
 		funcSelectShares(temp2, temp1, prevDelta, iw*ih*Din*B);
 }
 
-void MaxpoolLayer::updateEquations(const RSSVectorMyType& prevActivations)
+void MaxpoolLayer::updateEquations(const BackwardVectorType& prevActivations)
 {
 	log_print("Maxpool.updateEquations");
+}
+
+void MaxpoolLayer::weight_reduction() {
+	// funcWeightReduction(low_weights, weights, weights.size());
+	// funcWeightReduction(low_biases, biases, biases.size());
+}
+
+void MaxpoolLayer::activation_extension() {
+	// cout << "<<< Max Pooling >>> No need to perform activation extension." << endl;
+}
+
+void MaxpoolLayer::weight_extension() {
+	// cout << "Not implemented weight extension" << endl;
 }

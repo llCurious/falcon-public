@@ -767,61 +767,8 @@ void mat2file(const vector<T> &a, string filename, size_t row, size_t col)
 	f.close();
 }
 
-template <typename T>
-void mat2file(const vector<T> &a, const vector<T> &b, const vector<T> &c, const vector<T> &d, string filename, size_t row, size_t col)
-{
-	assert(a.size() == row * col);
-	typedef typename std::conditional<std::is_same<T, lowBit>::value, int32_t, int64_t>::type computeType;
-	size_t float_precision = FLOAT_PRECISION;
-	if (std::is_same<T, highBit>::value)
-	{
-		float_precision = HIGH_PRECISION;
-	}
-	else if (std::is_same<T, lowBit>::value)
-	{
-		float_precision = LOW_PRECISION;
-	}
-	else
-	{
-		cout << "Not supported type" << typeid(a).name() << endl;
-	}
-
-	ofstream f;
-	f.open(filename, ios::out);
-
-	// cout << row << " " << col << endl;
-	for (size_t i = 0; i < row; ++i)
-	{
-		f << ((static_cast<computeType>(a[i * col])) / (float)(1 << float_precision));
-		for (size_t j = 1; j < col; ++j)
-		{
-			f << "," << ((static_cast<computeType>(a[i * col + j])) / (float)(1l << float_precision));
-		}
-		f << "\n";
-	}
-	for (size_t i = 0; i < row; ++i)
-	{
-		f << ((static_cast<computeType>(b[i * col])) / (float)(1 << float_precision));
-		for (size_t j = 1; j < col; ++j)
-		{
-			f << "," << ((static_cast<computeType>(b[i * col + j])) / (float)(1l << float_precision));
-		}
-		f << "\n";
-	}
-	f << (static_cast<computeType>(c[0])) / (float)(1 << float_precision);
-	for (size_t i = 1; i < col; i++)
-	{
-		f << "," << (static_cast<computeType>(c[i])) / (float)(1 << float_precision);
-	}
-	f << "\n";
-	f << (static_cast<computeType>(d[0])) / (float)(1 << float_precision);
-	for (size_t i = 1; i < col; i++)
-	{
-		f << "," << (static_cast<computeType>(d[i])) / (float)(1 << float_precision);
-	}
-	f << "\n";
-	f.close();
-}
+// template <typename T>
+void mat2file(const vector<ForwardType> &a, const vector<BackwardType> &b, const vector<BackwardType> &c, const vector<BackwardType> &d, string filename, size_t row, size_t col);
 
 void mat2file(const vector<float> &a, string filename, size_t size);
 

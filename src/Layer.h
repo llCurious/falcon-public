@@ -10,11 +10,17 @@ public:
 
 //Virtual functions	
 	virtual void printLayer() {};
-	virtual void forward(const RSSVectorMyType& inputActivation) {};
-	virtual void computeDelta(RSSVectorMyType& prevDelta) {};
-	virtual void updateEquations(const RSSVectorMyType& prevActivations) {};
+	virtual void forward(const ForwardVecorType& inputActivation) {};
+	virtual void computeDelta(BackwardVectorType& prevDelta) {};
+	virtual void updateEquations(const BackwardVectorType& prevActivations) {};
+
+	// Mixed-Precision funcs
+	virtual void weight_reduction() {};
+	virtual void activation_extension() {};
+	virtual void weight_extension() {};
 
 //Getters
-	virtual RSSVectorMyType* getActivation() {};
-	virtual RSSVectorMyType* getDelta() {};
+	virtual ForwardVecorType* getActivation() {};
+	virtual BackwardVectorType* getHighActivation() {};
+	virtual BackwardVectorType* getDelta() {};
 };
