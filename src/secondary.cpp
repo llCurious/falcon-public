@@ -1820,6 +1820,30 @@ void runOnly(NeuralNetwork* net, size_t l, string what, string& network)
 		assert(false && "Only F,D or U allowed in runOnly");
 }
 
+void runOnlyLayer(NeuralNetwork* net, size_t l, string& network, size_t count)
+{
+	size_t total_layers = net->layers.size();
+	assert((l >= 0 and l < total_layers) && "Incorrect layer number for runOnly"); 
+	network = network + " L" + std::to_string(l) + (MP_TRAINING ? " Mixed-Precision" : " Full-Precision");
+
+	for (size_t i = 0; i < count; i++) {
+		if (l == 0) {
+			net->layers[0]->weight_reduction();
+			net->layers[0]->forward(net->low_inputData);
+			// net->layers[0]->activation_extension();
+			// net->layers[0]->weight_extension();
+			net->layers[0]->updateEquations(net->inputData);
+		} else {
+			net->layers[l]->weight_reduction();
+			net->layers[l]->forward(*(net->layers[l-1]->getActivation()));
+			net->layers[l]->activation_extension();
+			net->layers[l]->weight_extension();
+			net->layers[l]->computeDelta(*(net->layers[l-1]->getDelta()));
+			net->layers[l]->updateEquations(*(net->layers[l-1]->getHighActivation()));
+		}
+	}
+}
+
 
 
 

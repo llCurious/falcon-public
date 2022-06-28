@@ -107,17 +107,19 @@ int main(int argc, char **argv)
 	// Run forward/backward for single layers
 	//  1. what {F, D, U}
 	// 	2. l {0,1,....NUM_LAYERS-1}
-	// size_t l = 0;
-	// string what = "F";
+	size_t l = 1;
+	string what = "F";
+	size_t count = 10;
 	// runOnly(net, l, what, network);
+	runOnlyLayer(net, l, network, count);
 
 #if (!DEBUG_ONLY)
 	// Run training
-	cout << "----------------------------------------------" << endl;
-	cout << "-------------------Run Training---------------" << endl;
-	network += " train";
-	printNetwork(net);
-	train(net, network, dataset);
+	// cout << "----------------------------------------------" << endl;
+	// cout << "-------------------Run Training---------------" << endl;
+	// network += " train";
+	// printNetwork(net);
+	// train(net, network, dataset);
 
 	// Run inference (possibly with preloading a network)
 	// cout << "----------------------------------------------" << endl;
