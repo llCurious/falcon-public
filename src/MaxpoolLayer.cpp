@@ -11,6 +11,9 @@ MaxpoolLayer::MaxpoolLayer(MaxpoolConfig* conf, int _layerNum)
  activations(conf->batchSize * conf->features * 
 		    (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
  		    (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
+ high_activations(conf->batchSize * conf->features * 
+		    (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
+ 		    (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
  deltas(conf->batchSize * conf->features * 
 	   (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
 	   (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
