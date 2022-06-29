@@ -121,11 +121,12 @@ void runBN(BNLayerOpt *layer, VecLow &forward_output, VecLow &input_act, VecHigh
 }
 
 // template <typename Vec>
-// void runBN(BNLayer *layer, Vec &forward_output, Vec &input_act, Vec &grad, Vec &x_grad)
+// template <typename VecLow, typename VecHigh>
+// void runBN(BNLayer *layer, VecLow &forward_output, VecLow &input_act, VecHigh &grad, VecHigh &x_grad)
 // {
 // 	layer->forward(input_act);
 // 	forward_output = *layer->getActivation();
-// 	print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
+// 	// print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
 
 // 	*(layer->getDelta()) = grad;
 // 	layer->computeDelta(x_grad);
@@ -248,15 +249,14 @@ void benchBN()
 	// batch size: 32,64,128,256
 	size_t B = (1 << LOG_MINI_BATCH), D;
 	clock_t start, end;
-	double time_sum = 0;
-	int cnt = 5;
+	int cnt = 4;
 	if (IS_FALCON)
 	{
-		cout << "falcon ";
+		cout << "falcon " << endl;
 	}
 	else
 	{
-		cout << "ours ";
+		cout << "ours " << endl;
 	}
 	// if (std::is_same<Vec, RSSVectorLowType>::value && MP_FOR_DIVISION && MP_FOR_INV_SQRT)
 	// {
@@ -290,12 +290,13 @@ void benchBN()
 
 		ForwardVecorType input_act(size);
 		BackwardVectorType grad(size);
+		double time_sum = 0;
 		if (IS_FALCON)
 		{
 			// BNConfig *bn_conf = new BNConfig(D, B);
 			// BNLayer *layer = new BNLayer(bn_conf, 0);
 
-			// getBNInput(x_raw, grad_raw, input_act, grad, B, D);
+			// // getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
 			// // comm test
 			// round = commObject.getRoundsRecv();
@@ -309,11 +310,11 @@ void benchBN()
 
 			// 	// time test
 			// 	auto start = std::chrono::system_clock::now();
-			// 	// runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
 			// 	runBN(layer, forward_output, input_act, grad, x_grad);
 
 			// 	auto end = std::chrono::system_clock::now();
 			// 	double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+			// 	cout << dur << endl;
 			// 	time_sum += dur;
 			// }
 		}
@@ -359,10 +360,17 @@ void benchBNAcc()
 	double time_sum = 0;
 
 	string infile = "./scripts/test_data/input_bn.csv";
-	string outfile = "./scripts/test_data/output_bn_mix.csv";
-
-	uint64_t round = 0;
-	uint64_t commsize = 0;
+	string outfile = "./scripts/test_data/";
+	if (MP_TRAINING)
+	{
+		cout << "mix" << endl;
+		outfile += "output_bn_mix.csv";
+	}
+	else
+	{
+		cout << "highbit" << endl;
+		outfile += "output_bn_h.csv";
+	}
 
 	size_t size = B * D;
 
@@ -382,7 +390,17 @@ void benchBNAcc()
 		// BNLayer *layer = new BNLayer(bn_conf, 0);
 
 		// getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
-		// runBN(layer, forward_output, input_act, grad, x_grad);
+
+		// layer->weight_reduction();
+		// layer->forward(input_act);
+		// forward_output = *layer->getActivation();
+
+		// *(layer->getDelta()) = grad;
+		// layer->activation_extension();
+		// layer->computeDelta(x_grad);
+		// BackwardVectorType high_input_act(input_act.size());
+		// funcActivationExtension(high_input_act, input_act, input_act.size());
+		// layer->updateEquations(high_input_act);
 
 		// gammagrad = *layer->getGammaGrad();
 		// betagrad = *layer->getBetaGrad();
@@ -1257,7 +1275,7 @@ void runTest(string str, string whichTest, string &network)
 			// benchBN<RSSVectorLowType, lowBit>();
 			// benchBNAcc<RSSVectorMyType, myType>();
 			// benchBN<RSSVectorMyType, myType>();
-			benchBN();
+			// benchBN();
 			// benchBNAcc<RSSVectorMyType();
 			benchBNAcc();
 		}

@@ -1106,7 +1106,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	multiplyByScalar(b, 2, twoX);
 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
 	funcDotProduct(b, w0, xw0, size, true, precision);
-	cout << "h2" << endl;
+	// cout << "h2" << endl;
 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
 	if (PRECISE_DIVISION)
 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
@@ -1114,15 +1114,16 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	if (PRECISE_DIVISION)
 		addVectors(ones, epsilon1, termTwo, size);
 	funcDotProduct(w0, termOne, answer, size, true, precision);
-	cout << "h3" << endl;
+	// cout << "h3" << endl;
 	if (PRECISE_DIVISION)
 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
 	// falcon-error
+	cout << 2 * precision - float_precision << endl;
 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-	cout << "h5" << endl;
+	// cout << "h5" << endl;
 }
 
 template <typename VEC>
