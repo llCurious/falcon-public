@@ -2,32 +2,32 @@
 
 void benchWCExtension()
 {
+	cout << "wc-extension" << endl;
 	size_t dims[4] = {100, 1000, 10000, 100000};
 	int cnt = 20;
-	clock_t start, end;
 	uint64_t round = 0;
 	uint64_t commsize = 0;
 
-	commObject.setMeasurement(true);
-	for (int i = 0; i < 4; i++)
-	{
-		size_t size = dims[i];
-		cout << "dim " << size << endl;
-		vector<lowBit> data(size);
-		RSSVectorLowType datalow(size);
-		RSSVectorHighType datahigh(size);
-		funcGetShares(datalow, data);
+	// commObject.setMeasurement(true);
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	size_t size = dims[i];
+	// 	cout << "dim " << size << endl;
+	// 	vector<lowBit> data(size);
+	// 	RSSVectorLowType datalow(size);
+	// 	RSSVectorHighType datahigh(size);
+	// 	funcGetShares(datalow, data);
 
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
+	// 	round = commObject.getRoundsRecv();
+	// 	commsize = commObject.getRecv();
 
-		funcWCExtension(datahigh, datalow, size); // test function
+	// 	funcWCExtension(datahigh, datalow, size); // test function
 
-		cout << "round " << commObject.getRoundsRecv() - round << endl;
-		// cout << "send round " << commObject.getRoundsSent() << endl;
-		cout << "size " << commObject.getRecv() - commsize << endl;
-		// cout << "send size" << commObject.getSent() << endl;
-	}
+	// 	cout << "round " << commObject.getRoundsRecv() - round << endl;
+	// 	// cout << "send round " << commObject.getRoundsSent() << endl;
+	// 	cout << "size " << commObject.getRecv() - commsize << endl;
+	// 	// cout << "send size" << commObject.getSent() << endl;
+	// }
 	commObject.setMeasurement(false);
 	for (int i = 0; i < 4; i++)
 	{
@@ -41,10 +41,10 @@ void benchWCExtension()
 			RSSVectorHighType datahigh(size);
 			funcGetShares(datalow, data);
 
-			start = clock();
+			auto start = std::chrono::system_clock::now();
 			funcWCExtension(datahigh, datalow, size); // test function
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			auto end = std::chrono::system_clock::now();
+			double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 			time_sum += dur;
 			// cout << j << " " << dur << endl;
 		}
@@ -54,32 +54,32 @@ void benchWCExtension()
 
 void benchMSExtension()
 {
+	cout << "ms-extension" << endl;
 	size_t dims[4] = {100, 1000, 10000, 100000};
 	int cnt = 20;
-	clock_t start, end;
 	uint64_t round = 0;
 	uint64_t commsize = 0;
 
-	commObject.setMeasurement(true);
-	for (int i = 0; i < 4; i++)
-	{
-		size_t size = dims[i];
-		cout << "dim " << size << endl;
-		vector<lowBit> data(size);
-		RSSVectorLowType datalow(size);
-		RSSVectorHighType datahigh(size);
-		funcGetShares(datalow, data);
+	// commObject.setMeasurement(true);
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	size_t size = dims[i];
+	// 	cout << "dim " << size << endl;
+	// 	vector<lowBit> data(size);
+	// 	RSSVectorLowType datalow(size);
+	// 	RSSVectorHighType datahigh(size);
+	// 	funcGetShares(datalow, data);
 
-		round = commObject.getRoundsRecv();
-		commsize = commObject.getRecv();
+	// 	round = commObject.getRoundsRecv();
+	// 	commsize = commObject.getRecv();
 
-		funcMSExtension(datahigh, datalow, size); // test function
+	// 	funcMSExtension(datahigh, datalow, size); // test function
 
-		cout << "round " << commObject.getRoundsRecv() - round << endl;
-		// cout << "send round " << commObject.getRoundsSent() << endl;
-		cout << "size " << commObject.getRecv() - commsize << endl;
-		// cout << "send size" << commObject.getSent() << endl;
-	}
+	// 	cout << "round " << commObject.getRoundsRecv() - round << endl;
+	// 	// cout << "send round " << commObject.getRoundsSent() << endl;
+	// 	cout << "size " << commObject.getRecv() - commsize << endl;
+	// 	// cout << "send size" << commObject.getSent() << endl;
+	// }
 	commObject.setMeasurement(false);
 	for (int i = 0; i < 4; i++)
 	{
@@ -93,10 +93,10 @@ void benchMSExtension()
 			RSSVectorHighType datahigh(size);
 			funcGetShares(datalow, data);
 
-			start = clock();
+			auto start = std::chrono::system_clock::now();
 			funcMSExtension(datahigh, datalow, size); // test function
-			end = clock();
-			double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			auto end = std::chrono::system_clock::now();
+			double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 			time_sum += dur;
 			// cout << j << " " << dur << endl;
 		}
@@ -121,11 +121,12 @@ void runBN(BNLayerOpt *layer, VecLow &forward_output, VecLow &input_act, VecHigh
 }
 
 // template <typename Vec>
-// void runBN(BNLayer *layer, Vec &forward_output, Vec &input_act, Vec &grad, Vec &x_grad)
+// template <typename VecLow, typename VecHigh>
+// void runBN(BNLayer *layer, VecLow &forward_output, VecLow &input_act, VecHigh &grad, VecHigh &x_grad)
 // {
 // 	layer->forward(input_act);
 // 	forward_output = *layer->getActivation();
-// 	print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
+// 	// print_vector(forward_output, "FLOAT", "BN Forward", forward_output.size());
 
 // 	*(layer->getDelta()) = grad;
 // 	layer->computeDelta(x_grad);
@@ -248,8 +249,27 @@ void benchBN()
 	// batch size: 32,64,128,256
 	size_t B = (1 << LOG_MINI_BATCH), D;
 	clock_t start, end;
-	double time_sum = 0;
-	int cnt = 10;
+	int cnt = 4;
+	if (IS_FALCON)
+	{
+		cout << "falcon " << endl;
+	}
+	else
+	{
+		cout << "ours " << endl;
+	}
+	// if (std::is_same<Vec, RSSVectorLowType>::value && MP_FOR_DIVISION && MP_FOR_INV_SQRT)
+	// {
+	// 	cout << "mix " << OFFLINE_ON << endl;
+	// }
+	// else if (std::is_same<Vec, RSSVectorHighType>::value)
+	// {
+	// 	cout << "high " << OFFLINE_ON << endl;
+	// }
+	// else if (std::is_same<Vec, RSSVectorLowType>::value && !MP_FOR_DIVISION && !MP_FOR_INV_SQRT)
+	// {
+	// 	cout << "low " << OFFLINE_ON << endl;
+	// }
 
 	// string infile = "./scripts/test_data/input.csv";
 	// string outfile = "./scripts/test_data/output.csv";
@@ -270,12 +290,13 @@ void benchBN()
 
 		ForwardVecorType input_act(size);
 		BackwardVectorType grad(size);
+		double time_sum = 0;
 		if (IS_FALCON)
 		{
 			// BNConfig *bn_conf = new BNConfig(D, B);
 			// BNLayer *layer = new BNLayer(bn_conf, 0);
 
-			// getBNInput(x_raw, grad_raw, input_act, grad, B, D);
+			// // getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
 			// // comm test
 			// round = commObject.getRoundsRecv();
@@ -288,11 +309,12 @@ void benchBN()
 			// 	getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
 			// 	// time test
-			// 	start = clock();
+			// 	auto start = std::chrono::system_clock::now();
 			// 	runBN(layer, forward_output, input_act, grad, x_grad);
 
-			// 	end = clock();
-			// 	double dur = (double)(end - start) / CLOCKS_PER_SEC;
+			// 	auto end = std::chrono::system_clock::now();
+			// 	double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+			// 	cout << dur << endl;
 			// 	time_sum += dur;
 			// }
 		}
@@ -314,11 +336,14 @@ void benchBN()
 				getBNInput(x_raw, grad_raw, input_act, grad, B, D);
 
 				// time test
-				start = clock();
+				auto start = std::chrono::system_clock::now();
+
+				// runBN<Vec>(layer, forward_output, input_act, grad, x_grad);
+				// start = clock();
 				runBN(layer, forward_output, input_act, grad, x_grad);
 
-				end = clock();
-				double dur = (double)(end - start) / CLOCKS_PER_SEC;
+				auto end = std::chrono::system_clock::now();
+				double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
 				time_sum += dur;
 			}
 		}
@@ -335,10 +360,17 @@ void benchBNAcc()
 	double time_sum = 0;
 
 	string infile = "./scripts/test_data/input_bn.csv";
-	string outfile = "./scripts/test_data/output_bn_mix.csv";
-
-	uint64_t round = 0;
-	uint64_t commsize = 0;
+	string outfile = "./scripts/test_data/";
+	if (MP_TRAINING)
+	{
+		cout << "mix" << endl;
+		outfile += "output_bn_mix.csv";
+	}
+	else
+	{
+		cout << "highbit" << endl;
+		outfile += "output_bn_h.csv";
+	}
 
 	size_t size = B * D;
 
@@ -358,7 +390,17 @@ void benchBNAcc()
 		// BNLayer *layer = new BNLayer(bn_conf, 0);
 
 		// getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
-		// runBN(layer, forward_output, input_act, grad, x_grad);
+
+		// layer->weight_reduction();
+		// layer->forward(input_act);
+		// forward_output = *layer->getActivation();
+
+		// *(layer->getDelta()) = grad;
+		// layer->activation_extension();
+		// layer->computeDelta(x_grad);
+		// BackwardVectorType high_input_act(input_act.size());
+		// funcActivationExtension(high_input_act, input_act, input_act.size());
+		// layer->updateEquations(high_input_act);
 
 		// gammagrad = *layer->getGammaGrad();
 		// betagrad = *layer->getBetaGrad();
@@ -386,54 +428,54 @@ void benchBNAcc()
 	mat2file(x_f, x_g, gamma_g, beta_g, outfile, B, D);
 }
 
-void benchSoftMax()
-{
-	// d=10/200，batch=100/1000/10000/100000
-	size_t ds[2] = {10, 200};
-	size_t batchs[3] = {100, 1000, 10000};
-	// size_t ds[1] = {200};
-	// size_t batchs[1] = {10000};
-	size_t cnt = 4;
+// void benchSoftMax()
+// {
+// 	// d=10/200，batch=100/1000/10000/100000
+// 	size_t ds[2] = {10, 200};
+// 	size_t batchs[3] = {100, 1000, 10000};
+// 	// size_t ds[1] = {200};
+// 	// size_t batchs[1] = {10000};
+// 	size_t cnt = 4;
 
-	size_t size;
+// 	size_t size;
 
-	uint64_t round = 0;
-	uint64_t commsize = 0;
+// 	uint64_t round = 0;
+// 	uint64_t commsize = 0;
 
-	clock_t start, end;
+// 	clock_t start, end;
 
-	for (int d : ds)
-	{
-		for (int batch : batchs)
-		{
-			size = d * batch;
+// 	for (int d : ds)
+// 	{
+// 		for (int batch : batchs)
+// 		{
+// 			size = d * batch;
 
-			RSSVectorHighType a(size), b(size);
+// 			RSSVectorHighType a(size), b(size);
 
-			// comm
-			round = commObject.getRoundsRecv();
-			commsize = commObject.getRecv();
+// 			// comm
+// 			// round = commObject.getRoundsRecv();
+// 			// commsize = commObject.getRecv();
 
-			funcSoftmax(a, b, batch, d, false);
+// 			// funcSoftmax(a, b, batch, d, false);
 
-			cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
+// 			// cout << "round: " << commObject.getRoundsRecv() - round << "  size: " << commObject.getRecv() - commsize << endl;
 
-			// time
-			double time_sum = 0;
-			for (size_t i = 0; i < cnt; i++)
-			{
-				start = clock();
-				funcSoftmax(a, b, batch, d, false);
+// 			// time
+// 			double time_sum = 0;
+// 			for (size_t i = 0; i < cnt; i++)
+// 			{
+// 				auto start = std::chrono::system_clock::now();
+// 				funcSoftmax(a, b, batch, d, false);
 
-				end = clock();
-				double dur = (double)(end - start) / CLOCKS_PER_SEC;
-				cout << dur << endl;
-				time_sum += dur;
-			}
-			cout << batch << " " << d << " " << time_sum / cnt << endl;
-		}
-	}
-}
+// 				auto end = std::chrono::system_clock::now();
+// 				double dur = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+// 				cout << dur << endl;
+// 				time_sum += dur;
+// 			}
+// 			cout << batch << " " << d << " " << time_sum / cnt << endl;
+// 		}
+// 	}
+// }
 
 void debugPartySS()
 {
@@ -809,24 +851,31 @@ void debugMixedShareGen()
 
 void debugMSExtension()
 {
-	size_t size = 100;
+	size_t size = 30;
+	vector<float> data_row = {1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 1.59265, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 5.35291, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373, 6.7373};
 	vector<lowBit> data(size);
-	size_t i = 0;
-	data[i] = -(1 << 30);
-	// cout << bitset<32>(data[i]) << endl;
-	i++;
-	for (; i < size / 2; i++)
+	for (size_t i = 0; i < size; i++)
 	{
-		data[i] = data[i - 1] + 1;
+		data[i] = data_row[i] * (1l << LOW_PRECISION);
 	}
-	data[i] = (1 << 30) - 1;
-	i++;
-	for (; i < size; i++)
-	{
-		data[i] = data[i - 1] - 1;
-	}
+
+	// size_t i = 0;
+	// data[i] = -(1 << 30);
+	// // cout << bitset<32>(data[i]) << endl;
+	// i++;
+	// for (; i < size / 2; i++)
+	// {
+	// 	data[i] = data[i - 1] + 1;
+	// }
+	// data[i] = (1 << 30) - 1;
+	// i++;
+	// for (; i < size; i++)
+	// {
+	// 	data[i] = data[i - 1] - 1;
+	// }
 	// printLowBitVec(data, "input", size);
 	// printVector<lowBit>(data, "input", size);
+	printVectorReal<lowBit>(data, "input", size);
 
 	int checkParty = PARTY_B;
 
@@ -839,12 +888,13 @@ void debugMSExtension()
 	// printRssVector<RSSVectorHighType>(datahigh, "highbit ss", size);
 	vector<highBit> plain_high(size);
 	funcReconstruct<RSSVectorHighType, highBit>(datahigh, plain_high, size, "high bit plain", false);
-	// printHighBitVec(plain_high, "", size);
+	// printVector<highBit>(plain_high, "", size);
+	printVectorReal<highBit>(plain_high, "output", size);
 
 	for (size_t i = 0; i < size; i++)
 	{
 		// cout << (int)plain_high[i] << " " << (int)data[i] << endl;
-		assert((int)plain_high[i] == (int)(highBit)data[i]);
+		assert((int)plain_high[i] == (int)data[i]);
 	}
 }
 
@@ -1106,8 +1156,8 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("Softmax") == 0)
 		{
 			network = "Softmax";
-			// debugSoftmax<RSSVectorHighType, highBit>();
 			debugSoftmax<RSSVectorHighType, highBit>();
+			// debugSoftmax<RSSVectorHighType, highBit>();
 		}
 		else if (whichTest.compare("BNLayer") == 0)
 		{
@@ -1220,16 +1270,29 @@ void runTest(string str, string whichTest, string &network)
 		else if (whichTest.compare("BN") == 0)
 		{
 			network = "BN";
+			// benchBN<RSSVectorHighType, highBit>();
 			// benchBN<RSSVectorMyType, myType>();
-			benchBN();
+			// benchBN<RSSVectorLowType, lowBit>();
+			// benchBNAcc<RSSVectorMyType, myType>();
+			// benchBN<RSSVectorMyType, myType>();
+			// benchBN();
 			// benchBNAcc<RSSVectorMyType();
 			benchBNAcc();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
-			benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+			benchSoftMax<RSSVectorHighType, highBit>();
+			// benchSoftMax<RSSVectorLowType, lowBit>();
 			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
+			// benchSoftMaxAcc<RSSVectorLowType, lowBit>();
+		}
+		else if (whichTest.compare("Trunc") == 0)
+		{
+			network = "Trunc";
+			// benchTrunc<RSSVectorHighType, highBit>();
+			// benchTrunc<RSSVectorLowType, lowBit>();
+			benchTrunc<RSSVectorMyType, myType>();
 		}
 	}
 	else

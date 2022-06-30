@@ -21,7 +21,7 @@
 // 	RSSVectorMyType sigma;
 // 	RSSVectorMyType beta_grad;
 // 	RSSVectorMyType gamma_grad;
-
+// // 
 // public:
 // 	// Constructor and initializer
 // 	BNLayer(BNConfig *conf, int _layerNum);

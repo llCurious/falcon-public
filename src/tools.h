@@ -277,10 +277,10 @@ void printVectorReal(const vector<T> &var, string pre_text, int print_nos)
 		cout << "Not supported type" << typeid(var).name() << endl;
 	}
 
-	cout << pre_text << " " << print_nos << endl;
+	cout << pre_text << " " << print_nos << " " << float_precision << endl;
 	for (size_t i = 0; i < print_nos; i++)
 	{
-		cout << (static_cast<computeType>(var[i])) / (float)(1 << float_precision) << " ";
+		cout << (static_cast<computeType>(var[i])) / (float)(1l << float_precision) << " ";
 		// cout << var[i] << " ";
 	}
 	cout << endl;

@@ -30,7 +30,7 @@
 // void BNLayer::forward(const RSSVectorMyType &inputActivation)
 // {
 // 	log_print("BN.forward");
-// 	cout << "bn.for2" << endl;
+// 	// cout << "bn.for2" << endl;
 
 // 	size_t B = conf.numBatches;
 // 	size_t m = conf.inputSize;
@@ -72,7 +72,7 @@
 // 	funcGetShares(epsilon, eps);
 // 	addVectors<RSSMyType>(temp3, epsilon, temp3, B);
 
-// 	cout << "bn.for1" << endl;
+// 	// cout << "bn.for1" << endl;
 
 // 	// Square Root
 // 	funcGetShares(sigma, initG);
@@ -80,28 +80,32 @@
 // 	{
 // 		if (IS_FALCON)
 // 		{
-// 			// cout << i << endl;
 // 			funcDivision(temp3, sigma, b, B);
 // 		}
 // 		else
 // 		{
 // 			funcDivisionByNR(b, temp3, sigma, B);
 // 		}
+// 		// funcDivisionByNR(b, temp3, sigma, B);
 // 		addVectors<RSSMyType>(sigma, b, sigma, B);
-// 		cout << i << endl;
+// 		// cout << i << endl;
 // 		funcTruncatePublic(sigma, 2, B);
 // 	}
 
-// 	cout << "bn.for4" << endl;
+// 	// cout << "bn.for2" << endl;
 
 // 	// Normalized x (xhat)
 // 	funcBatchNorm(temp1, sigma, xhat, m, B);
+
+// 	// cout << "bn.for3" << endl;
 
 // 	// Scaling
 // 	RSSVectorMyType g_repeat(B * m);
 // 	for (int i = 0; i < B; ++i)
 // 		for (int j = 0; j < m; ++j)
 // 			g_repeat[i * m + j] = gamma[i];
+	
+// 	// cout << "bn.for4" << endl;
 
 // 	funcDotProduct(g_repeat, xhat, activations, B * m, true, FLOAT_PRECISION);
 // 	for (int i = 0; i < B; ++i)

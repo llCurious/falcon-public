@@ -11,7 +11,7 @@
 #include <bitset>
 #include <iostream>
 
-#define MP_TRAINING true
+#define MP_TRAINING false
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
@@ -128,7 +128,7 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 
 /********************* DEBUG AND TEST *********************/
 #define DEBUG_ONLY true
-#define OFFLINE_ON true
+#define OFFLINE_ON false
 #define PRE_LOAD false
 #define IS_FALCON false
 

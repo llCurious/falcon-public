@@ -1106,7 +1106,7 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	multiplyByScalar(b, 2, twoX);
 	subtractVectors<RSScomputeType>(twoPointNine, twoX, w0, size);
 	funcDotProduct(b, w0, xw0, size, true, precision);
-	cout <<"h2" << endl;
+	// cout << "h2" << endl;
 	subtractVectors<RSScomputeType>(ones, xw0, epsilon0, size);
 	if (PRECISE_DIVISION)
 		funcDotProduct(epsilon0, epsilon0, epsilon1, size, true, precision);
@@ -1114,15 +1114,16 @@ void funcDivision(const VEC &a, const VEC &b, VEC &quotient,
 	if (PRECISE_DIVISION)
 		addVectors(ones, epsilon1, termTwo, size);
 	funcDotProduct(w0, termOne, answer, size, true, precision);
-	cout <<"h3" << endl;
+	// cout << "h3" << endl;
 	if (PRECISE_DIVISION)
 		funcDotProduct(answer, termTwo, answer, size, true, precision);
 
 	// RSSVectorMyType scaledA(size);
 	// multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
 	// falcon-error
+	cout << 2 * precision - float_precision << endl;
 	funcDotProduct(answer, a, quotient, size, true, ((2 * precision - float_precision)));
-	cout <<"h5" << endl;
+	// cout << "h5" << endl;
 }
 
 template <typename VEC>
@@ -2485,12 +2486,16 @@ void funcExp(const Vec &a, Vec &b, size_t size)
 	}
 
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, highBit, lowBit>::type elementType;
+	// vector<elementType> plain_input(size), plain_output(size);
+	// funcReconstruct(a, plain_input, size, "exp plain-text divisor", true);
+
 	typedef typename std::conditional<std::is_same<Vec, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_EXP)
 	{
 		cout << "Plain text Exp" << endl;
 		vector<elementType> plain_input(size), plain_output(size);
 		funcReconstruct(a, plain_input, size, "plain-text divisor", false);
+		typedef typename std::conditional<std::is_same<Vec, RSSVectorLowType>::value, int32_t, int64_t>::type computeType;
 
 		vector<float> pl_input_float(size);
 		for (size_t i = 0; i < size; i++)
@@ -2879,9 +2884,22 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 		{
 			// cout << "Mixed-Precision Division" << endl;
 			RSSVectorHighType highP_dividend(size), highP_rec(size);
-			funcMSExtension(highP_dividend, quotient, size);
+			funcWCExtension(highP_dividend, quotient, size);
+
+			vector<highBit> plainh(size);
+			// log
+			// funcReconstruct(highP_dividend, plainh, size, "high_queo", true);
+
 			funcMulConst(highP_dividend, highP_dividend, 1 << (HIGH_PRECISION - LOW_PRECISION), size); // maintain same precision
+
+			// log
+			// funcReconstruct(highP_dividend, plainh, size, "high_queo mul c", true);
+
 			funcReciprocal2(highP_rec, highP_dividend, false, size);
+
+			// log
+			// funcReconstruct(highP_rec, plainh, size, "recipol", true);
+
 			funcTruncAndReduce(q_rec, highP_rec, (HIGH_PRECISION - LOW_PRECISION), size);
 		}
 		else
@@ -2889,8 +2907,12 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 			funcReciprocal2(q_rec, quotient, false, size);
 		}
 	}
+	// log
+	// funcReconstruct(q_rec, plain_output, size, "output", true);
 
 	funcDotProduct(q_rec, input, result, size, true, float_precision);
+
+	// funcReconstruct(result, plain_output, size, "result", true);
 }
 
 /**
@@ -3185,9 +3207,12 @@ void funcSoftmax(const Vec &a, Vec &b, size_t rows, size_t cols, bool masked)
 		}
 	}
 
+	// vector<elementType> reconst_exp_elements(size);
+	// funcReconstruct(temp, reconst_exp_elements, size, "before exp", true);
+
 	// compute exp of each element
 	Vec exp_elements(size);
-	funcExp(temp, exp_elements, size);
+	funcExp<Vec>(temp, exp_elements, size);
 
 	// vector<elementType> reconst_exp_elements(size);
 	// funcReconstruct(exp_elements, reconst_exp_elements, size, "exp", true);
