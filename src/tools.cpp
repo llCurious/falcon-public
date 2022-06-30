@@ -552,32 +552,32 @@ void mat2file(const vector<ForwardType> &a, const vector<BackwardType> &b, const
 	// cout << row << " " << col << endl;
 	for (size_t i = 0; i < row; ++i)
 	{
-		f << ((static_cast<ForwardType>(a[i * col])) / (float)(1 << FORWARD_PRECISION));
+		f << ((static_cast<int32_t>(a[i * col])) / (float)(1 << FORWARD_PRECISION));
 		for (size_t j = 1; j < col; ++j)
 		{
-			f << "," << ((static_cast<ForwardType>(a[i * col + j])) / (float)(1l << FORWARD_PRECISION));
+			f << "," << ((static_cast<int32_t>(a[i * col + j])) / (float)(1l << FORWARD_PRECISION));
 		}
 		f << "\n";
 	}
 	for (size_t i = 0; i < row; ++i)
 	{
-		f << ((static_cast<BackwardType>(b[i * col])) / (float)(1 << BACKWARD_PRECISION));
+		f << ((static_cast<int64_t>(b[i * col])) / (float)(1 << BACKWARD_PRECISION));
 		for (size_t j = 1; j < col; ++j)
 		{
-			f << "," << ((static_cast<BackwardType>(b[i * col + j])) / (float)(1l << BACKWARD_PRECISION));
+			f << "," << ((static_cast<int64_t>(b[i * col + j])) / (float)(1l << BACKWARD_PRECISION));
 		}
 		f << "\n";
 	}
-	f << (static_cast<BackwardType>(c[0])) / (float)(1 << BACKWARD_PRECISION);
+	f << (static_cast<int64_t>(c[0])) / (float)(1 << BACKWARD_PRECISION);
 	for (size_t i = 1; i < col; i++)
 	{
-		f << "," << (static_cast<BackwardType>(c[i])) / (float)(1 << BACKWARD_PRECISION);
+		f << "," << (static_cast<int64_t>(c[i])) / (float)(1 << BACKWARD_PRECISION);
 	}
 	f << "\n";
-	f << (static_cast<BackwardType>(d[0])) / (float)(1 << BACKWARD_PRECISION);
+	f << (static_cast<int64_t>(d[0])) / (float)(1 << BACKWARD_PRECISION);
 	for (size_t i = 1; i < col; i++)
 	{
-		f << "," << (static_cast<BackwardType>(d[i])) / (float)(1 << BACKWARD_PRECISION);
+		f << "," << (static_cast<int64_t>(d[i])) / (float)(1 << BACKWARD_PRECISION);
 	}
 	f << "\n";
 	f.close();
