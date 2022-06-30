@@ -371,5 +371,5 @@ void BNLayerOpt::activation_extension() {
 }
 
 void BNLayerOpt::weight_extension() {
-	cout << "Not implemented weight extension" << endl;
+	// cout << "Not implemented weight extension" << endl;
 }

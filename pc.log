@@ -1,29 +1,7 @@
 nohup: ignoring input
 ./Falcon.out 2 files/IP_localhost files/keyC files/keyAC files/keyBC
 Loading data done.....
-high
-0.044762
-0.043807
-0.040661
-100 10 0.0430767
-0.072045
-0.072166
-0.070565
-1000 10 0.071592
-0.476802
-0.469225
-0.44395
-10000 10 0.463326
-0.821902
-0.782451
-0.842784
-100 200 0.815712
-2.17058
-2.21721
-2.16005
-1000 200 2.18262
-17.7998
-17.3298
-17.3427
-10000 200 17.4908
+01 time: 29.1628    round: 11    size: 383926240
+11 time: 3.16366    round: 40    size: 32993280
+21 time: 0.981591    round: 15    size: 9861120
 make: *** No rule to make target '1'.  Stop.
