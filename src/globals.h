@@ -11,7 +11,7 @@
 #include <bitset>
 #include <iostream>
 
-#define MP_TRAINING true
+#define MP_TRAINING false
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
@@ -47,12 +47,12 @@
 #define REC_Y 6
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
 #define INVSQRT_ITERS 6
-#define LOG_MINI_BATCH 5
+#define LOG_MINI_BATCH 7
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 1000
+#define NUM_ITERATIONS 1
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -97,7 +97,7 @@ operator<<(std::ostream &dest, longBit value);
 
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
-#define USE_SOFTMAX_CE true
+#define USE_SOFTMAX_CE false
 #define MP_FOR_DIVISION (true && MP_TRAINING)
 #define MP_FOR_INV_SQRT (true && MP_TRAINING)
 #define PLAINTEXT_INV_SQRT false
@@ -127,8 +127,8 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 #endif
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY true
-#define OFFLINE_ON false
+#define DEBUG_ONLY false
+#define OFFLINE_ON true
 #define PRE_LOAD false
 #define IS_FALCON false
 

@@ -68,8 +68,8 @@ void NeuralNetwork::forward()
 	log_print("NN.forward");
 
 	layers[0]->forward(low_inputData);
-	if (LARGE_NETWORK)
-		cout << "Forward \t" << layers[0]->layerNum << " completed..." << endl;
+	// if (LARGE_NETWORK)
+	// 	cout << "Forward \t" << layers[0]->layerNum << " completed..." << endl;
 
 	// cout << "----------------------------------------------" << endl;
 	// cout << "DEBUG: forward() at NeuralNetwork.cpp" << endl;
@@ -79,10 +79,10 @@ void NeuralNetwork::forward()
 
 	for (size_t i = 1; i < NUM_LAYERS; ++i)
 	{
-		cout << "Layer" << i << endl;
+		// cout << "Layer" << i << endl;
 		layers[i]->forward(*(layers[i - 1]->getActivation()));
-		if (LARGE_NETWORK)
-			cout << "Forward \t" << layers[i]->layerNum << " completed..." << endl;
+		// if (LARGE_NETWORK)
+		// 	cout << "Forward \t" << layers[i]->layerNum << " completed..." << endl;
 
 		// print_vector((*layers[i]->getActivation()), "FLOAT", "Activation Layer"+to_string(i),
 		// 			(*layers[i]->getActivation()).size());
@@ -148,8 +148,8 @@ void NeuralNetwork::computeDelta()
 		{
 			funcSoftmax(*(layers[NUM_LAYERS - 1]->getHighActivation()), softmax_output, rows, columns, false);
 			subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS - 1]->getDelta()), size);
-			print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 30);
-			print_vector(softmax_output, "FLOAT", "predict_softmax", 30);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 30);
+			// print_vector(softmax_output, "FLOAT", "predict_softmax", 30);
 			// print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
 		}
 		else
@@ -160,8 +160,8 @@ void NeuralNetwork::computeDelta()
 			BackwardVectorType diff(size);
 			subtractVectors(*(layers[NUM_LAYERS - 1]->getHighActivation()), outputData, diff, size);
 			*(layers[NUM_LAYERS - 1]->getDelta()) = diff;
-			print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 100);
-			print_vector(outputData, "FLOAT", "label", 30);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 100);
+			// print_vector(outputData, "FLOAT", "label", 30);
 			// print_vector(diff, "FLOAT", "diff", diff.size());
 			// funcTruncate(diff, LOG_MINI_BATCH, size);
 		}
@@ -185,8 +185,8 @@ void NeuralNetwork::computeDelta()
 	{
 		// cout << "Delta " << i << endl;
 		layers[i]->computeDelta(*(layers[i - 1]->getDelta()));
-		if (LARGE_NETWORK)
-			cout << "Delta \t\t" << layers[i]->layerNum << " completed..." << endl;
+		// if (LARGE_NETWORK)
+		// 	cout << "Delta \t\t" << layers[i]->layerNum << " completed..." << endl;
 	}
 }
 
@@ -198,8 +198,8 @@ void NeuralNetwork::updateEquations()
 	{
 		// cout << "Update " << i << endl;
 		layers[i]->updateEquations(*(layers[i - 1]->getHighActivation()));
-		if (LARGE_NETWORK)
-			cout << "Update Eq. \t" << layers[i]->layerNum << " completed..." << endl;
+		// if (LARGE_NETWORK)
+		// 	cout << "Update Eq. \t" << layers[i]->layerNum << " completed..." << endl;
 	}
 
 	layers[0]->updateEquations(inputData);
@@ -272,8 +272,8 @@ float NeuralNetwork::getAccuracy()
 	// }
 	// cout << endl;
 
-	cout << "Rolling accuracy: " << counter[0] << " out of " 
-		 << counter[1] << " (" << (counter[0]*100.0/counter[1]) << " %)" << endl;
+	// cout << "Rolling accuracy: " << counter[0] << " out of " 
+	// 	 << counter[1] << " (" << (counter[0]*100.0/counter[1]) << " %)" << endl;
 	return (counter[0]*100.0/counter[1]);
 }
 

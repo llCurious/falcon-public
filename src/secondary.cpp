@@ -71,18 +71,18 @@ void train(NeuralNetwork* net, string network, string dataset)
 	cout << default_path + "_acc.txt" << endl;
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
-		cout << "----------------------------------" << endl;  
-		cout << "Iteration " << i << endl;
+		// cout << "----------------------------------" << endl;  
+		// cout << "Iteration " << i << endl;
 		readMiniBatch(net, "TRAINING");
 		net->weight_reduction();
 		net->forward();
 		net->activation_extension();
 		net->weight_extension();
 		net->backward();
-		acc = net->getAccuracy();
-		loss = net->getLoss();
-		accF << to_string(i) << "\t" << to_string(acc) + "\n"; accF.flush();
-		lossF << to_string(i) << "\t" << to_string(loss) + "\n"; lossF.flush();
+		// acc = net->getAccuracy();
+		// loss = net->getLoss();
+		// accF << to_string(i) << "\t" << to_string(acc) + "\n"; accF.flush();
+		// lossF << to_string(i) << "\t" << to_string(loss) + "\n"; lossF.flush();
 		// cout << "----------------------------------" << endl;  
 	}
 	accF.close(); lossF.close();
@@ -92,14 +92,14 @@ void train(NeuralNetwork* net, string network, string dataset)
 extern void print_vector(RSSVectorHighType &var, string type, string pre_text, int print_nos);
 extern void print_vector(RSSVectorLowType &var, string type, string pre_text, int print_nos);
 extern string which_network(string network);
-void test(bool PRELOADING, string network, NeuralNetwork* net)
+void test(bool PRELOADING, string network, NeuralNetwork* net, int cnt)
 {
-	log_print("test");
+	// log_print("test");
 
 	//counter[0]: Correct samples, counter[1]: total samples
-	vector<size_t> counter(2,0);
+	// vector<size_t> counter(2,0);
 
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < cnt; ++i)
 	{
 		// if (!PRELOADING)
 			readMiniBatch(net, "TESTING");
@@ -113,8 +113,8 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 		 * efficiency experiments.
 		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		 * **/
-		net->layers[NUM_LAYERS-1]->activation_extension();
-		net->getAccuracy();
+		// net->layers[NUM_LAYERS-1]->activation_extension();
+		// net->getAccuracy();
 	}
 	// print_vector((*(net->layers[NUM_LAYERS-1])->getActivation()), "FLOAT", "MPC Output over uint32_t:", 1280);
 
@@ -1888,8 +1888,9 @@ void end_time(string str)
 	}
 
 	clock_gettime(CLOCK_REALTIME, &requestEnd);
-	cout << "----------------------------------------------" << endl;
+	// cout << "----------------------------------------------" << endl;
 	cout << "Wall Clock time for " << str << ": " << diff(requestStart, requestEnd) << " sec\n";
+	// cout << "Wall Clock time for " << str << ": " << diff(requestStart, requestEnd)/ 2 << " sec\n";
 	cout << "CPU time for " << str << ": " << (double)(clock() - tStart)/CLOCKS_PER_SEC << " sec\n";
 	cout << "----------------------------------------------" << endl;	
 	alreadyMeasuringTime = false;

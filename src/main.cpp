@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		network = "LeNet";
+		network = "SecureML";
 		dataset = "MNIST";
 		security = "Semi-honest";
 	}
@@ -56,11 +56,12 @@ int main(int argc, char **argv)
 	// Run these if you want a preloaded network to be tested
 	// assert(NUM_ITERATION == 1 and "check if readMiniBatch is false in test(net)")
 	// First argument {SecureML, Sarda, MiniONN, or LeNet}
-	if (PRE_LOAD) {
-		network += " preloaded"; PRELOADING = true;
+	if (PRE_LOAD)
+	{
+		network += " preloaded";
+		PRELOADING = true;
 		preload_network(PRELOADING, network, dataset, net);
 	}
-	
 
 	start_m();
 	// Run unit tests in two modes:
@@ -110,40 +111,73 @@ int main(int argc, char **argv)
 	// 	2. l {0,1,....NUM_LAYERS-1}
 	// size_t l = 1;
 	// string what = "F";
-	size_t count = 10;
+	// size_t count = 10;
 	// // runOnly(net, l, what, network);
 	// runOnlyLayer(net, 1, network, count);
-	for (size_t i = 0; i < 3; i++)
-	{
-		// from layer 0 -> 2
-		// time
-		auto start = std::chrono::system_clock::now();
-		runOnlyLayer(net, i, network, count);
-		auto end = std::chrono::system_clock::now();
-		double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / count;
+	// for (size_t i = 0; i < 3; i++)
+	// {
+	// 	// from layer 0 -> 2
+	// 	// time
+	// 	auto start = std::chrono::system_clock::now();
+	// 	runOnlyLayer(net, i, network, count);
+	// 	auto end = std::chrono::system_clock::now();
+	// 	double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / count;
 
-		// comm
-		uint64_t round = commObject.getRoundsRecv();
-		uint64_t commsize = commObject.getRecv();
-		runOnlyLayer(net, i, network, 1);
-		cout << i << OFFLINE_ON << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
-	}
+	// 	// comm
+	// 	uint64_t round = commObject.getRoundsRecv();
+	// 	uint64_t commsize = commObject.getRecv();
+	// 	runOnlyLayer(net, i, network, 1);
+	// 	cout << i << OFFLINE_ON << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
+	// }
 
 #if (!DEBUG_ONLY)
 	// Run training
 	// cout << "----------------------------------------------" << endl;
 	// cout << "-------------------Run Training---------------" << endl;
+	network += " train";
+	printNetwork(net);
+	train(net, network, dataset);
+
+	// string type = MP_TRAINING ? "mix" : "high";
+	// string off = OFFLINE_ON ? "all" : "on";
+	// cout << network << " " << dataset << " inf " << NUM_ITERATIONS << " " << off << " " << type << endl;
 	// network += " train";
-	// printNetwork(net);
+
+	// uint64_t round = commObject.getRoundsRecv();
+	// uint64_t commsize = commObject.getRecv();
+	// auto start = std::chrono::system_clock::now();
+
 	// train(net, network, dataset);
+
+	// auto end = std::chrono::system_clock::now();
+	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+	// cout << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
 
 	// Run inference (possibly with preloading a network)
 	// cout << "----------------------------------------------" << endl;
 	// cout << "-------------------Run Inference---------------" << endl;
+	// test(PRELOADING, network, net, 2);
+	// string type = MP_TRAINING ? "mix" : "high";
+	// string off = OFFLINE_ON ? "all" : "on";
+	// cout << network << " " << dataset << " inf " << NUM_ITERATIONS << " " << off << " " << type << endl;
 	// network += " test";
-	// test(PRELOADING, network, net);
-
+	// // test time
+	// int cnt = 2;
+	// auto start = std::chrono::system_clock::now();
+	// train(net, network, dataset);
+	// // test(PRELOADING, network, net, cnt);
+	// auto end = std::chrono::system_clock::now();
+	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / cnt;
+	// // comm
+	// uint64_t round = commObject.getRoundsRecv();
+	// uint64_t commsize = commObject.getRecv();
+	// train(net, network, dataset);
+	// // test(PRELOADING, network, net, 1);
+	// cout << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
+	// // cout << cnt << " " << time << endl;
 	end_m(network);
+	// string type = MP_TRAINING ? "mix" : "high";
+	// cout << network << " on " << dataset << " dataset " << (1<<LOG_MINI_BATCH) << " " << type << endl;
 	cout << "----------------------------------------------" << endl;
 	cout << "Run details: " << NUM_OF_PARTIES << "PC (P" << partyNum
 		 << "), " << NUM_ITERATIONS << " iterations, batch size " << MINI_BATCH_SIZE << endl

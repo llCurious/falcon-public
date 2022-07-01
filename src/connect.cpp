@@ -246,10 +246,12 @@ void resume_communication()
 
 void end_communication(string str)
 {
-	cout << "----------------------------------------------" << endl;
+	// cout << "----------------------------------------------" << endl;
+	// cout << ((float)commObject.getRecv() / 1048576) / 2 << " MB"
+	// 	 << "     Rounds " << commObject.getRoundsSent() / 2 << endl;
 	cout << "Communication, " << str << ", P" << partyNum << ": "
-		 << (float)commObject.getSent() / 1000000 << "MB (sent) "
-		 << (float)commObject.getRecv() / 1000000 << "MB (recv)" << endl;
+		 << (float)commObject.getSent() / 1048576 << "MB (sent) "
+		 << (float)commObject.getRecv() / 1048576 << "MB (recv)" << endl;
 	cout << "Rounds, " << str << ", P" << partyNum << ": "
 		 << commObject.getRoundsSent() << "(sends) "
 		 << commObject.getRoundsRecv() << "(recvs)" << endl;
