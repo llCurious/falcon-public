@@ -148,8 +148,8 @@ void NeuralNetwork::computeDelta()
 		{
 			funcSoftmax(*(layers[NUM_LAYERS - 1]->getHighActivation()), softmax_output, rows, columns, false);
 			subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS - 1]->getDelta()), size);
-			print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 30);
-			print_vector(softmax_output, "FLOAT", "predict_softmax", 30);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 10);
+			// print_vector(softmax_output, "FLOAT", "predict_softmax", 10);
 			// print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
 		}
 		else
@@ -160,8 +160,8 @@ void NeuralNetwork::computeDelta()
 			BackwardVectorType diff(size);
 			subtractVectors(*(layers[NUM_LAYERS - 1]->getHighActivation()), outputData, diff, size);
 			*(layers[NUM_LAYERS - 1]->getDelta()) = diff;
-			print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 100);
-			print_vector(outputData, "FLOAT", "label", 30);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 100);
+			// print_vector(outputData, "FLOAT", "label", 10);
 			// print_vector(diff, "FLOAT", "diff", diff.size());
 			// funcTruncate(diff, LOG_MINI_BATCH, size);
 		}
@@ -306,11 +306,11 @@ float NeuralNetwork::getLoss() {
 	{
 		if (sizeof(BackwardType) == 4)
 		{ // int32
-			reconst_label_float[i] = (static_cast<int32_t>(reconst_label[i])) / (float)(1 << FLOAT_PRECISION);
+			reconst_label_float[i] = (static_cast<int32_t>(reconst_label[i])) / (float)(1 << BACKWARD_PRECISION);
 		}
 		else if (sizeof(BackwardType) == 8)
 		{ // int64
-			reconst_label_float[i] = (static_cast<int64_t>(reconst_label[i])) / (float)(1 << FLOAT_PRECISION);
+			reconst_label_float[i] = (static_cast<int64_t>(reconst_label[i])) / (float)(1 << BACKWARD_PRECISION);
 		}
 	}
 
@@ -325,11 +325,11 @@ float NeuralNetwork::getLoss() {
 		{
 			if (sizeof(BackwardType) == 4)
 			{ // int32
-				reconst_y_soft_float[i] = (static_cast<int32_t>(reconst_y_soft[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_soft_float[i] = (static_cast<int32_t>(reconst_y_soft[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			else if (sizeof(BackwardType) == 8)
 			{ // int64
-				reconst_y_soft_float[i] = (static_cast<int64_t>(reconst_y_soft[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_soft_float[i] = (static_cast<int64_t>(reconst_y_soft[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			// avoid log(0) cause nan
 			reconst_y_soft_float[i] = reconst_y_soft_float[i] == 0 ? 1e-6 : reconst_y_soft_float[i];
@@ -340,16 +340,16 @@ float NeuralNetwork::getLoss() {
 	{ // MSE
 		vector<BackwardType> reconst_y(size);
 		vector<float> reconst_y_float(size);
-		funcReconstruct(*(layers[NUM_LAYERS - 1]->getActivation()), reconst_y, size, "NN output", false);
+		funcReconstruct(*(layers[NUM_LAYERS - 1]->getHighActivation()), reconst_y, size, "NN output", false);
 		for (size_t i = 0; i < size; i++)
 		{
 			if (sizeof(BackwardType) == 4)
 			{ // int32
-				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			else if (sizeof(BackwardType) == 8)
 			{ // int64
-				reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			loss += (reconst_y_float[i] - reconst_label_float[i]) * (reconst_y_float[i] - reconst_label_float[i]);
 		}
