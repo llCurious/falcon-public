@@ -28,21 +28,34 @@ DATASET	:= MNIST
 SECURITY:= Semi-honest
 #########################################################################################
 
-
+# CUDA
+USE_CUDA := 0
+ifeq ($(USE_CUDA), 1)
+INC_CUDA=-I '/usr/local/cuda/include' -lcudart -L/usr/local/cuda/lib64 #-I '/usr/include/thrust/system/cuda' -lcudart -L/usr/lib/cuda
+NVCC=/usr/local/cuda/bin/nvcc #/usr/bin/nvcc
+NVCC_OPT=-std=c++11 -arch sm_60
+endif
 
 
 #########################################################################################
 CXX=g++
 SRC_CPP_FILES     := $(wildcard src/*.cpp)
+SRC_CU_FILES      := $(wildcard src/*.cu)
 OBJ_CPP_FILES     := $(wildcard util/*.cpp)
 OBJ_FILES    	  := $(patsubst src/%.cpp, src/%.o,$(SRC_CPP_FILES))
+ifeq ($(USE_CUDA), 1)
+OBJ_FILES    	  += $(patsubst src/%.cu, src/%.o_cu,$(SRC_CU_FILES))
+endif
 OBJ_FILES    	  += $(patsubst util/%.cpp, util/%.o,$(OBJ_CPP_FILES))
 HEADER_FILES       = $(wildcard src/*.h)
 
 # FLAGS := -static -g -O0 -w -std=c++11 -pthread -msse4.1 -maes -msse2 -mpclmul -fpermissive -fpic
 FLAGS := -O3 -w -std=c++11 -pthread -msse4.1 -maes -msse2 -mpclmul -fpic
 LIBS := -lcrypto -lssl
-OBJ_INCLUDES := -I 'lib_eigen/' -I 'util/Miracl/' -I 'util/' -I '$(OPEN_SSL_LOC)/include/'
+OBJ_INCLUDES := -I 'lib_eigen/' -I 'util/Miracl/' -I 'util/' -I '$(OPEN_SSL_LOC)/include/' 
+ifeq ($(USE_CUDA), 1)
+OBJ_INCLUDES += $(INC_CUDA) 
+endif
 BMR_INCLUDES := -L./ -L$(OPEN_SSL_LOC)/lib/ $(OBJ_INCLUDES) 
 
 
@@ -53,13 +66,17 @@ all: Falcon.out ## Just compile the code
 
 Falcon.out: $(OBJ_FILES)
 	g++ $(FLAGS) -o $@ $(OBJ_FILES) $(BMR_INCLUDES) $(LIBS)
-
+	
+# /usr/local/cuda/bin/nvcc -std=c++11 ./src/tools_gpu.cu -o ./src/tools_gpu.o -I 'lib_eigen/' -I 'util/Miracl/' -I 'util/' -I '/data/swagh/conda/include/'
 %.o: %.cpp $(HEADER_FILES)
 	$(CXX) $(FLAGS) -c $< -o $@ $(OBJ_INCLUDES)
-
+ifeq ($(USE_CUDA), 1)
+%.o_cu: %.cu $(HEADER_FILES)
+	$(NVCC) $(NVCC_OPT)  -c $< -o $@ $(BMR_INCLUDES)
+endif
 clean: ## Run this to clean all files
 	rm -rf Falcon.out
-	rm -rf src/*.o util/*.o
+	rm -rf src/*.o src/*.o_cu util/*.o
 
 ################################# Remote runs ##########################################
 terminal: Falcon.out ## Run this to print the output of (only) Party 0 to terminal

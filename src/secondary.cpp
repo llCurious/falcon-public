@@ -1210,8 +1210,8 @@ void loadData(string net, string dataset)
 		{
 			INPUT_SIZE = 32*32*3;
 			LAST_LAYER_SIZE = 10;
-			TRAINING_DATA_SIZE = 8;
-			TEST_DATA_SIZE = 8;	
+			TRAINING_DATA_SIZE = 1000;
+			TEST_DATA_SIZE = 2000;	
 		}
 		else
 			assert(false && "Only AlexNet and VGG16 supported on CIFAR10");
@@ -1237,7 +1237,7 @@ void loadData(string net, string dataset)
 		{
 			INPUT_SIZE = 64*64*3;
 			LAST_LAYER_SIZE = 200;
-			TRAINING_DATA_SIZE = 8;
+			TRAINING_DATA_SIZE = 1000;
 			TEST_DATA_SIZE = 8;			
 		}
 		else

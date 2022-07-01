@@ -34,6 +34,6 @@ public:
 
 	//Getters
 	ForwardVecorType* getActivation() {return &activations;};
-	BackwardVectorType* getDelta() {return &deltas;};
 	BackwardVectorType* getHighActivation() {return &high_activations;};
+	BackwardVectorType* getDelta() {return &deltas;};
 };
