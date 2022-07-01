@@ -365,5 +365,5 @@ void CNNLayer::activation_extension() {
 }
 
 void CNNLayer::weight_extension() {
-	cout << "Not implemented weight extension" << endl;
+	// cout << "Not implemented weight extension" << endl;
 }

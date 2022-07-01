@@ -21,7 +21,7 @@ OPEN_SSL_LOC := /data/swagh/conda
 # RUN_TYPE {localhost, LAN or WAN} 
 RUN_TYPE := localhost
 # NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
-NETWORK := MiniONN
+NETWORK := LeNet
 # Dataset {MNIST, CIFAR10, and ImageNet}
 DATASET	:= MNIST
 # Security {Semi-honest or Malicious} 

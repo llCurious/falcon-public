@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		network = "SecureML";
+		network = "LeNet";
 		dataset = "MNIST";
 		security = "Semi-honest";
 	}
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	// runTest("Debug", "BNLayer", network);
 	// runTest("Bench", "MSExtension", network);
 	// runTest("Bench", "WCExtension", network);
-	runTest("Bench", "BN", network);
+	// runTest("Bench", "BN", network);
 	// runTest("Bench", "Trunc", network);
 	// runTest("Bench", "SoftMax", network);
 	// runTest("Debug", "Square", network);
@@ -108,11 +108,26 @@ int main(int argc, char **argv)
 	// Run forward/backward for single layers
 	//  1. what {F, D, U}
 	// 	2. l {0,1,....NUM_LAYERS-1}
-	size_t l = 1;
-	string what = "F";
+	// size_t l = 1;
+	// string what = "F";
 	size_t count = 10;
-	// runOnly(net, l, what, network);
-	runOnlyLayer(net, l, network, count);
+	// // runOnly(net, l, what, network);
+	// runOnlyLayer(net, 1, network, count);
+	for (size_t i = 0; i < 3; i++)
+	{
+		// from layer 0 -> 2
+		// time
+		auto start = std::chrono::system_clock::now();
+		runOnlyLayer(net, i, network, count);
+		auto end = std::chrono::system_clock::now();
+		double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / count;
+
+		// comm
+		uint64_t round = commObject.getRoundsRecv();
+		uint64_t commsize = commObject.getRecv();
+		runOnlyLayer(net, i, network, 1);
+		cout << i << OFFLINE_ON << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
+	}
 
 #if (!DEBUG_ONLY)
 	// Run training

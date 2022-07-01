@@ -186,7 +186,7 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 				   BACKWARD_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH);
 
 	subtractVectors(weights, deltaWeight, weights, size);
-	cout << "===============================" << endl;
+	// cout << "===============================" << endl;
 	// RSSVectorMyType xx = prevActivations;
 	// print_vector(xx, "FLOAT", "prevActivations", 100);
 	// print_vector(deltas, "FLOAT", "deltas-FC", 100);
@@ -205,5 +205,5 @@ void FCLayer::activation_extension() {
 }
 
 void FCLayer::weight_extension() {
-	cout << "Not implemented weight extension" << endl;
+	// cout << "Not implemented weight extension" << endl;
 }

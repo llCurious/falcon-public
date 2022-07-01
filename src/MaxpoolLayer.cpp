@@ -3,97 +3,96 @@
 #include "Functionalities.h"
 using namespace std;
 
-
-MaxpoolLayer::MaxpoolLayer(MaxpoolConfig* conf, int _layerNum)
-:Layer(_layerNum),
- conf(conf->imageHeight, conf->imageWidth, conf->features, 
-	  conf->poolSize, conf->stride, conf->batchSize),
- activations(conf->batchSize * conf->features * 
-		    (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
- 		    (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
- high_activations(conf->batchSize * conf->features * 
-		    (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
- 		    (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
- deltas(conf->batchSize * conf->features * 
-	   (((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
-	   (((conf->imageHeight - conf->poolSize)/conf->stride) + 1)),
- maxPrime((((conf->imageWidth - conf->poolSize)/conf->stride) + 1) * 
-		 (((conf->imageHeight - conf->poolSize)/conf->stride) + 1) * 
-		 conf->features * conf->batchSize * conf->poolSize * conf->poolSize)
-{};
-
+MaxpoolLayer::MaxpoolLayer(MaxpoolConfig *conf, int _layerNum)
+	: Layer(_layerNum),
+	  conf(conf->imageHeight, conf->imageWidth, conf->features,
+		   conf->poolSize, conf->stride, conf->batchSize),
+	  activations(conf->batchSize * conf->features *
+				  (((conf->imageWidth - conf->poolSize) / conf->stride) + 1) *
+				  (((conf->imageHeight - conf->poolSize) / conf->stride) + 1)),
+	  high_activations(conf->batchSize * conf->features *
+				  (((conf->imageWidth - conf->poolSize) / conf->stride) + 1) *
+				  (((conf->imageHeight - conf->poolSize) / conf->stride) + 1)),
+	  deltas(conf->batchSize * conf->features *
+			 (((conf->imageWidth - conf->poolSize) / conf->stride) + 1) *
+			 (((conf->imageHeight - conf->poolSize) / conf->stride) + 1)),
+	  maxPrime((((conf->imageWidth - conf->poolSize) / conf->stride) + 1) *
+			   (((conf->imageHeight - conf->poolSize) / conf->stride) + 1) *
+			   conf->features * conf->batchSize * conf->poolSize * conf->poolSize){};
 
 void MaxpoolLayer::printLayer()
 {
-	cout << "----------------------------------------------" << endl;  	
-	cout << "(" << layerNum+1 << ") Maxpool Layer\t  " << conf.imageHeight << " x " << conf.imageWidth 
-		 << " x " << conf.features << endl << "\t\t\t  " 
-		 << conf.poolSize << "  \t\t(Pooling Size)" << endl << "\t\t\t  " 
-		 << conf.stride << " \t\t(Stride)" << endl << "\t\t\t  " 
-		 << conf.batchSize << "\t\t(Batch Size)" << endl << "\t\t\t  " 
-		 << conf.features << " x " << (((conf.imageWidth - conf.poolSize)/conf.stride) + 1) << " x " << (((conf.imageHeight - conf.poolSize)/conf.stride) + 1) << "\t(Output)" << endl;
+	cout << "----------------------------------------------" << endl;
+	cout << "(" << layerNum + 1 << ") Maxpool Layer\t  " << conf.imageHeight << " x " << conf.imageWidth
+		 << " x " << conf.features << endl
+		 << "\t\t\t  "
+		 << conf.poolSize << "  \t\t(Pooling Size)" << endl
+		 << "\t\t\t  "
+		 << conf.stride << " \t\t(Stride)" << endl
+		 << "\t\t\t  "
+		 << conf.batchSize << "\t\t(Batch Size)" << endl
+		 << "\t\t\t  "
+		 << conf.features << " x " << (((conf.imageWidth - conf.poolSize) / conf.stride) + 1) << " x " << (((conf.imageHeight - conf.poolSize) / conf.stride) + 1) << "\t(Output)" << endl;
 }
 
-void MaxpoolLayer::forward(const ForwardVecorType& inputActivation)
+void MaxpoolLayer::forward(const ForwardVecorType &inputActivation)
 {
 	log_print("Maxpool.forward");
 
-	size_t B 	= conf.batchSize;
-	size_t iw 	= conf.imageWidth;
-	size_t ih 	= conf.imageHeight;
-	size_t f 	= conf.poolSize;
-	size_t Din 	= conf.features;
-	size_t S 	= conf.stride;
-	size_t ow 	= (((iw-f)/S)+1);
-	size_t oh	= (((ih-f)/S)+1);
+	size_t B = conf.batchSize;
+	size_t iw = conf.imageWidth;
+	size_t ih = conf.imageHeight;
+	size_t f = conf.poolSize;
+	size_t Din = conf.features;
+	size_t S = conf.stride;
+	size_t ow = (((iw - f) / S) + 1);
+	size_t oh = (((ih - f) / S) + 1);
 
-	ForwardVecorType temp1(ow*oh*Din*B*f*f);
+	ForwardVecorType temp1(ow * oh * Din * B * f * f);
 	{
 		size_t sizeBeta = iw;
-		size_t sizeD 	= sizeBeta*ih;
-		size_t sizeB 	= sizeD*Din;
-		size_t counter 	= 0;
+		size_t sizeD = sizeBeta * ih;
+		size_t sizeB = sizeD * Din;
+		size_t counter = 0;
 		for (int b = 0; b < B; ++b)
 			for (size_t r = 0; r < Din; ++r)
-				for (size_t beta = 0; beta < ih-f+1; beta+=S) 
-					for (size_t alpha = 0; alpha < iw-f+1; alpha+=S)
+				for (size_t beta = 0; beta < ih - f + 1; beta += S)
+					for (size_t alpha = 0; alpha < iw - f + 1; alpha += S)
 						for (int q = 0; q < f; ++q)
 							for (int p = 0; p < f; ++p)
 							{
-								temp1[counter++] = 
-									inputActivation[b*sizeB + r*sizeD + 
-										(beta + q)*sizeBeta + (alpha + p)];
+								temp1[counter++] =
+									inputActivation[b * sizeB + r * sizeD +
+													(beta + q) * sizeBeta + (alpha + p)];
 							}
 	}
 
-	//Pooling operation
+	// Pooling operation
 	if (FUNCTION_TIME)
-		cout << "funcMaxpool: " << funcTime(funcMaxpool<ForwardVecorType>, temp1, activations, maxPrime, ow*oh*Din*B, f*f) << endl;
+		cout << "funcMaxpool: " << funcTime(funcMaxpool<ForwardVecorType>, temp1, activations, maxPrime, ow * oh * Din * B, f * f) << endl;
 	else
-		funcMaxpool(temp1, activations, maxPrime, ow*oh*Din*B, f*f);
-	
+		funcMaxpool(temp1, activations, maxPrime, ow * oh * Din * B, f * f);
 }
 
-
-void MaxpoolLayer::computeDelta(BackwardVectorType& prevDelta)
+void MaxpoolLayer::computeDelta(BackwardVectorType &prevDelta)
 {
 	log_print("Maxpool.computeDelta");
 
-	size_t B 	= conf.batchSize;
-	size_t iw 	= conf.imageWidth;
-	size_t ih 	= conf.imageHeight;
-	size_t f 	= conf.poolSize;
-	size_t Din 	= conf.features;
-	size_t S 	= conf.stride;
-	size_t ow 	= (((iw-f)/S)+1);
-	size_t oh	= (((ih-f)/S)+1);
+	size_t B = conf.batchSize;
+	size_t iw = conf.imageWidth;
+	size_t ih = conf.imageHeight;
+	size_t f = conf.poolSize;
+	size_t Din = conf.features;
+	size_t S = conf.stride;
+	size_t ow = (((iw - f) / S) + 1);
+	size_t oh = (((ih - f) / S) + 1);
 
-	RSSVectorSmallType temp1(iw*ih*Din*B);	//Contains maxPrime reordered
-	BackwardVectorType temp2(iw*ih*Din*B);		//Contains Delta reordered
+	RSSVectorSmallType temp1(iw * ih * Din * B); // Contains maxPrime reordered
+	BackwardVectorType temp2(iw * ih * Din * B); // Contains Delta reordered
 	{
-		size_t sizeY 	= iw;
-		size_t sizeD 	= sizeY*ih;
-		size_t sizeB 	= sizeD*Din;
+		size_t sizeY = iw;
+		size_t sizeD = sizeY * ih;
+		size_t sizeB = sizeD * Din;
 		size_t counter1 = 0;
 		size_t counter2 = 0;
 
@@ -106,13 +105,13 @@ void MaxpoolLayer::computeDelta(BackwardVectorType& prevDelta)
 						{
 							for (int p = 0; p < f; ++p)
 							{
-								temp1[b*sizeB + r*sizeD + 
-									(y*S + q)*sizeY + (x*S + p)] = 
-								maxPrime[counter1++];
+								temp1[b * sizeB + r * sizeD +
+									  (y * S + q) * sizeY + (x * S + p)] =
+									maxPrime[counter1++];
 
-								temp2[b*sizeB + r*sizeD + 
-									(y*S + q)*sizeY + (x*S + p)] = 
-								deltas[counter2];
+								temp2[b * sizeB + r * sizeD +
+									  (y * S + q) * sizeY + (x * S + p)] =
+									deltas[counter2];
 							}
 						}
 						counter2++;
@@ -120,26 +119,28 @@ void MaxpoolLayer::computeDelta(BackwardVectorType& prevDelta)
 	}
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(static_cast<void(*)(const BackwardVectorType &, const RSSVectorSmallType &,
-					  BackwardVectorType &, size_t)>(funcSelectShares), temp2, temp1, prevDelta, iw*ih*Din*B) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void (*)(const BackwardVectorType &, const RSSVectorSmallType &, BackwardVectorType &, size_t)>(funcSelectShares), temp2, temp1, prevDelta, iw * ih * Din * B) << endl;
 	else
-		funcSelectShares(temp2, temp1, prevDelta, iw*ih*Din*B);
+		funcSelectShares(temp2, temp1, prevDelta, iw * ih * Din * B);
 }
 
-void MaxpoolLayer::updateEquations(const BackwardVectorType& prevActivations)
+void MaxpoolLayer::updateEquations(const BackwardVectorType &prevActivations)
 {
 	log_print("Maxpool.updateEquations");
 }
 
-void MaxpoolLayer::weight_reduction() {
+void MaxpoolLayer::weight_reduction()
+{
 	// funcWeightReduction(low_weights, weights, weights.size());
 	// funcWeightReduction(low_biases, biases, biases.size());
 }
 
-void MaxpoolLayer::activation_extension() {
+void MaxpoolLayer::activation_extension()
+{
 	// cout << "<<< Max Pooling >>> No need to perform activation extension." << endl;
 }
 
-void MaxpoolLayer::weight_extension() {
+void MaxpoolLayer::weight_extension()
+{
 	// cout << "Not implemented weight extension" << endl;
 }

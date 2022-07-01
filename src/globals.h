@@ -11,7 +11,7 @@
 #include <bitset>
 #include <iostream>
 
-#define MP_TRAINING false
+#define MP_TRAINING true
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
