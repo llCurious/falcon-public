@@ -131,5 +131,6 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 #define OFFLINE_ON false
 #define PRE_LOAD false
 #define IS_FALCON false
+#define USE_GPU true
 
 #endif

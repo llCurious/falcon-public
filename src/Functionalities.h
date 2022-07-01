@@ -4,6 +4,7 @@
 #include "connect.h"
 #include "globals.h"
 #include <tuple>
+#include "tools_gpu.h"
 // #include "BooleanFunc.h"
 using namespace std;
 
@@ -1731,9 +1732,11 @@ void funcMatMul(const Vec &a, const Vec &b, Vec &c,
 	size_t final_size = rows * columns;
 	vector<computeType> temp3(final_size, 0), diffReconst(final_size, 0);
 
-	matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
-	matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
-
+	#if (USE_GPU)
+		matrixMultRSS_Cuda(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
+	#else
+		matrixMultRSS(a, b, temp3, rows, common_dim, columns, transpose_a, transpose_b);
+	#endif
 	Vec r(final_size), rPrime(final_size), rmsb(final_size);
 	if (IS_FALCON)
 	{
