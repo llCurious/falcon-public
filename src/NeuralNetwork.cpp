@@ -340,16 +340,16 @@ float NeuralNetwork::getLoss() {
 	{ // MSE
 		vector<BackwardType> reconst_y(size);
 		vector<float> reconst_y_float(size);
-		funcReconstruct(*(layers[NUM_LAYERS - 1]->getActivation()), reconst_y, size, "NN output", false);
+		funcReconstruct(*(layers[NUM_LAYERS - 1]->getHighActivation()), reconst_y, size, "NN output", false);
 		for (size_t i = 0; i < size; i++)
 		{
 			if (sizeof(BackwardType) == 4)
 			{ // int32
-				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			else if (sizeof(BackwardType) == 8)
 			{ // int64
-				reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1 << FLOAT_PRECISION);
+				reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1 << BACKWARD_PRECISION);
 			}
 			loss += (reconst_y_float[i] - reconst_label_float[i]) * (reconst_y_float[i] - reconst_label_float[i]);
 		}
