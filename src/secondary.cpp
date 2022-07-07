@@ -68,7 +68,7 @@ void train(NeuralNetwork* net, string network, string dataset)
 	float loss = 0, acc = 0;
 	string default_path = "output/" + network + "_" + dataset;
 	ofstream accF(default_path + "_acc.txt"), lossF(default_path + "_loss.txt");
-	cout << default_path + "_acc.txt" << endl;
+	// cout << default_path + "_acc.txt" << endl;
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
 		// cout << "----------------------------------" << endl;  
