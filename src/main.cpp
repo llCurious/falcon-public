@@ -34,8 +34,14 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		network = "SecureML";
-		dataset = "MNIST";
+		// network = "LeNet";
+		// network = "SecureML";
+		// network = "MiniONN";
+		// network = "VGG16";
+		network = "AlexNet";
+		// dataset = "MNIST";
+		dataset = "CIFAR10";
+		// dataset = "ImageNet";
 		security = "Semi-honest";
 	}
 	selectNetwork(network, dataset, security, config);
@@ -134,47 +140,57 @@ int main(int argc, char **argv)
 	// Run training
 	// cout << "----------------------------------------------" << endl;
 	// cout << "-------------------Run Training---------------" << endl;
+	// network += " train";
+	// printNetwork(net);
+	// train(net, network, dataset);
+	string isgpu = USE_GPU ? "gpu" : "nogpu";
+	string type = MP_TRAINING ? "mix" : "high";
+	string off = OFFLINE_ON ? "all" : "on";
+	cout << network << " " << dataset << " train " << NUM_ITERATIONS << " " << (1 << LOG_MINI_BATCH) << " " << off << " " << type << " " << isgpu << endl;
 	network += " train";
-	printNetwork(net);
+
+	uint64_t round = commObject.getRoundsRecv();
+	uint64_t commsize = commObject.getRecv();
+	auto start = std::chrono::system_clock::now();
+
 	train(net, network, dataset);
 
-	// string type = MP_TRAINING ? "mix" : "high";
-	// string off = OFFLINE_ON ? "all" : "on";
-	// cout << network << " " << dataset << " inf " << NUM_ITERATIONS << " " << off << " " << type << endl;
-	// network += " train";
-
-	// uint64_t round = commObject.getRoundsRecv();
-	// uint64_t commsize = commObject.getRecv();
-	// auto start = std::chrono::system_clock::now();
-
-	// train(net, network, dataset);
-
-	// auto end = std::chrono::system_clock::now();
-	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
-	// cout << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
+	auto end = std::chrono::system_clock::now();
+	double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6);
+	cout << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
 
 	// Run inference (possibly with preloading a network)
 	// cout << "----------------------------------------------" << endl;
 	// cout << "-------------------Run Inference---------------" << endl;
 	// test(PRELOADING, network, net, 2);
+
 	// string type = MP_TRAINING ? "mix" : "high";
 	// string off = OFFLINE_ON ? "all" : "on";
-	// cout << network << " " << dataset << " inf " << NUM_ITERATIONS << " " << off << " " << type << endl;
+	// cout << network << " " << dataset << " inf " << (1 << LOG_MINI_BATCH) << " " << off << " " << type << endl;
 	// network += " test";
 	// // test time
-	// int cnt = 2;
-	// auto start = std::chrono::system_clock::now();
-	// train(net, network, dataset);
+	// // int cnt = 2;
+	// // auto start = std::chrono::system_clock::now();
 	// // test(PRELOADING, network, net, cnt);
-	// auto end = std::chrono::system_clock::now();
-	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / cnt;
+	// // auto end = std::chrono::system_clock::now();
+	// // double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / cnt;
 	// // comm
 	// uint64_t round = commObject.getRoundsRecv();
 	// uint64_t commsize = commObject.getRecv();
-	// train(net, network, dataset);
-	// // test(PRELOADING, network, net, 1);
+	// auto start = std::chrono::system_clock::now();
+	// test(PRELOADING, network, net, 1);
+	// auto end = std::chrono::system_clock::now();
+	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) ;
 	// cout << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
-	// // cout << cnt << " " << time << endl;
+	// cout << cnt << " " << time << endl;
+
+	// int cnt = 2;
+	// auto start = std::chrono::system_clock::now();
+	// test(PRELOADING, network, net, cnt);
+	// auto end = std::chrono::system_clock::now();
+	// double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / cnt;
+	// cout << time << endl;
+
 	end_m(network);
 	// string type = MP_TRAINING ? "mix" : "high";
 	// cout << network << " on " << dataset << " dataset " << (1<<LOG_MINI_BATCH) << " " << type << endl;
@@ -188,7 +204,7 @@ int main(int argc, char **argv)
 
 	/****************************** CLEAN-UP ******************************/
 	// delete aes_indep;
-	// delete aes_next;
+	// delete aes_n
 	// delete aes_prev;
 	delete config;
 	delete net;
