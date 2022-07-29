@@ -65,8 +65,7 @@ void ReLULayer::weight_reduction() {
 }
 
 void ReLULayer::activation_extension() {
-	// cout << "<<< ReLU >>> No need to perform activation extension." << endl;
-	// funcActivationExtension(high_activations, activations, activations.size());
+	funcActivationExtension(high_activations, activations, activations.size());
 }
 
 void ReLULayer::weight_extension() {
