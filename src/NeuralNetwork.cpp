@@ -306,7 +306,7 @@ float NeuralNetwork::getLoss() {
 	{
 		if (sizeof(BackwardType) == 4)
 		{ // int32
-			reconst_label_float[i] = (static_cast<int32_t>(reconst_label[i])) / (float)(1 << BACKWARD_PRECISION);
+			reconst_label_float[i] = (static_cast<int32_t>(reconst_label[i])) / (float)(1 << FORWARD_PRECISION);
 		}
 		else if (sizeof(BackwardType) == 8)
 		{ // int64
@@ -325,7 +325,7 @@ float NeuralNetwork::getLoss() {
 		{
 			if (sizeof(BackwardType) == 4)
 			{ // int32
-				reconst_y_soft_float[i] = (static_cast<int32_t>(reconst_y_soft[i])) / (float)(1 << BACKWARD_PRECISION);
+				reconst_y_soft_float[i] = (static_cast<int32_t>(reconst_y_soft[i])) / (float)(1 << FORWARD_PRECISION);
 			}
 			else if (sizeof(BackwardType) == 8)
 			{ // int64
@@ -345,7 +345,7 @@ float NeuralNetwork::getLoss() {
 		{
 			if (sizeof(BackwardType) == 4)
 			{ // int32
-				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << BACKWARD_PRECISION);
+				reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1 << FORWARD_PRECISION);
 			}
 			else if (sizeof(BackwardType) == 8)
 			{ // int64
