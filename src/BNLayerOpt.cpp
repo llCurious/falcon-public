@@ -65,7 +65,9 @@ void BNLayerOpt::forward(const ForwardVecorType &inputActivation)
     // } else {
 
     // }
-    // cout << "forward... " << size << " " << m << " " << B << " " << endl;
+    funcMPBatchNorm(inputActivation, high_norm_x, high_inv_sqrt, gamma, beta, activations, B, m);
+    cout << "forward... " << size << " " << m << " " << B << " " << endl;
+    /**
     ForwardType eps = (1e-5) * (1l << FORWARD_PRECISION);
 
     ForwardVecorType var_eps(m, make_pair(0, 0));
@@ -148,6 +150,7 @@ void BNLayerOpt::forward(const ForwardVecorType &inputActivation)
     for (int i = 0; i < B; ++i)
         for (int j = 0; j < m; ++j)
             activations[i * m + j] = activations[i * m + j] + low_beta[j];
+    **/
 }
 
 // void BNLayerOpt::backward(const RSSVectorMyType &input_grad)
