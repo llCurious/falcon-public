@@ -1,4 +1,8 @@
-
+/****
+ * 
+ * Note: This refers to the implementation in https://github.com/HuangPZ/falcon-public
+ * 
+ * ***/
 #include "tools_gpu.h"
 
 #if (USE_GPU)
@@ -80,7 +84,7 @@ void matrixMultRSS_Cuda(const RSSVectorLowType &a, const RSSVectorLowType &b, ve
 
 	cudaMemcpy(d_a, &a[0], size_a, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, &b[0], size_b, cudaMemcpyHostToDevice);
-	int THREADS = 64;
+	int THREADS = 32;
 	dim3 threads(min(THREADS,(int)rows), min(THREADS,(int)columns));
 	dim3 blocks((rows+THREADS-1)/THREADS, (columns+THREADS-1)/THREADS);
 	matrixMulGPU<<<blocks, threads>>>(d_a, d_b, d_c, common_dim,rows,columns,transpose_a,transpose_b);
@@ -158,7 +162,7 @@ void matrixMultRSS_Cuda(const RSSVectorHighType &a, const RSSVectorHighType &b, 
 
 	cudaMemcpy(d_a, &a[0], size_a, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, &b[0], size_b, cudaMemcpyHostToDevice);
-	int THREADS = 64;
+	int THREADS = 32;
 	dim3 threads(min(THREADS,(int)rows), min(THREADS,(int)columns));
 	dim3 blocks((rows+THREADS-1)/THREADS, (columns+THREADS-1)/THREADS);
 	matrixMulGPU<<<blocks, threads>>>(d_a, d_b, d_c, common_dim,rows,columns,transpose_a,transpose_b);

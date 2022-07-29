@@ -66,9 +66,9 @@ void train(NeuralNetwork* net, string network, string dataset)
 	log_print("train");
 
 	float loss = 0, acc = 0;
-	string default_path = "output/" + network + "_" + dataset;
-	ofstream accF(default_path + "_acc.txt"), lossF(default_path + "_loss.txt");
-	cout << default_path + "_acc.txt" << endl;
+	string default_path = "output/" + network + (USE_GPU ? "_GPU" : "_CPU") + (MP_TRAINING ? "_Mixed" : "_Full") + "_" + dataset;
+	ofstream accF(default_path + "_acc_10epoch.txt"), lossF(default_path + "_loss_10epoch.txt");
+	cout << default_path + "_acc_10epoch.txt" << endl;
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
 		cout << "----------------------------------" << endl;  
@@ -99,7 +99,7 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 	//counter[0]: Correct samples, counter[1]: total samples
 	vector<size_t> counter(2,0);
 
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < 300; ++i)
 	{
 		// if (!PRELOADING)
 			readMiniBatch(net, "TESTING");
@@ -163,7 +163,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 	//Set to true if you want the zeros files generated.
 	bool ZEROS = false;
 
-	if (which_network(network).compare("SecureML") == 0)
+	if (which_network(network).compare("SecureML_init") == 0)
 	{
 		string temp = "SecureML";
 		/************************** Input **********************************/
@@ -439,7 +439,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias3_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("MiniONN") == 0)
+	else if (which_network(network).compare("MiniONN_init") == 0)
 	{
 		string temp = "MiniONN";
 		/************************** Input **********************************/
@@ -609,7 +609,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias4_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("LeNet") == 0)
+	else if (which_network(network).compare("LeNet_init") == 0)
 	{
 		string temp = "LeNet";
 		/************************** Input **********************************/
@@ -779,7 +779,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias4_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("AlexNet") == 0)
+	else if (which_network(network).compare("AlexNet_Init") == 0)
 	{
 		if (dataset.compare("CIFAR10") == 0) {
 			string temp = "AlexNet_10";
@@ -1177,6 +1177,612 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 		else if (dataset.compare("ImageNet") == 0) {
 
 		}
+	} else if (which_network(network).compare("VGG16") == 0)
+	{
+		if (dataset.compare("CIFAR10") == 0) {
+			string temp = "VGG16_10";
+			// int offset1 = USE_BN ? 0 : -1, offset2 = USE_BN ? 0 : -2;
+			/************************** Input **********************************/
+			// string path_input_1 = default_path+"input_"+to_string(partyNum);
+			// string path_input_2 = default_path+"input_"+to_string(nextParty(partyNum));
+			// ifstream f_input_1(path_input_1), f_input_2(path_input_2);
+
+			// for (int i = 0; i < INPUT_SIZE * MINI_BATCH_SIZE; ++i)
+			// {
+			// 	f_input_1 >> temp_next; f_input_2 >> temp_prev;
+			// 	net->inputData[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			// }
+			// f_input_1.close(); f_input_2.close();
+			// if (ZEROS)
+			// {
+			// 	generate_zeros("input_1", 784*128, temp);
+			// 	generate_zeros("input_2", 784*128, temp);
+			// }
+
+			// print_vector(net->inputData, "FLOAT", "inputData:", 784);
+			default_path = default_path + dataset + "/";
+			cout << default_path << endl;
+			/************************** Weight1 **********************************/
+			string path_weight1_1 = default_path+"cnn1_weight_"+to_string(partyNum);
+			string path_weight1_2 = default_path+"cnn1_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight1_1(path_weight1_1), f_weight1_2(path_weight1_2);
+
+			for (int row = 0; row < 3*3*3*64; ++row)
+			{
+				f_weight1_1 >> temp_next; f_weight1_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[0])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight1_1.close(); f_weight1_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn1_weight_1", 3*3*3*64, temp);
+				generate_zeros("cnn1_weight_2", 3*3*3*64, temp);
+			}
+
+			/************************** Bias1 **********************************/
+			string path_bias1_1 = default_path+"cnn1_bias_"+to_string(partyNum);
+			string path_bias1_2 = default_path+"cnn1_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias1_1(path_bias1_1), f_bias1_2(path_bias1_2);
+
+			for (int i = 0; i < 64; ++i)
+			{
+				f_bias1_1 >> temp_next; f_bias1_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[0])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias1_1.close(); f_bias1_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn1_bias_1", 64, temp);
+				generate_zeros("cnn1_bias_2", 64, temp);
+			}
+			print_vector((*((CNNLayer*)net->layers[0])->getBias()), "FLOAT", "CNN1 bias", 64);
+
+
+			/************************** Weight2 **********************************/
+			string path_weight2_1 = default_path+"cnn2_weight_"+to_string(partyNum);
+			string path_weight2_2 = default_path+"cnn2_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight2_1(path_weight2_1), f_weight2_2(path_weight2_2);
+
+
+			for (int row = 0; row < 64*3*3*64; ++row)
+			{
+				f_weight2_1 >> temp_next; f_weight2_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[2])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight2_1.close(); f_weight2_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn2_weight_1", 64*3*3*64, temp);
+				generate_zeros("cnn2_weight_2", 64*3*3*64, temp);
+			}
+
+			/************************** Bias2 **********************************/
+			string path_bias2_1 = default_path+"cnn2_bias_"+to_string(partyNum);
+			string path_bias2_2 = default_path+"cnn2_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias2_1(path_bias2_1), f_bias2_2(path_bias2_2);
+
+			for (int i = 0; i < 64; ++i)
+			{
+				f_bias2_1 >> temp_next; f_bias2_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[2])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias2_1.close(); f_bias2_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn2_bias_1", 64, temp);
+				generate_zeros("cnn2_bias_2", 64, temp);
+			}
+			print_vector((*((CNNLayer*)net->layers[2])->getBias()), "FLOAT", "CNN2 bias", 64);
+
+
+			/************************** Weight3 **********************************/
+			string path_weight3_1 = default_path+"cnn3_weight_"+to_string(partyNum);
+			string path_weight3_2 = default_path+"cnn3_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight3_1(path_weight3_1), f_weight3_2(path_weight3_2);
+
+			for (int row = 0; row < 64*3*3*128; ++row)
+			{
+				f_weight3_1 >> temp_next; f_weight3_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[5])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight3_1.close(); f_weight3_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn3_weight_1", 64*3*3*128, temp);
+				generate_zeros("cnn3_weight_2", 64*3*3*128, temp);
+			}
+
+			/************************** Bias3 **********************************/
+			string path_bias3_1 = default_path+"cnn3_bias_"+to_string(partyNum);
+			string path_bias3_2 = default_path+"cnn3_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias3_1(path_bias3_1), f_bias3_2(path_bias3_2);
+
+			for (int i = 0; i < 128; ++i)
+			{
+				f_bias3_1 >> temp_next; f_bias3_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[5])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias3_1.close(); f_bias3_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn3_bias_1", 128, temp);
+				generate_zeros("cnn3_bias_2", 128, temp);
+			}
+
+			/************************** Weight4 **********************************/
+			string path_weight4_1 = default_path+"cnn4_weight_"+to_string(partyNum);
+			string path_weight4_2 = default_path+"cnn4_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight4_1(path_weight4_1), f_weight4_2(path_weight4_2);
+
+			for (int row = 0; row < 128*3*3*128; ++row)
+			{
+				f_weight4_1 >> temp_next; f_weight4_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[7])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight4_1.close(); f_weight4_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn4_weight_1", 128*3*3*128, temp);
+				generate_zeros("cnn4_weight_2", 128*3*3*128, temp);
+			}
+
+			/************************** Bias4 **********************************/
+			string path_bias4_1 = default_path+"cnn4_bias_"+to_string(partyNum);
+			string path_bias4_2 = default_path+"cnn4_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias4_1(path_bias4_1), f_bias4_2(path_bias4_2);
+
+			for (int i = 0; i < 128; ++i)
+			{
+				f_bias4_1 >> temp_next; f_bias4_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[7])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias4_1.close(); f_bias4_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn4_bias_1", 128, temp);
+				generate_zeros("cnn4_bias_2", 128, temp);
+			}
+
+			/************************** Weight5 **********************************/
+			string path_weight5_1 = default_path+"cnn5_weight_"+to_string(partyNum);
+			string path_weight5_2 = default_path+"cnn5_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight5_1(path_weight5_1), f_weight5_2(path_weight5_2);
+
+			for (int row = 0; row < 128*3*3*256; ++row)
+			{
+				f_weight5_1 >> temp_next; f_weight5_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[10])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight5_1.close(); f_weight5_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn5_weight_1", 128*3*3*256, temp);
+				generate_zeros("cnn5_weight_2", 128*3*3*256, temp);
+			}
+
+			/************************** Bias5 **********************************/
+			string path_bias5_1 = default_path+"cnn5_bias_"+to_string(partyNum);
+			string path_bias5_2 = default_path+"cnn5_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias5_1(path_bias5_1), f_bias5_2(path_bias5_2);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				f_bias5_1 >> temp_next; f_bias5_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[10])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias5_1.close(); f_bias5_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn5_bias_1", 256, temp);
+				generate_zeros("cnn5_bias_2", 256, temp);
+			}
+
+			/************************** Weight6 **********************************/
+			string path_weight6_1 = default_path+"cnn6_weight_"+to_string(partyNum);
+			string path_weight6_2 = default_path+"cnn6_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight6_1(path_weight6_1), f_weight6_2(path_weight6_2);
+
+			for (int row = 0; row < 256*3*3*256; ++row)
+			{
+				f_weight6_1 >> temp_next; f_weight6_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[12])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight6_1.close(); f_weight6_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn6_weight_1", 256*3*3*256, temp);
+				generate_zeros("cnn6_weight_2", 256*3*3*256, temp);
+			}
+
+			/************************** Bias6 **********************************/
+			string path_bias6_1 = default_path+"cnn6_bias_"+to_string(partyNum);
+			string path_bias6_2 = default_path+"cnn6_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias6_1(path_bias6_1), f_bias6_2(path_bias6_1);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				f_bias6_1 >> temp_next; f_bias6_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[12])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias6_1.close(); f_bias6_1.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn6_bias_1", 256, temp);
+				generate_zeros("cnn6_bias_2", 256, temp);
+			}
+
+			/************************** Weight7 **********************************/
+			string path_weight7_1 = default_path+"cnn7_weight_"+to_string(partyNum);
+			string path_weight7_2 = default_path+"cnn7_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight7_1(path_weight7_1), f_weight7_2(path_weight7_2);
+
+			for (int row = 0; row < 256*3*3*256; ++row)
+			{
+				f_weight7_1 >> temp_next; f_weight7_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[14])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight7_1.close(); f_weight7_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn7_weight_1", 256*3*3*256, temp);
+				generate_zeros("cnn7_weight_2", 256*3*3*256, temp);
+			}
+
+			/************************** Bias7 **********************************/
+			string path_bias7_1 = default_path+"cnn7_bias_"+to_string(partyNum);
+			string path_bias7_2 = default_path+"cnn7_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias7_1(path_bias7_1), f_bias7_2(path_bias7_2);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				f_bias7_1 >> temp_next; f_bias7_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[14])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias7_1.close(); f_bias7_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn7_bias_1", 256, temp);
+				generate_zeros("cnn7_bias_2", 256, temp);
+			}
+
+			/************************** Weight8 **********************************/
+			string path_weight8_1 = default_path+"cnn8_weight_"+to_string(partyNum);
+			string path_weight8_2 = default_path+"cnn8_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight8_1(path_weight8_1), f_weight8_2(path_weight8_2);
+
+			for (int row = 0; row < 256*3*3*512; ++row)
+			{
+				f_weight8_1 >> temp_next; f_weight8_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[17])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight8_1.close(); f_weight8_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn8_weight_1", 256*3*3*512, temp);
+				generate_zeros("cnn8_weight_2", 256*3*3*512, temp);
+			}
+
+			/************************** Bias8 **********************************/
+			string path_bias8_1 = default_path+"cnn8_bias_"+to_string(partyNum);
+			string path_bias8_2 = default_path+"cnn8_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias8_1(path_bias8_1), f_bias8_2(path_bias8_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias8_1 >> temp_next; f_bias8_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[17])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias8_1.close(); f_bias8_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn8_bias_1", 512, temp);
+				generate_zeros("cnn8_bias_2", 512, temp);
+			}
+
+			/************************** Weight9 **********************************/
+			string path_weight9_1 = default_path+"cnn9_weight_"+to_string(partyNum);
+			string path_weight9_2 = default_path+"cnn9_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight9_1(path_weight9_1), f_weight9_2(path_weight9_2);
+
+			for (int row = 0; row < 512*3*3*512; ++row)
+			{
+				f_weight9_1 >> temp_next; f_weight9_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[19])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight9_1.close(); f_weight9_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn9_weight_1", 512*3*3*512, temp);
+				generate_zeros("cnn9_weight_2", 512*3*3*512, temp);
+			}
+
+			/************************** Bias9 **********************************/
+			string path_bias9_1 = default_path+"cnn9_bias_"+to_string(partyNum);
+			string path_bias9_2 = default_path+"cnn9_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias9_1(path_bias9_1), f_bias9_2(path_bias9_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias9_1 >> temp_next; f_bias9_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[19])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias9_1.close(); f_bias9_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn9_bias_1", 512, temp);
+				generate_zeros("cnn9_bias_2", 512, temp);
+			}
+
+			/************************** Weight10 **********************************/
+			string path_weight10_1 = default_path+"cnn10_weight_"+to_string(partyNum);
+			string path_weight10_2 = default_path+"cnn10_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight10_1(path_weight10_1), f_weight10_2(path_weight10_2);
+
+			for (int row = 0; row < 512*3*3*512; ++row)
+			{
+				f_weight10_1 >> temp_next; f_weight10_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[21])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight10_1.close(); f_weight10_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn10_weight_1", 512*3*3*512, temp);
+				generate_zeros("cnn10_weight_2", 512*3*3*512, temp);
+			}
+
+			/************************** Bias10 **********************************/
+			string path_bias10_1 = default_path+"cnn10_bias_"+to_string(partyNum);
+			string path_bias10_2 = default_path+"cnn10_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias10_1(path_bias10_1), f_bias10_2(path_bias10_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias10_1 >> temp_next; f_bias10_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[21])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias10_1.close(); f_bias10_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn10_bias_1", 512, temp);
+				generate_zeros("cnn10_bias_2", 512, temp);
+			}
+
+			/************************** Weight11 **********************************/
+			string path_weight11_1 = default_path+"cnn11_weight_"+to_string(partyNum);
+			string path_weight11_2 = default_path+"cnn11_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight11_1(path_weight11_1), f_weight11_2(path_weight11_2);
+
+			for (int row = 0; row < 512*3*3*512; ++row)
+			{
+				f_weight11_1 >> temp_next; f_weight11_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[24])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight11_1.close(); f_weight11_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn11_weight_1", 512*3*3*512, temp);
+				generate_zeros("cnn11_weight_2", 512*3*3*512, temp);
+			}
+
+			/************************** Bias11 **********************************/
+			string path_bias11_1 = default_path+"cnn11_bias_"+to_string(partyNum);
+			string path_bias11_2 = default_path+"cnn11_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias11_1(path_bias11_1), f_bias11_2(path_bias11_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias11_1 >> temp_next; f_bias11_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[24])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias11_1.close(); f_bias11_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn11_bias_1", 512, temp);
+				generate_zeros("cnn11_bias_2", 512, temp);
+			}
+
+			/************************** Weight12 **********************************/
+			string path_weight12_1 = default_path+"cnn12_weight_"+to_string(partyNum);
+			string path_weight12_2 = default_path+"cnn12_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight12_1(path_weight12_1), f_weight12_2(path_weight12_2);
+
+			for (int row = 0; row < 512*3*3*512; ++row)
+			{
+				f_weight12_1 >> temp_next; f_weight12_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[26])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight12_1.close(); f_weight12_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn12_weight_1", 512*3*3*512, temp);
+				generate_zeros("cnn12_weight_2", 512*3*3*512, temp);
+			}
+
+			/************************** Bias12 **********************************/
+			string path_bias12_1 = default_path+"cnn12_bias_"+to_string(partyNum);
+			string path_bias12_2 = default_path+"cnn12_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias12_1(path_bias12_1), f_bias12_2(path_bias12_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias12_1 >> temp_next; f_bias12_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[26])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias12_1.close(); f_bias12_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn12_bias_1", 512, temp);
+				generate_zeros("cnn12_bias_2", 512, temp);
+			}
+
+			/************************** Weight13 **********************************/
+			string path_weight13_1 = default_path+"cnn13_weight_"+to_string(partyNum);
+			string path_weight13_2 = default_path+"cnn13_weight_"+to_string(nextParty(partyNum));
+			ifstream f_weight13_1(path_weight13_1), f_weight13_2(path_weight13_2);
+
+			for (int row = 0; row < 512*3*3*512; ++row)
+			{
+				f_weight13_1 >> temp_next; f_weight13_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[28])->getWeights())[row] = 
+						std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_weight13_1.close(); f_weight13_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn13_weight_1", 512*3*3*512, temp);
+				generate_zeros("cnn13_weight_2", 512*3*3*512, temp);
+			}
+
+			/************************** Bias13 **********************************/
+			string path_bias13_1 = default_path+"cnn13_bias_"+to_string(partyNum);
+			string path_bias13_2 = default_path+"cnn13_bias_"+to_string(nextParty(partyNum));
+			ifstream f_bias13_1(path_bias13_1), f_bias13_2(path_bias13_2);
+
+			for (int i = 0; i < 512; ++i)
+			{
+				f_bias13_1 >> temp_next; f_bias13_2 >> temp_prev;
+				(*((CNNLayer*)net->layers[28])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_bias13_1.close(); f_bias13_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("cnn13_bias_1", 512, temp);
+				generate_zeros("cnn13_bias_2", 512, temp);
+			}
+
+			/************************** FC Weight1 **********************************/
+			string path_fc1_weight_1 = default_path+"fc1_weight_"+to_string(partyNum);
+			string path_fc1_weight_2 = default_path+"fc1_weight_"+to_string(nextParty(partyNum));
+			ifstream f_fc1_weight_1(path_fc1_weight_1), f_fc1_weight_2(path_fc1_weight_2);
+
+			for (int column = 0; column < 256; ++column)
+			{
+				for (int row = 0; row < 512; ++row)
+				{
+					f_fc1_weight_1 >> temp_next; f_fc1_weight_2 >> temp_prev;
+					(*((FCLayer*)net->layers[31])->getWeights())[256*row + column] = 
+							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+			}
+			f_fc1_weight_1.close(); f_fc1_weight_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc1_weight_1", 512*256, temp);
+				generate_zeros("fc1_weight_2", 512*256, temp);
+			}
+
+
+			/************************** FC Bias1 **********************************/
+			string path_fc1_bias_1 = default_path+"fc1_bias_"+to_string(partyNum);
+			string path_fc1_bias_2 = default_path+"fc1_bias_"+to_string(nextParty(partyNum));
+			ifstream f_fc1_bias_1(path_fc1_bias_1), f_fc1_bias_2(path_fc1_bias_2);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				f_fc1_bias_1 >> temp_next; f_fc1_bias_2 >> temp_prev;
+				(*((FCLayer*)net->layers[31])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_fc1_bias_1.close(); f_fc1_bias_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc1_bias_1", 256, temp);
+				generate_zeros("fc1_bias_2", 256, temp);
+			}
+
+			/************************** FC Weight2 **********************************/
+			string path_fc2_weight_1 = default_path+"fc2_weight_"+to_string(partyNum);
+			string path_fc2_weight_2 = default_path+"fc2_weight_"+to_string(nextParty(partyNum));
+			ifstream f_fc2_weight_1(path_fc2_weight_1), f_fc2_weight_2(path_fc2_weight_2);
+
+			for (int column = 0; column < 256; ++column)
+			{
+				for (int row = 0; row < 256; ++row)
+				{
+					f_fc2_weight_1 >> temp_next; f_fc2_weight_2 >> temp_prev;
+					(*((FCLayer*)net->layers[33])->getWeights())[256*row + column] = 
+							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+			}
+			f_fc2_weight_1.close(); f_fc2_weight_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc2_weight_1", 256*256, temp);
+				generate_zeros("fc2_weight_2", 256*256, temp);
+			}
+
+
+			/************************** FC Bias2 **********************************/
+			string path_fc2_bias_1 = default_path+"fc2_bias_"+to_string(partyNum);
+			string path_fc2_bias_2 = default_path+"fc2_bias_"+to_string(nextParty(partyNum));
+			ifstream f_fc2_bias_1(path_fc2_bias_1), f_fc2_bias_2(path_fc2_bias_2);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				f_fc2_bias_1 >> temp_next; f_fc2_bias_2 >> temp_prev;
+				(*((FCLayer*)net->layers[33])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_fc2_bias_1.close(); f_fc2_bias_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc2_bias_1", 256, temp);
+				generate_zeros("fc2_bias_2", 256, temp);
+			}
+
+			/************************** FC Weight3 **********************************/
+			string path_fc3_weight_1 = default_path+"fc3_weight_"+to_string(partyNum);
+			string path_fc3_weight_2 = default_path+"fc3_weight_"+to_string(nextParty(partyNum));
+			ifstream f_fc3_weight_1(path_fc3_weight_1), f_fc3_weight_2(path_fc3_weight_2);
+
+			for (int column = 0; column < 10; ++column)
+			{
+				for (int row = 0; row < 256; ++row)
+				{
+					f_fc3_weight_1 >> temp_next; f_fc3_weight_2 >> temp_prev;
+					(*((FCLayer*)net->layers[35])->getWeights())[10*row + column] = 
+							std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+				}
+			}
+			f_fc3_weight_1.close(); f_fc3_weight_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc3_weight_1", 256*10, temp);
+				generate_zeros("fc3_weight_2", 256*10, temp);
+			}
+
+
+			/************************** FC Bias3 **********************************/
+			string path_fc3_bias_1 = default_path+"fc3_bias_"+to_string(partyNum);
+			string path_fc3_bias_2 = default_path+"fc3_bias_"+to_string(nextParty(partyNum));
+			ifstream f_fc3_bias_1(path_fc3_bias_1), f_fc3_bias_2(path_fc3_bias_2);
+
+			for (int i = 0; i < 10; ++i)
+			{
+				f_fc3_bias_1 >> temp_next; f_fc3_bias_2 >> temp_prev;
+				(*((FCLayer*)net->layers[35])->getBias())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+			}
+			f_fc3_bias_1.close(); f_fc3_bias_2.close();
+			if (ZEROS)
+			{
+				generate_zeros("fc3_bias_1", 10, temp);
+				generate_zeros("fc3_bias_2", 10, temp);
+			}
+			print_vector((*((FCLayer*)net->layers[35])->getBias()), "FLOAT", "FC3 bias", 10);
+		}
+		else if (dataset.compare("ImageNet") == 0) {
+
+		}
 	}
 	else 
 		error("Preloading network error");
@@ -1192,8 +1798,8 @@ void loadData(string net, string dataset)
 	{
 		INPUT_SIZE = 784;
 		LAST_LAYER_SIZE = 10;
-		TRAINING_DATA_SIZE = 10000;
-		TEST_DATA_SIZE = 1000;
+		TRAINING_DATA_SIZE = 60000;
+		TEST_DATA_SIZE = 10000;
 		LARGE_NETWORK = false;
 	}
 	else if (dataset.compare("CIFAR10") == 0)
@@ -1203,8 +1809,8 @@ void loadData(string net, string dataset)
 		{
 			INPUT_SIZE = 32*32*3;
 			LAST_LAYER_SIZE = 10;
-			TRAINING_DATA_SIZE = 10000;
-			TEST_DATA_SIZE = 2000;			
+			TRAINING_DATA_SIZE = 50000;
+			TEST_DATA_SIZE = 10000;			
 		}
 		else if (net.compare("VGG16") == 0)
 		{
@@ -1620,7 +2226,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			assert(false && "No VGG16 on MNIST");
 		else if (dataset.compare("CIFAR10") == 0)
 		{
-			NUM_LAYERS = 37;
+			NUM_LAYERS = 36;
 			WITH_NORMALIZATION = false;
 			CNNConfig* l0 = new CNNConfig(32,32,3,64,3,1,1,MINI_BATCH_SIZE);
 			ReLUConfig* l1 = new ReLUConfig(32*32*64,MINI_BATCH_SIZE);		
@@ -1658,12 +2264,12 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			MaxpoolConfig* l29 = new MaxpoolConfig(2,2,512,2,2,MINI_BATCH_SIZE);
 			ReLUConfig* l30 = new ReLUConfig(1*1*512,MINI_BATCH_SIZE);
 
-			FCConfig* l31 = new FCConfig(1*1*512,MINI_BATCH_SIZE,4096);
-			ReLUConfig* l32 = new ReLUConfig(4096,MINI_BATCH_SIZE);
-			FCConfig* l33 = new FCConfig(4096, MINI_BATCH_SIZE, 4096);
-			ReLUConfig* l34 = new ReLUConfig(4096, MINI_BATCH_SIZE);
-			FCConfig* l35 = new FCConfig(4096, MINI_BATCH_SIZE, 1000);
-			ReLUConfig* l36 = new ReLUConfig(1000, MINI_BATCH_SIZE);
+			FCConfig* l31 = new FCConfig(1*1*512,MINI_BATCH_SIZE,256);
+			ReLUConfig* l32 = new ReLUConfig(256,MINI_BATCH_SIZE);
+			FCConfig* l33 = new FCConfig(256, MINI_BATCH_SIZE, 256);
+			ReLUConfig* l34 = new ReLUConfig(256, MINI_BATCH_SIZE);
+			FCConfig* l35 = new FCConfig(256, MINI_BATCH_SIZE, 10);
+			ReLUConfig* l36 = new ReLUConfig(10, MINI_BATCH_SIZE);
 			config->addLayer(l0);
 			config->addLayer(l1);
 			config->addLayer(l2);
@@ -1700,7 +2306,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			config->addLayer(l33);
 			config->addLayer(l34);
 			config->addLayer(l35);
-			config->addLayer(l36);
+			// config->addLayer(l36);
 		}
 		else if (dataset.compare("ImageNet") == 0)
 		{
@@ -1830,8 +2436,8 @@ void runOnlyLayer(NeuralNetwork* net, size_t l, string& network, size_t count)
 		if (l == 0) {
 			net->layers[0]->weight_reduction();
 			net->layers[0]->forward(net->low_inputData);
-			// net->layers[0]->activation_extension();
-			// net->layers[0]->weight_extension();
+			net->layers[0]->activation_extension();
+			net->layers[0]->weight_extension();
 			net->layers[0]->updateEquations(net->inputData);
 		} else {
 			net->layers[l]->weight_reduction();

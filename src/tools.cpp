@@ -334,15 +334,15 @@ void error(string str)
 string which_network(string network)
 {
 	if (network.find("SecureML") != std::string::npos)
-		return "SecureML";
+		return "SecureML_init";
 	else if (network.find("MiniONN") != std::string::npos)
-		return "MiniONN";
+		return "MiniONN_init";
 	else if (network.find("Sarda") != std::string::npos)
 		return "Sarda";
 	else if (network.find("LeNet") != std::string::npos)
-		return "LeNet";
+		return "LeNet_init";
 	else if (network.find("AlexNet") != std::string::npos)
-		return "AlexNet";
+		return "AlexNet_Init";
 	else if (network.find("VGG16") != std::string::npos)
 		return "VGG16";
 	else
