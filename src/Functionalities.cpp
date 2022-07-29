@@ -1160,7 +1160,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 		for (int i = 0; i < size; ++i)
 			if (reconst_b[i] == 0)
 			{
-				m_c[i].first = (myType)1 - m_c[i].first;
+				m_c[i].first = (highBit)1 - m_c[i].first;
 				m_c[i].second = -m_c[i].second;
 			}
 
@@ -1177,7 +1177,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 			if (reconst_b[i] == 0)
 			{
 				m_c[i].first = -m_c[i].first;
-				m_c[i].second = (myType)1 - m_c[i].second;
+				m_c[i].second = (highBit)1 - m_c[i].second;
 			}
 
 	funcDotProduct(a, m_c, selected, size, false, 0);
@@ -1209,7 +1209,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 		for (int i = 0; i < size; ++i)
 			if (reconst_b[i] == 0)
 			{
-				m_c[i].first = (myType)1 - m_c[i].first;
+				m_c[i].first = (lowBit)1 - m_c[i].first;
 				m_c[i].second = -m_c[i].second;
 			}
 
@@ -1226,7 +1226,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 			if (reconst_b[i] == 0)
 			{
 				m_c[i].first = -m_c[i].first;
-				m_c[i].second = (myType)1 - m_c[i].second;
+				m_c[i].second = (lowBit)1 - m_c[i].second;
 			}
 
 	funcDotProduct(a, m_c, selected, size, false, 0);
@@ -1816,7 +1816,7 @@ void debugMatMul()
 	size_t columns = 2;
 	size_t transpose_a = 0, transpose_b = 0;
 
-	RSSVectorLowType a(rows * common_dim), b(common_dim * columns), c(rows * columns);
+	RSSVectorMyType a(rows * common_dim), b(common_dim * columns), c(rows * columns);
 	// vector<myType> a_reconst(rows*columns), b_reconst(common_dim*columns), c_reconst(rows*columns);
 
 	// A, B 		: 0001011001110, 1000011000101, 0110001100111, 0110101000001
@@ -1826,8 +1826,8 @@ void debugMatMul()
 	// Float(exact)	: [0.21069336, 0.26293945, 0.19445801, 0.37463379]
 	// Float(MPC)	: [0.21078883, 0.26298349, 0.19449629, 0.37465578]
 	// Rel error (%)	: [0.04531312, 0.01674641, 0.01968604, 0.00587083] --> 0.022% error
-	vector<lowBit> data_a = {-718, -4293, -3175, -3393};
-	vector<lowBit> data_b = {718, 4293, 3175, 3393};
+	vector<myType> data_a = {-2 << FLOAT_PRECISION, -1 << FLOAT_PRECISION, -1 << FLOAT_PRECISION, -3 << FLOAT_PRECISION};
+	vector<myType> data_b = {4 << FLOAT_PRECISION, 6 << FLOAT_PRECISION, 1 << FLOAT_PRECISION, 2 << FLOAT_PRECISION};
 	funcGetShares(a, data_a);
 	funcGetShares(b, data_b);
 
