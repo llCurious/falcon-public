@@ -44,7 +44,7 @@
 /********************* Neural Network globals *********************/
 // Batch size has to be a power of two
 #define REC_ITERS 7
-#define REC_Y 6
+#define REC_Y 7
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
 #define INVSQRT_ITERS 6
 #define LOG_MINI_BATCH 5
@@ -52,7 +52,7 @@
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 1000
+#define NUM_ITERATIONS 7812 // 7035 / 2400
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -93,13 +93,14 @@ operator<<(std::ostream &dest, longBit value);
 
 // Mixed-Precision Setting. Currently, the precision is dependent on the bitwidth.
 #define HIGH_PRECISION 20
-#define LOW_PRECISION 13
+#define LOW_PRECISION 10
 
 /********************* Additional Functions Parameter Setting *********************/
 #define EXP_PRECISION 9
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION (true && MP_TRAINING)
 #define MP_FOR_INV_SQRT (true && MP_TRAINING)
+#define MP_FOR_EXP (true && MP_TRAINING)
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL false
 #define PLAINTEXT_EXP false
@@ -127,9 +128,9 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 #endif
 
 /********************* DEBUG AND TEST *********************/
-#define DEBUG_ONLY true
+#define DEBUG_ONLY false
 #define OFFLINE_ON false
-#define PRE_LOAD false
+#define PRE_LOAD true
 #define IS_FALCON false
 #define USE_GPU true
 
