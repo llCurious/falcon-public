@@ -18,6 +18,7 @@ private:
 	BackwardVectorType high_activations;
 	BackwardVectorType deltas;
 	BackwardVectorType weights;
+	BackwardVectorType extend_weights;
 	BackwardVectorType biases;
 
 public:

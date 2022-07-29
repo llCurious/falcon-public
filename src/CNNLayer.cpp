@@ -11,6 +11,7 @@ CNNLayer::CNNLayer(CNNConfig *conf, int _layerNum)
 		   conf->filters, conf->filterSize, conf->stride,
 		   conf->padding, conf->batchSize),
 	  weights(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters),
+	  extend_weights(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters),
 	  biases(conf->filters),
 	  low_weights(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters),
 	  low_biases(conf->filters),
@@ -228,7 +229,7 @@ void CNNLayer::computeDelta(BackwardVectorType &prevDelta)
 					for (size_t p = 0; p < f; ++p)
 					{
 						temp2[r * sizeWeightsR + d * sizeWeightsD + q * sizeWeightsQ + p] =
-							weights[d * sizeD + r * sizeR + q * sizeQ + p];
+							extend_weights[d * sizeD + r * sizeR + q * sizeQ + p];
 					}
 	}
 
@@ -366,4 +367,5 @@ void CNNLayer::activation_extension() {
 
 void CNNLayer::weight_extension() {
 	// cout << "Not implemented weight extension" << endl;
+	funcWeightExtension(extend_weights, weights, weights.size());
 }

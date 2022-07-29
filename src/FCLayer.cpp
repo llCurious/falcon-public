@@ -11,8 +11,10 @@ FCLayer::FCLayer(FCConfig *conf, int _layerNum)
 	  high_activations(conf->batchSize * conf->outputDim),
 	  deltas(conf->batchSize * conf->outputDim),
 	  weights(conf->inputDim * conf->outputDim),
+	  extend_weights(conf->inputDim * conf->outputDim),
 	  low_weights(conf->inputDim * conf->outputDim),
 	  biases(conf->outputDim),
+	//   extend_biases(conf->outputDim),
 	  low_biases(conf->outputDim)
 {
 	initialize();
@@ -140,9 +142,9 @@ void FCLayer::computeDelta(BackwardVectorType &prevDelta)
 	size_t common_dim = conf.outputDim;
 
 	if (FUNCTION_TIME)
-		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION) << endl;
+		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, deltas, extend_weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION) << endl;
 	else
-		funcMatMul(deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION);
+		funcMatMul(deltas, extend_weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION);
 	// print_vector(deltas, "FLOAT", "deltas-" + to_string(deltas.size()), deltas.size());
 	// print_vector(prevDelta, "FLOAT", "prevDelta", prevDelta.size());
 }
@@ -206,4 +208,6 @@ void FCLayer::activation_extension() {
 
 void FCLayer::weight_extension() {
 	// cout << "Not implemented weight extension" << endl;
+	funcWeightExtension(extend_weights, weights, weights.size());
+	// funcWeightExtension(biases, low_biases, biases.size());
 }

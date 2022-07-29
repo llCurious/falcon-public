@@ -19,8 +19,10 @@ private:
 	ForwardVecorType activations;
 	BackwardVectorType high_activations;
 	BackwardVectorType weights;
+	BackwardVectorType extend_weights;
 	BackwardVectorType biases;
 	BackwardVectorType deltas;
+	// BackwardVectorType extend_biases;
 
 public:
 	//Constructor and initializer
