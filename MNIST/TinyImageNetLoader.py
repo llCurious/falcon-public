@@ -18,7 +18,11 @@ import numpy as np
 
 batch_size = 64
 
-base_path = "/home/whq/Downloads/"
+base_path = f"{os.path.expanduser('~')}/Downloads/"
+if not os.path.exists(base_path):
+    os.makedirs(base_path)
+
+
 id_dict = {}
 for i, line in enumerate(open(base_path + 'tiny-imagenet-200/wnids.txt', 'r')):
   id_dict[line.replace('\n', '')] = i

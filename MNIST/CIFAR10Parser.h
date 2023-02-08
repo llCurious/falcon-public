@@ -60,7 +60,6 @@ int parse(char* filename, string type)
 	
     // jump the first row, the attributes info
 	getline(input_file, line);
-    cout << "Index: " << line << endl;
 
 	//Reading
 	inputs = new int [data_size * (INPUT_DIMENSION + 1)];
