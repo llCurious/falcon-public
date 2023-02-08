@@ -11,13 +11,13 @@
 #include <bitset>
 #include <iostream>
 
-#define MP_TRAINING true
+#define MP_TRAINING false
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
 #define _aligned_free free
 #define getrandom(min, max) ((rand() % (int)(((max) + 1) - (min))) + (min))
-#define floatToMyType(a) ((myType)(int)floor(a * (1 << FLOAT_PRECISION)))
+#define floatToMyType(a) ((myType)(int)floor(a * (1l << FLOAT_PRECISION)))
 #define floatToLowType(a) ((lowBit)(int)floor(a * (1l << LOW_PRECISION)))
 #define floatToHighType(a) ((highBit)(long)floor(a * (1l << HIGH_PRECISION)))
 
@@ -52,7 +52,7 @@
 #define LOG_LEARNING_RATE 5
 #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 7812 // 7035 / 2400
+#define NUM_ITERATIONS 5*1563 // 7035 / 2400
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -131,6 +131,7 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 #define DEBUG_ONLY false
 #define OFFLINE_ON false
 #define PRE_LOAD true
+#define LOAD_TRAINED false
 #define IS_FALCON false
 #define USE_GPU true
 

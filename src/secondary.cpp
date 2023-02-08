@@ -66,9 +66,9 @@ void train(NeuralNetwork* net, string network, string dataset)
 	log_print("train");
 
 	float loss = 0, acc = 0;
-	string default_path = "output/" + network + (USE_GPU ? "_GPU" : "_CPU") + (MP_TRAINING ? "_Mixed" : "_Full") + "_" + dataset;
-	ofstream accF(default_path + "_acc_10epoch.txt"), lossF(default_path + "_loss_10epoch.txt");
-	cout << default_path + "_acc_10epoch.txt" << endl;
+	string default_path = string(getenv("HOME"))+"/DNN/output/" + network + (USE_GPU ? "_GPU" : "_CPU") + (MP_TRAINING ? "_Mixed" : "_Full") + "_" + dataset;
+	ofstream accF(default_path + "_acc_"+to_string(NUM_ITERATIONS)+"-epoch.txt"), lossF(default_path + "_loss_"+to_string(NUM_ITERATIONS)+"-epoch.txt");
+	cout << "Output path: " << default_path + "_acc_"+to_string(NUM_ITERATIONS)+"-epoch.txt" << endl;
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
 		cout << "----------------------------------" << endl;  
@@ -159,11 +159,13 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 	// assert((PRELOADING) and (NUM_ITERATIONS == 1) and (MINI_BATCH_SIZE == 128) && "Preloading conditions fail");
 
 	float temp_next = 0, temp_prev = 0;
-	string default_path = "files/preload/"+which_network(network)+"/";
+	string phase = LOAD_TRAINED ? "trained":"init";
+	string default_path = string(getenv("HOME"))+"/DNN/params/"+phase+"/"+which_network(network)+"/";
+	cout << default_path << endl;
 	//Set to true if you want the zeros files generated.
 	bool ZEROS = false;
 
-	if (which_network(network).compare("SecureML_init") == 0)
+	if (which_network(network).compare("SecureML") == 0)
 	{
 		string temp = "SecureML";
 		/************************** Input **********************************/
@@ -439,7 +441,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias3_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("MiniONN_init") == 0)
+	else if (which_network(network).compare("MiniONN") == 0)
 	{
 		string temp = "MiniONN";
 		/************************** Input **********************************/
@@ -609,7 +611,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias4_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("LeNet_init") == 0)
+	else if (which_network(network).compare("LeNet") == 0)
 	{
 		string temp = "LeNet";
 		/************************** Input **********************************/
@@ -779,7 +781,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			generate_zeros("bias4_2", 10, temp);
 		}
 	}
-	else if (which_network(network).compare("AlexNet_Init") == 0)
+	else if (which_network(network).compare("AlexNet") == 0)
 	{
 		if (dataset.compare("CIFAR10") == 0) {
 			string temp = "AlexNet_10";
@@ -802,8 +804,6 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 			// }
 
 			// print_vector(net->inputData, "FLOAT", "inputData:", 784);
-			default_path = default_path + dataset + "/";
-			cout << default_path << endl;
 			/************************** Weight1 **********************************/
 			string path_weight1_1 = default_path+"cnn1_weight_"+to_string(partyNum);
 			string path_weight1_2 = default_path+"cnn1_weight_"+to_string(nextParty(partyNum));
