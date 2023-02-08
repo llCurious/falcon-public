@@ -68,6 +68,9 @@ cd Falcon
 make all -j$(nproc)
 ```
 
+#### Load dataset
+Please refer to the MNIST directory.
+
 #### Running the code
 
 To run the code, simply choose one of the following options: 
