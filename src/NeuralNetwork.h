@@ -22,6 +22,7 @@ public:
 	void updateEquations();
 	void predict(RSSVectorMyType &maxIndex);
 	float getAccuracy();
+	float getCorrectCount();
 	float getLoss();
 
 	// Mixed-precision funcs

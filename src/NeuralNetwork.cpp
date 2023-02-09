@@ -277,6 +277,54 @@ float NeuralNetwork::getAccuracy()
 	return (counter[0]*100.0/counter[1]);
 }
 
+float NeuralNetwork::getCorrectCount()
+{
+	vector<size_t> counter(2);
+	log_print("NN.getCorrectCount");
+
+	size_t rows = MINI_BATCH_SIZE;
+	size_t columns = LAST_LAYER_SIZE;
+
+	BackwardVectorType max(rows);
+	RSSVectorSmallType maxPrime(rows * columns);
+	BackwardVectorType temp_max(rows), temp_groundTruth(rows);
+	RSSVectorSmallType temp_maxPrime(rows * columns);
+
+	vector<BackwardType> groundTruth(rows * columns);
+	vector<smallType> prediction(rows * columns);
+
+	// reconstruct ground truth from output data
+	funcReconstruct(outputData, groundTruth, rows * columns, "groundTruth", false);
+	// print_vector(outputData, "FLOAT", "outputData:", rows*columns);
+
+	// reconstruct prediction from neural network
+	funcMaxpool((*(layers[NUM_LAYERS - 1])->getHighActivation()), temp_max, temp_maxPrime, rows, columns);
+	funcReconstructBit(temp_maxPrime, prediction, rows * columns, "prediction", false);
+
+	for (int i = 0, index = 0; i < rows; ++i)
+	{
+		counter[1]++;
+		for (int j = 0; j < columns; j++)
+		{
+			index = i * columns + j;
+			if ((int)groundTruth[index] * (int)prediction[index] ||
+				(!(int)groundTruth[index] && !(int)prediction[index]))
+			{
+				if (j == columns - 1)
+				{
+					counter[0]++;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	return counter[0];
+}
+
 float NeuralNetwork::getLoss() {
 	log_print("NN.getLoss");
 
