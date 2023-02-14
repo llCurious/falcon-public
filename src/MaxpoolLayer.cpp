@@ -72,6 +72,12 @@ void MaxpoolLayer::forward(const ForwardVecorType &inputActivation)
 		cout << "funcMaxpool: " << funcTime(funcMaxpool<ForwardVecorType>, temp1, activations, maxPrime, ow * oh * Din * B, f * f) << endl;
 	else
 		funcMaxpool(temp1, activations, maxPrime, ow * oh * Din * B, f * f);
+
+	ForwardVecorType a = inputActivation;
+	print_vector(a, "FLOAT", "input_maxpool", 100);
+	// // print_vector(weights, "FLOAT", "weights", 10);
+	// // print_vector(biases, "FLOAT", "biases", biases.size());
+	print_vector(activations, "FLOAT", "output_maxpool", 100);
 }
 
 void MaxpoolLayer::computeDelta(BackwardVectorType &prevDelta)
@@ -119,9 +125,19 @@ void MaxpoolLayer::computeDelta(BackwardVectorType &prevDelta)
 	}
 
 	if (FUNCTION_TIME)
-		cout << "funcSelectShares: " << funcTime(static_cast<void (*)(const BackwardVectorType &, const RSSVectorSmallType &, BackwardVectorType &, size_t)>(funcSelectShares), temp2, temp1, prevDelta, iw * ih * Din * B) << endl;
+		cout << "funcSelectShares: " << funcTime(static_cast<void (*)(const BackwardVectorType &, const RSSVectorSmallType &, BackwardVectorType &, smallType, size_t)>(funcSelectShares), temp2, temp1, prevDelta, 1, iw * ih * Din * B) << endl;
 	else
-		funcSelectShares(temp2, temp1, prevDelta, iw * ih * Din * B);
+		funcSelectShares(temp2, temp1, prevDelta, 1, iw * ih * Din * B);
+	
+	cout << "delta size: " << deltas.size() << ", prevDeltas size: " << prevDelta.size() << endl;
+    print_vector(deltas, "FLOAT", "MaxPool_delta", 100);
+    // print_vector(temp2, "FLOAT", "MaxPool_delta_tmp", 100);
+
+	// RSSVectorSmallType temp_maxPrime(iw * ih * Din * B);
+	// vector<smallType> prediction(iw * ih * Din * B);
+	// funcReconstructBit(maxPrime, prediction, iw * ih * Din * B, "maxpool_grad", true);
+	
+    print_vector(prevDelta, "FLOAT", "MaxPool_prevDelta grad", 100);
 }
 
 void MaxpoolLayer::updateEquations(const BackwardVectorType &prevActivations)
@@ -138,6 +154,7 @@ void MaxpoolLayer::weight_reduction()
 void MaxpoolLayer::activation_extension()
 {
 	// cout << "<<< Max Pooling >>> No need to perform activation extension." << endl;
+	funcActivationExtension(high_activations, activations, activations.size());
 }
 
 void MaxpoolLayer::weight_extension()
