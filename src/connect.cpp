@@ -96,8 +96,8 @@ void initializeCommunication(char *filename, int p)
 		sscanf(buff, "%s\n", ip);
 		addrs[i] = string(ip);
 		// cout << addrs[i] << endl;
-		ports[2 * i] = 31000 + i * NUM_OF_PARTIES + partyNum;
-		ports[2 * i + 1] = 31000 + partyNum * NUM_OF_PARTIES + i;
+		ports[2 * i] = PORT_START + i * NUM_OF_PARTIES + partyNum;
+		ports[2 * i + 1] = PORT_START + partyNum * NUM_OF_PARTIES + i;
 	}
 
 	fclose(f);
