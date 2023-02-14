@@ -1135,7 +1135,7 @@ void funcDotProductBits(const RSSVectorSmallType &a, const RSSVectorSmallType &b
 // Set c[i] = a[i] if b[i] = 0
 // Set c[i] = 0    if b[i] = 1
 void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
-					  RSSVectorHighType &selected, size_t size)
+					  RSSVectorHighType &selected, smallType true_or_false, size_t size)
 {
 	log_print("funcSelectShares");
 
@@ -1158,7 +1158,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_A)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = (highBit)1 - m_c[i].first;
 				m_c[i].second = -m_c[i].second;
@@ -1166,7 +1166,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_B)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = -m_c[i].first;
 				m_c[i].second = -m_c[i].second;
@@ -1174,7 +1174,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_C)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = -m_c[i].first;
 				m_c[i].second = (highBit)1 - m_c[i].second;
@@ -1184,7 +1184,7 @@ void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
 }
 
 void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
-					  RSSVectorLowType &selected, size_t size)
+					  RSSVectorLowType &selected, smallType true_or_false, size_t size)
 {
 	log_print("funcSelectShares");
 
@@ -1207,7 +1207,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_A)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = (lowBit)1 - m_c[i].first;
 				m_c[i].second = -m_c[i].second;
@@ -1215,7 +1215,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_B)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = -m_c[i].first;
 				m_c[i].second = -m_c[i].second;
@@ -1223,7 +1223,7 @@ void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
 
 	if (partyNum == PARTY_C)
 		for (int i = 0; i < size; ++i)
-			if (reconst_b[i] == 0)
+			if (reconst_b[i] == true_or_false)
 			{
 				m_c[i].first = -m_c[i].first;
 				m_c[i].second = (lowBit)1 - m_c[i].second;
@@ -2128,7 +2128,7 @@ void debugSS()
 	funcGetShares(a, data);
 	funcGetShares(b, bits);
 
-	funcSelectShares(a, b, selection, size);
+	funcSelectShares(a, b, selection, 0, size);
 
 #if (!LOG_DEBUG)
 	funcReconstruct(a, reconst, size, "a", true);
