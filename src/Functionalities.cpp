@@ -2180,10 +2180,10 @@ void debugSquare()
 
 void debugExp()
 {
-	vector<highBit> data_a{0, -2, -4, 5, 3, 7};
+	vector<highBit> data_a{0, -2, -10, 5, 3, -30};
 	size_t size = data_a.size();
 	for (size_t i = 0; i < size; i++)
-		data_a[i] = data_a[i] * (1 << HIGH_PRECISION);
+		data_a[i] = data_a[i] * (1l << HIGH_PRECISION);
 	RSSVectorHighType a(size), b(size);
 
 	funcGetShares(a, data_a);
