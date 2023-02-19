@@ -919,9 +919,9 @@ void funcWrap(const VEC &a, RSSVectorSmallType &theta, size_t size)
 }
 
 void funcSelectShares(const RSSVectorHighType &a, const RSSVectorSmallType &b,
-					  RSSVectorHighType &selected, size_t size);
+					  RSSVectorHighType &selected, smallType true_or_false, size_t size);
 void funcSelectShares(const RSSVectorLowType &a, const RSSVectorSmallType &b,
-					  RSSVectorLowType &selected, size_t size);
+					  RSSVectorLowType &selected, smallType true_or_false, size_t size);
 void funcSelectBitShares(const RSSVectorSmallType &a0, const RSSVectorSmallType &a1,
 						 const RSSVectorSmallType &b, RSSVectorSmallType &answer,
 						 size_t rows, size_t columns, size_t loopCounter);
@@ -2780,6 +2780,27 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 	{
 		cout << "Not supported type" << typeid(a).name() << endl;
 	}
+	if (PLAINTEXT_RECIPROCAL)
+	{
+		cout << "Plaintext Reciprocal" << endl;
+		typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, int64_t, int32_t>::type elementType;
+
+		vector<elementType> plain_input(size), plain_output(size);
+		funcReconstruct(b, plain_input, size, "mixed-preicision divisor", false);
+
+		vector<float> pl_input_float(size);
+		for (size_t i = 0; i < size; i++)
+		{
+			pl_input_float[i] = static_cast<elementType>(plain_input[i]) * 1.0 / (1l << float_precision);
+			pl_input_float[i] = 1. / pl_input_float[i];
+			// cout << pl_input_float[i] << endl;
+			plain_output[i] = (elementType)(pl_input_float[i] * (1l << float_precision));
+		}
+		funcGetShares(a, plain_output);
+		// print_vector(q_rec, "FLOAT", "mixed-preicision reciprocal", size);
+		return;
+	}
+
 	VEC temp(size);
 	if (input_in_01)
 	{
@@ -2797,7 +2818,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			a[i].first = (1 << (float_precision - REC_INIT));
+			a[i].first = (1l << (float_precision - REC_INIT));
 			a[i].second = 0;
 		}
 	}
@@ -2806,7 +2827,7 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 		for (size_t i = 0; i < size; i++)
 		{
 			a[i].first = 0;
-			a[i].second = (1 << (float_precision - REC_INIT));
+			a[i].second = (1l << (float_precision - REC_INIT));
 		}
 	}
 	else
@@ -2840,6 +2861,10 @@ void funcReciprocal2(VEC &a, const VEC &b, bool input_in_01,
 		// funcReconstruct(a, r, size, "it", false);
 		// printVectorReal(r, "it", size);
 	}
+	// VEC tmp_a = a, tmp_b = b;
+	// print_vector(tmp_b, "FLOAT", "reciprocal input", tmp_b.size());
+	// print_vector(tmp_a, "FLOAT", "reciprocal output", tmp_a.size());
+
 }
 template <typename VEC>
 void funcMPExp(const VEC &input, VEC &result, size_t size){
@@ -2895,7 +2920,7 @@ void funcDivisionByNR(VEC &result, const VEC &input, const VEC &quotient,
 	typedef typename std::conditional<std::is_same<VEC, RSSVectorHighType>::value, int64_t, int32_t>::type realValueType;
 	if (PLAINTEXT_RECIPROCAL)
 	{
-		// cout << "Plaintext Reciprocal" << endl;
+		cout << "Plaintext Reciprocal" << endl;
 		vector<elementType> plain_input(size), plain_output(size);
 		funcReconstruct(quotient, plain_input, size, "mixed-preicision divisor", false);
 
@@ -2975,8 +3000,30 @@ void funcInverseSqrt(Vec &result, const Vec &input, size_t size)
 	{
 		cout << "Not supported type" << typeid(input).name() << endl;
 	}
-	const T insqrt_a0 = 0.2 * (1 << float_precision);
-	const T insqrt_a3 = 3 * (1 << float_precision);
+
+	if (PLAINTEXT_INV_SQRT) {
+		cout << "Plaintext Inverse sqrt" << endl;
+		vector<T> plain_input(size), plain_output(size);
+		// vector<T> plain_high_output(size);
+		funcReconstruct(input, plain_input, size, "mixed-preicision inverse sqrt", false);
+		vector<float> pl_input_float(size);
+
+		// cout << "Plaintext rsqrt output: ";
+		for (size_t i = 0; i < size; i++) {
+			pl_input_float[i] = plain_input[i] * 1.0 / (1l << float_precision);
+			pl_input_float[i] = 1. / sqrt(pl_input_float[i]);
+			// plain_high_output[i] = (BackwardType)(pl_input_float[i] * (1l << float_precision));
+			plain_output[i] = (T)(pl_input_float[i] * (1l << float_precision));
+			// cout << pl_input_float[i] << " ";
+		}
+		// cout << endl;
+		// funcGetShares(high_output, plain_high_output);
+		funcGetShares(result, plain_output);
+		return;
+	}
+
+	const T insqrt_a0 = 0.2 * (1l << float_precision);
+	const T insqrt_a3 = 3 * (1l << float_precision);
 	Vec temp(size);
 	funcProbTruncation<Vec, T>(result, input, 1, size); // x/2
 	if (partyNum == PARTY_A)
@@ -3115,10 +3162,13 @@ void mixedPrecisionOp(VecLow &output, VecHigh &high_output, const VecLow &input,
 	}
 }
 
+// https://discuss.pytorch.org/t/implementing-batchnorm-in-pytorch-problem-with-updating-self-running-mean-and-self-running-var/49314/11
 template<typename VecLow, typename VecHigh>
-void funcMPBatchNorm(const VecLow &input, VecHigh &norm_x, VecHigh &inv_sqrt, VecHigh &gamma, VecHigh &beta, VecLow &forward_output, size_t B, size_t m) {
-	cout << "forward... " << m << " " << B << " " << endl;
-	size_t size = B * m;
+void funcMPBatchNorm(const VecLow &input, VecHigh &norm_x, VecHigh &x_mean, VecHigh &high_var, VecHigh &inv_sqrt, VecHigh &gamma, VecHigh &beta, VecLow &forward_output, size_t B, size_t channel, size_t width, size_t height) {
+	cout << "forward... " << channel << width << height << " " << B << " " << endl;
+	size_t size = B * channel * width * height;
+	size_t m = channel * width * height;
+
 	typedef typename std::conditional<std::is_same<VecHigh, RSSVectorHighType>::value, highBit, lowBit>::type computeType;
 	VecHigh high_input(size);
 	
@@ -3138,69 +3188,115 @@ void funcMPBatchNorm(const VecLow &input, VecHigh &norm_x, VecHigh &inv_sqrt, Ve
 	
 	
     
-	VecHigh var_eps(m, make_pair(0, 0));
+	VecHigh var_eps(channel, make_pair(0, 0));
 	// VecHigh inv_sqrt(m);
-    VecHigh mu(m);
+    VecHigh mu(channel);
 
     // Compute mean
-    for (int i = 0; i < B; ++i)
-    {
-        for (int j = 0; j < m; ++j)
+    // for (int i = 0; i < B; ++i)
+    // {
+    //     for (int j = 0; j < m; ++j)
+    //     {
+    //         mu[j] = mu[j] + high_input[i * m + j];
+    //     }
+    // }
+	for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
         {
-            mu[j] = mu[j] + high_input[i * m + j];
+			for (int k = 0; k < width * height; k++) {
+				mu[i] = mu[i] + high_input[j * m + i * width * height + k];
+			}			
         }
     }
-    funcProbTruncation<VecHigh, highBit>(mu, LOG_MINI_BATCH, m); //  1 truncation by batchSize [1, D]
+
+	size_t dim_bits = (int)log2(width * height);
+	// cout << "dim bits=" << dim_bits << endl;
+    funcProbTruncation<VecHigh, highBit>(mu, LOG_MINI_BATCH + dim_bits, channel); //  1 truncation by batchSize [1, D]
 
     // log
     // vector<ForwardType> plainm(m);
     // funcReconstruct(mu, plainm, m, "mean", true);
 
     // Compute x - mean
-    VecHigh x_mean(size);
+    // VecHigh x_mean(size);
     for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            x_mean[i * m + j] = high_input[i * m + j] - mu[j];
-    // log
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	x_mean[i * m + j * width * height + k] = high_input[i * m + j * width * height + k] - mu[j];
+
+
     // vector<myType> plainsize(size);
     // funcReconstruct(x_mean, plainsize, size, "x_mean", true);
 
     // Compute (x-mean)^2
     VecHigh temp2(size);
-    funcDotProduct(x_mean, x_mean, temp2, size, true, BACKWARD_PRECISION + LOG_MINI_BATCH);
+    funcDotProduct(x_mean, x_mean, temp2, size, true, BACKWARD_PRECISION);
+	// print_vector(mu, "FLOAT", "BN_mean", channel);
+	// print_vector(x_mean, "FLOAT", "BN_mean", channel);
+
 
     // mean((x-mean)^2)
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            var_eps[j] = var_eps[j] + temp2[i * m + j];
+	for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				var_eps[i] = var_eps[i] + temp2[j * m + i * width * height + k];
+			}			
+        }
+    }
+
+	funcProbTruncation<VecHigh, highBit>(var_eps, LOG_MINI_BATCH + dim_bits, channel); //  1 truncation by batchSize [1, D]
+
+
+    // for (int i = 0; i < channel; ++i)
+    //     for (int j = 0; j < m; ++j)
+    //         var_eps[j] = var_eps[j] + temp2[i * m + j];
     // funcReconstruct(var_eps, plainm, m, "var_eps", true);
 
     // Compute (variance + epsilon)
-    funcAddOneConst(var_eps, eps, m);
+    funcAddOneConst(var_eps, eps, channel);
     // funcReconstruct(var_eps, plainm, m, "var_eps", true);
+	// print_vector(var_eps, "FLOAT", "BN_var", channel);
+	// cout << "eps: " << eps << endl;
+	high_var = var_eps;
 
-	funcInverseSqrt<VecHigh, computeType>(inv_sqrt, var_eps, m); // [1,D]
+
+	funcInverseSqrt<VecHigh, computeType>(inv_sqrt, var_eps, channel); // [1,D]
 
 	VecHigh inv_sqrt_rep(size);
-    for (int i = 0; i < m; ++i) // compute norm_x
-    {
-        for (int j = 0; j < B; ++j)
-            inv_sqrt_rep[j * m + i] = inv_sqrt[i];
-    }
+	for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	inv_sqrt_rep[i * m + j * width * height + k] = inv_sqrt[j];
+    // for (int i = 0; i < m; ++i) // compute norm_x
+    // {
+    //     for (int j = 0; j < B; ++j)
+    //         inv_sqrt_rep[j * m + i] = inv_sqrt[i];
+    // }
     funcDotProduct<VecHigh, computeType>(inv_sqrt_rep, x_mean, norm_x, size, true, BACKWARD_PRECISION); // [B, D] * [1, D]
 
 	// self.gamma * self.norm_x + self.beta
     // Scaling
     VecHigh g_repeat(size), high_forward_output(size);
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            g_repeat[i * m + j] = gamma[j];
+	for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	g_repeat[i * m + j * width * height + k] = gamma[j];
+    // for (int i = 0; i < B; ++i)
+    //     for (int j = 0; j < m; ++j)
+    //         g_repeat[i * m + j] = gamma[j];
     funcDotProduct(g_repeat, norm_x, high_forward_output, size, true, BACKWARD_PRECISION);
     // funcReconstruct(activations, plainsize, size, "self.gamma * self.norm_x ", true);
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            high_forward_output[i * m + j] = high_forward_output[i * m + j] + beta[j];
+    // for (int i = 0; i < B; ++i)
+    //     for (int j = 0; j < m; ++j)
+    //         high_forward_output[i * m + j] = high_forward_output[i * m + j] + beta[j];
 	
+	for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	high_forward_output[i * m + j * width * height + k] = high_forward_output[i * m + j * width * height + k] + beta[j];
 	if constexpr (std::is_same<VecLow, RSSVectorLowType>::value) {
 		funcTruncAndReduce(forward_output, high_forward_output, (HIGH_PRECISION - LOW_PRECISION), size);
 	} else {
