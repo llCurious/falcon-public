@@ -12,10 +12,10 @@ class BNLayerOpt : public Layer
 private:
     BNConfig conf;
     ForwardVecorType activations;
-    ForwardVecorType low_gamma;
-    ForwardVecorType low_beta;
-    ForwardVecorType inv_sqrt;
-    ForwardVecorType norm_x;
+    // ForwardVecorType low_gamma;
+    // ForwardVecorType low_beta;
+    // ForwardVecorType inv_sqrt;
+    // ForwardVecorType norm_x;
 
 
     BackwardVectorType high_activations;
@@ -28,11 +28,15 @@ private:
     BackwardVectorType beta;
     BackwardVectorType high_inv_sqrt;
     BackwardVectorType high_norm_x;
+    BackwardVectorType xmu;
+    BackwardVectorType var;
     BackwardVectorType beta_grad;
     BackwardVectorType gamma_grad;
     
     size_t B;
-    size_t m;
+    size_t channel;
+    size_t width;
+    size_t height;
     size_t size;
 
 public:

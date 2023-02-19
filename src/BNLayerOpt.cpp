@@ -8,21 +8,23 @@ using namespace std;
 // low_gamma and low_beta are required in the forward pass.
 BNLayerOpt::BNLayerOpt(BNConfig *conf, int _layerNum)
     : Layer(_layerNum),
-      conf(conf->inputSize, conf->numBatches),
-      gamma(conf->inputSize, make_pair(0, 0)),
-      beta(conf->inputSize, make_pair(0, 0)),
-      inv_sqrt(conf->inputSize),
-      high_inv_sqrt(conf->inputSize),
+      conf(conf->C, conf->w, conf->h, conf->numBatches),
+      gamma(conf->C, make_pair(0, 0)),
+      beta(conf->C, make_pair(0, 0)),
+    //   inv_sqrt(conf->C),
+      high_inv_sqrt(conf->C),
     //   inv_sqrt_rep(conf->numBatches * conf->inputSize),
-      norm_x(conf->numBatches * conf->inputSize),
-      high_norm_x(conf->numBatches * conf->inputSize),
-      beta_grad(conf->inputSize),
-      gamma_grad(conf->inputSize, make_pair(0, 0)),
-      activations(conf->numBatches * conf->inputSize),
-      high_activations(conf->numBatches * conf->inputSize),
-      low_gamma(conf->inputSize, make_pair(0, 0)),
-      low_beta(conf->inputSize, make_pair(0, 0)),
-      deltas(conf->inputSize * conf->numBatches)
+    //   norm_x(conf->numBatches * conf->C * conf->w * conf->h),
+      xmu(conf->numBatches * conf->C * conf->w * conf->h),
+      var(conf->C, make_pair(0, 0)),
+      high_norm_x(conf->numBatches * conf->C * conf->w * conf->h),
+      beta_grad(conf->C, make_pair(0, 0)),
+      gamma_grad(conf->C, make_pair(0, 0)),
+      activations(conf->numBatches * conf->C * conf->w * conf->h),
+      high_activations(conf->numBatches * conf->C * conf->w * conf->h),
+    //   low_gamma(conf->C, make_pair(0, 0)),
+    //   low_beta(conf->C, make_pair(0, 0)),
+      deltas(conf->C * conf->w * conf->h * conf->numBatches)
 {
     initialize();
 };
@@ -31,25 +33,27 @@ void BNLayerOpt::initialize()
 {
     if (partyNum == PARTY_A) // gamma = 1
     {
-        gamma = BackwardVectorType(conf.inputSize, make_pair(1l << BACKWARD_PRECISION, 0));
+        gamma = BackwardVectorType(conf.C, make_pair(1l << BACKWARD_PRECISION, 0));
     }
     else if (partyNum == PARTY_C)
     {
-        gamma = BackwardVectorType(conf.inputSize, make_pair(0, 1l << BACKWARD_PRECISION));
+        gamma = BackwardVectorType(conf.C, make_pair(0, 1l << BACKWARD_PRECISION));
     }
     else
     {
-        gamma = BackwardVectorType(conf.inputSize, make_pair(0, 0));
+        gamma = BackwardVectorType(conf.C, make_pair(0, 0));
     }
     B = conf.numBatches;
-    m = conf.inputSize;
-    size = B * m;
+    channel = conf.C;
+    width = conf.w;
+    height = conf.h;
+    size = B * channel * width * height;
 };
 
 void BNLayerOpt::printLayer()
 {
     cout << "----------------------------------------------" << endl;
-    cout << "(" << layerNum + 1 << ") BN Layer\t\t  " << conf.inputSize << " x "
+    cout << "(" << layerNum + 1 << ") BN Layer\t\t  " << conf.C << " x "
          << conf.numBatches << endl;
 }
 
@@ -65,8 +69,13 @@ void BNLayerOpt::forward(const ForwardVecorType &inputActivation)
     // } else {
 
     // }
-    funcMPBatchNorm(inputActivation, high_norm_x, high_inv_sqrt, gamma, beta, activations, B, m);
-    cout << "forward... " << size << " " << m << " " << B << " " << endl;
+    funcMPBatchNorm(inputActivation, high_norm_x, xmu, var, high_inv_sqrt, gamma, beta, activations, B, channel, width, height);
+    // cout << "forward... " << size << " " << channel << " " << B << " " << endl;
+    // ForwardVecorType a = inputActivation;
+	// print_vector(a, "FLOAT", "input_BN", size/B);
+	// print_vector(weights, "FLOAT", "weights", 100);
+	// print_vector(biases, "FLOAT", "biases", biases.size());
+	// print_vector(activations, "FLOAT", "out_BN", size/B);
     /**
     ForwardType eps = (1e-5) * (1l << FORWARD_PRECISION);
 
@@ -240,77 +249,253 @@ void BNLayerOpt::forward(const ForwardVecorType &inputActivation)
 // }
 
 // https://kevinzakka.github.io/2016/09/14/batch_normalization/
+// void BNLayerOpt::computeDelta(BackwardVectorType &prevDelta)
+// {
+//     size_t m = channel * width * height;
+//     // cout << "BN.computeDelta" << endl;
+
+//     //  dxhat = grad * self.gamma   # 1 multiplication
+//     BackwardVectorType dxhat(size);
+//     BackwardVectorType g_repeat(size);
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < channel; ++j)
+// 			for (int k = 0; k < width * height; k++)
+//             	g_repeat[i * m + j * width * height + k] = gamma[j];
+
+//     funcDotProduct(g_repeat, deltas, dxhat, size, true, BACKWARD_PRECISION);
+//     // funcReconstruct(dxhat, plainsize, size, "dxhat", true);
+
+//     // self.act_grad = self.inv_sqrt * (B*dxhat - np.sum(dxhat, axis=0) - self.norm_x * np.sum(dxhat * self.norm_x, axis=0)) / B
+//     BackwardVectorType bdxhat(size);
+//     funcMulConst(bdxhat, dxhat, B, size); // B*dxhat
+//     // print_vector(dxhat, "FLOAT", "dxhat", dxhat.size());
+//     // print_vector(bdxhat, "FLOAT", "bdxhat", bdxhat.size());
+
+//     BackwardVectorType sumdxhat(size, make_pair(0, 0)); // np.sum(dxhat, axis=0)
+//     BackwardVectorType sumdxhat_temp(channel, make_pair(0, 0)); // np.sum(dxhat, axis=0)
+//     // for (int i = 0; i < B; ++i)
+//     //     for (int j = 0; j < m; ++j)
+//     //         sumdxhat[j] = sumdxhat[j] + dxhat[i * m + j];
+//     // for (int i = 0; i < m; ++i)
+//     // {
+//     //     RSSBackwardType temp = sumdxhat[i];
+//     //     for (int j = 1; j < B; ++j)
+//     //         sumdxhat[j * m + i] = temp;
+//     // }
+//     for (int i = 0; i < channel; ++i)
+//     {	
+//         for (int j = 0; j < B; ++j)
+//         {
+// 			for (int k = 0; k < width * height; k++) {
+// 				sumdxhat_temp[i] = sumdxhat_temp[i] + dxhat[j * m + i * width * height + k];
+// 			}			
+//         }
+//     }
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < channel; ++j)
+// 			for (int k = 0; k < width * height; k++)
+//             	sumdxhat[i * m + j * width * height + k] = sumdxhat_temp[j];
+//     // print_vector(sumdxhat, "FLOAT", "sumdxhat", sumdxhat.size());
+
+
+//     BackwardVectorType dxx(size); // dxhat * self.norm_x
+//     funcDotProduct(dxhat, high_norm_x, dxx, size, true, BACKWARD_PRECISION);
+//     // funcReconstruct(dxx, plainsize, size, "dxhat * self.norm_x", true);
+
+//     BackwardVectorType sumdxx(size, make_pair(0, 0)); // np.sum(dxhat * self.norm_x, axis=0)
+//     BackwardVectorType sumdxx_temp(channel, make_pair(0, 0)); // np.sum(dxhat * self.norm_x, axis=0)
+//     for (int i = 0; i < channel; ++i)
+//     {	
+//         for (int j = 0; j < B; ++j)
+//         {
+// 			for (int k = 0; k < width * height; k++) {
+// 				sumdxx_temp[i] = sumdxx_temp[i] + dxx[j * m + i * width * height + k];
+// 			}			
+//         }
+//     }
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < channel; ++j)
+// 			for (int k = 0; k < width * height; k++)
+//             	sumdxx[i * m + j * width * height + k] = sumdxx_temp[j];
+//     // for (int i = 0; i < B; ++i)
+//     //     for (int j = 0; j < m; ++j)
+//     //         sumdxx[j] = sumdxx[j] + dxx[i * m + j];
+//     // for (int i = 0; i < m; ++i)
+//     // {
+//     //     RSSBackwardType temp = sumdxx[i];
+//     //     for (int j = 1; j < B; ++j)
+//     //         sumdxx[j * m + i] = temp;
+//     // }
+//     // print_vector(sumdxx, "FLOAT", "sumdxx", sumdxx.size());
+
+//     funcDotProduct(high_norm_x, sumdxx, sumdxx, size, true, BACKWARD_PRECISION);
+//     // print_vector(sumdxx, "FLOAT", "sumdxx", sumdxx.size());
+
+
+//     // (bdxhat-sumdxhat-sumdxx)
+//     for (size_t i = 0; i < size; i++)
+//     {
+//         bdxhat[i] = bdxhat[i] - sumdxhat[i] - sumdxx[i];
+//     }
+//     // print_vector(bdxhat, "FLOAT", "bdxhat", bdxhat.size());
+
+//     // self.inv_sqrt * ()/B
+//     BackwardVectorType high_inv_sqrt_rep(size);
+//     for (int i = 0; i < B; ++i)
+//         for (int j = 0; j < channel; ++j)
+// 			for (int k = 0; k < width * height; k++)
+//             	high_inv_sqrt_rep[i * m + j * width * height + k] = high_inv_sqrt[j];
+//     // for (int i = 0; i < m; ++i) //
+//     // {
+//     //     for (int j = 0; j < B; ++j)
+//     //         high_inv_sqrt_rep[j * m + i] = high_inv_sqrt[i];
+//     // }
+    
+//     // print_vector(high_inv_sqrt_rep, "FLOAT", "high_inv_sqrt_rep", high_inv_sqrt_rep.size());
+//     // print_vector(high_norm_x, "FLOAT", "high_norm_x", high_norm_x.size());
+//     funcDotProduct(high_inv_sqrt_rep, bdxhat, prevDelta, size, true, BACKWARD_PRECISION + LOG_MINI_BATCH);
+//     // print_vector(deltas, "FLOAT", "delta", 100);
+//     // print_vector(prevDelta, "FLOAT", "x_grad", 100);
+//     // prevDelta = deltas; // Test
+// }
+
+// updated version: https://stackoverflow.com/questions/67968913/derivative-of-batchnorm2d-in-pytorch
 void BNLayerOpt::computeDelta(BackwardVectorType &prevDelta)
 {
-    // cout << "BN.computeDelta" << endl;
+    size_t m = channel * width * height;
+
+    BackwardVectorType g_repeat(size);
+    for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	g_repeat[i * m + j * width * height + k] = gamma[j];
 
     //  dxhat = grad * self.gamma   # 1 multiplication
     BackwardVectorType dxhat(size);
-    BackwardVectorType g_repeat(size);
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            g_repeat[i * m + j] = gamma[j];
     funcDotProduct(g_repeat, deltas, dxhat, size, true, BACKWARD_PRECISION);
     // funcReconstruct(dxhat, plainsize, size, "dxhat", true);
 
-    // self.act_grad = self.inv_sqrt * (B*dxhat - np.sum(dxhat, axis=0) - self.norm_x * np.sum(dxhat * self.norm_x, axis=0)) / B
-    BackwardVectorType bdxhat(size);
-    funcMulConst(bdxhat, dxhat, B, size); // B*dxhat
-    // print_vector(dxhat, "FLOAT", "dxhat", dxhat.size());
-    // print_vector(bdxhat, "FLOAT", "bdxhat", bdxhat.size());
-
-    BackwardVectorType sumdxhat(size, make_pair(0, 0)); // np.sum(dxhat, axis=0)
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            sumdxhat[j] = sumdxhat[j] + dxhat[i * m + j];
-    for (int i = 0; i < m; ++i)
-    {
-        RSSBackwardType temp = sumdxhat[i];
-        for (int j = 1; j < B; ++j)
-            sumdxhat[j * m + i] = temp;
-    }
-    // print_vector(sumdxhat, "FLOAT", "sumdxhat", sumdxhat.size());
-
-
-    BackwardVectorType dxx(size); // dxhat * self.norm_x
-    funcDotProduct(dxhat, high_norm_x, dxx, size, true, BACKWARD_PRECISION);
-    // funcReconstruct(dxx, plainsize, size, "dxhat * self.norm_x", true);
-
-    BackwardVectorType sumdxx(size, make_pair(0, 0)); // np.sum(dxhat * self.norm_x, axis=0)
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            sumdxx[j] = sumdxx[j] + dxx[i * m + j];
-    for (int i = 0; i < m; ++i)
-    {
-        RSSBackwardType temp = sumdxx[i];
-        for (int j = 1; j < B; ++j)
-            sumdxx[j * m + i] = temp;
-    }
-    // print_vector(sumdxx, "FLOAT", "sumdxx", sumdxx.size());
-
-    funcDotProduct(high_norm_x, sumdxx, sumdxx, size, true, BACKWARD_PRECISION);
-    // print_vector(sumdxx, "FLOAT", "sumdxx", sumdxx.size());
-
-
-    // (bdxhat-sumdxhat-sumdxx)
-    for (size_t i = 0; i < size; i++)
-    {
-        bdxhat[i] = bdxhat[i] - sumdxhat[i] - sumdxx[i];
-    }
-    // print_vector(bdxhat, "FLOAT", "bdxhat", bdxhat.size());
-
-    // self.inv_sqrt * ()/B
-    BackwardVectorType high_inv_sqrt_rep(size);
-    for (int i = 0; i < m; ++i) //
-    {
+    // divar = sum(dxhat*x_mean)
+    BackwardVectorType divar_temp(channel);
+    BackwardVectorType divar(size);
+    funcDotProduct(dxhat, xmu, divar, size, true, BACKWARD_PRECISION);
+    for (int i = 0; i < channel; ++i)
+    {	
         for (int j = 0; j < B; ++j)
-            high_inv_sqrt_rep[j * m + i] = high_inv_sqrt[i];
+        {
+			for (int k = 0; k < width * height; k++) {
+				divar_temp[i] = divar_temp[i] + divar[j * m + i * width * height + k];
+			}			
+        }
+    }
+    // print_vector(divar, "FLOAT", "dxhat*x_mean", size);
+    // print_vector(divar_temp, "FLOAT", "sum(dxhat*x_mean)", channel);
+
+    for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	divar[i * m + j * width * height + k] = divar_temp[j];
+
+    // 1/var
+    // BackwardVectorType inv_var(channel);
+    // funcReciprocal2(inv_var, var, false, channel);
+
+    BackwardVectorType inv_var_mul_divar(channel);
+    BackwardVectorType inv_var_mul_divar_rep(size);
+    
+    /**
+     * Compute 1/var using inv_sqrt * inv_sqrt
+     * **/
+    BackwardVectorType inv_var(channel);
+    funcDotProduct(high_inv_sqrt, high_inv_sqrt, inv_var, channel, true, BACKWARD_PRECISION);  // 1/var
+    funcDotProduct(divar_temp, inv_var, inv_var_mul_divar, channel, true, BACKWARD_PRECISION);  // -dsqrtvar
+
+    // funcDivisionByNR(inv_var_mul_divar, divar_temp, var, channel);  // -dsqrtvar
+	// print_vector(inv_var, "FLOAT", "reciprocal output", inv_var.size());
+
+
+    for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	inv_var_mul_divar_rep[i * m + j * width * height + k] = inv_var_mul_divar[j];
+
+    // dvar = -0.5 * divar * 1/var * inv_sqrt
+    // dvar*xmu = -0.5 * divar * 1/var * inv_sqrt *xmu = -0.5 * divar * 1/var * norm_x
+    // 2dvar*xmu = - divar * 1/var * norm_x
+    // BackwardVectorType temp1(size);
+    // funcDotProduct(divar, high_norm_x, temp1, size, true, BACKWARD_PRECISION);
+    BackwardVectorType dvar_xmu_mul2(size);
+    funcDotProduct(inv_var_mul_divar_rep, high_norm_x, dvar_xmu_mul2, size, true, BACKWARD_PRECISION);  // -dxmu2 * B
+
+    BackwardVectorType sum_dvar_xmu_mul2(channel);  // -sum(dxmu2)
+    for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				sum_dvar_xmu_mul2[i] = sum_dvar_xmu_mul2[i] + dvar_xmu_mul2[j * m + i * width * height + k];
+			}
+        }
     }
     
-    // print_vector(high_inv_sqrt_rep, "FLOAT", "high_inv_sqrt_rep", high_inv_sqrt_rep.size());
-    // print_vector(high_norm_x, "FLOAT", "high_norm_x", high_norm_x.size());
-    funcDotProduct(high_inv_sqrt_rep, bdxhat, prevDelta, size, true, BACKWARD_PRECISION + LOG_MINI_BATCH);
-    // print_vector(deltas, "FLOAT", "delta", 100);
+    // invsqrt_dxhat = invsqrt * dxhat
+    BackwardVectorType invsqrt_dxhat(size);
+    BackwardVectorType inv_sqrt_rep(size);
+	for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	inv_sqrt_rep[i * m + j * width * height + k] = high_inv_sqrt[j];
+    funcDotProduct(dxhat, inv_sqrt_rep, invsqrt_dxhat, size, true, BACKWARD_PRECISION); // dxmu1
+
+    BackwardVectorType sum_invsqrt_dxhat(channel);  // sum(dxmu1)
+    for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				sum_invsqrt_dxhat[i] = sum_invsqrt_dxhat[i] + invsqrt_dxhat[j * m + i * width * height + k];
+			}
+        }
+    }
+
+
+    int dim_bits = int(log2(m));
+    // cout << m << ": " << dim_bits << endl;
+
+    funcProbTruncation<BackwardVectorType, BackwardType>(dvar_xmu_mul2, dim_bits, size);    // -dxmu2
+
+    BackwardVectorType sum_trunc_dvar_xmu(channel, make_pair(0, 0));        // -sum(dxmu2)
+    for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				sum_trunc_dvar_xmu[i] = sum_trunc_dvar_xmu[i] + dvar_xmu_mul2[j * m + i * width * height + k];
+			}
+        }
+    }
+
+    // finalize output
+    // davg = davg - sum_invsqrt_dxhat - sum_dvar_xmu_mul2 / m;
+    BackwardVectorType davg(channel, make_pair(0, 0));                      // dmu
+    for (int i = 0; i < channel; i++) {
+        davg[i] = davg[i] - sum_invsqrt_dxhat[i] + sum_trunc_dvar_xmu[i];
+    }
+
+
+    funcProbTruncation<BackwardVectorType, BackwardType>(davg, dim_bits, channel);  // dx2
+    BackwardVectorType trunc_davg_rep(size);
+    for (int i = 0; i < B; ++i)
+        for (int j = 0; j < channel; ++j)
+			for (int k = 0; k < width * height; k++)
+            	trunc_davg_rep[i * m + j * width * height + k] = davg[j];
+
+
+    for (int i = 0; i < size; i++) {
+        prevDelta[i] = invsqrt_dxhat[i] - dvar_xmu_mul2[i] + trunc_davg_rep[i];
+    }
+    // print_vector(deltas, "FLOAT", "delta-BN", 100);
+    // print_vector(prevDelta, "FLOAT", "BN-prevDelta", 100);
     // print_vector(prevDelta, "FLOAT", "x_grad", 100);
     // prevDelta = deltas; // Test
 }
@@ -320,14 +505,26 @@ void BNLayerOpt::updateEquations(const BackwardVectorType &prevActivations)
     log_print("BN.updateEquations");
 
     size_t B = conf.numBatches;
-    size_t m = conf.inputSize;
+    size_t m = channel * width * height;
+    // cout << B << " : " << m << endl;
+
+    // print_vector(deltas, "FLOAT", "BN deltas", 100);
 
     //  Update beta
     //  self.beta_grad = np.sum(grad, axis=0)
-    beta_grad = BackwardVectorType(m, make_pair(0, 0));
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            beta_grad[j] = beta_grad[j] + deltas[i * m + j];
+    beta_grad = BackwardVectorType(channel, make_pair(0, 0));
+    for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				beta_grad[i] = beta_grad[i] + deltas[j * m + i * width * height + k];
+			}			
+        }
+    }
+    // for (int i = 0; i < B; ++i)
+    //     for (int j = 0; j < m; ++j)
+    //         beta_grad[j] = beta_grad[j] + deltas[i * m + j];
     // funcProbTruncation<RSSVectorMyType, myType>(beta_grad, LOG_MINI_BATCH, m);
     // vector<myType> plainm(m);
     // vector<myType> plainsize(size);
@@ -335,42 +532,54 @@ void BNLayerOpt::updateEquations(const BackwardVectorType &prevActivations)
 
     // print_vector(beta_grad_lr, "FLOAT", "beta_grad_lr", 100);
 
-    BackwardVectorType beta_grad_lr(m);
-    funcProbTruncation<BackwardVectorType, BackwardType>(beta_grad_lr, beta_grad, LOG_LEARNING_RATE, m);
-    subtractVectors(beta, beta_grad_lr, beta, m);
+    // BackwardVectorType beta_grad_lr(channel);
+    // print_vector(beta_grad, "FLOAT", "BN_bias grad", beta_grad.size());
+
+    funcProbTruncation<BackwardVectorType, BackwardType>(beta_grad, LOG_MINI_BATCH + LOG_LEARNING_RATE, channel);
+    subtractVectors(beta, beta_grad, beta, channel);
 
     // funcTruncate(beta_grad, LOG_LEARNING_RATE, m);
     // subtractVectors(beta, beta_grad, beta, m);
 
-    // print_vector(beta_grad_lr, "FLOAT", "beta_grad_lr", 100);
+    // print_vector(beta_grad, "FLOAT", "BN_bias grad_lr", beta_grad.size());
 
 
     // Update gamma
     // self.gamma_grad = np.sum(self.norm_x * grad, axis=0)    # 1 multiplication
-    gamma_grad = BackwardVectorType(m, make_pair(0, 0));
+    gamma_grad = BackwardVectorType(channel, make_pair(0, 0));
     BackwardVectorType temp(size);
     funcDotProduct(high_norm_x, deltas, temp, size, true, BACKWARD_PRECISION);
     // funcReconstruct(temp, plainsize, size, "self.norm_x * grad", true);
-    for (int i = 0; i < B; ++i)
-        for (int j = 0; j < m; ++j)
-            gamma_grad[j] = gamma_grad[j] + temp[i * m + j];
-    BackwardVectorType gamma_grad_lr(m);
-    funcProbTruncation<BackwardVectorType, BackwardType>(gamma_grad_lr, gamma_grad, LOG_LEARNING_RATE, m);
-    // print_vector(gamma_grad, "FLOAT", "gamma_grad", 100);
+
+    for (int i = 0; i < channel; ++i)
+    {	
+        for (int j = 0; j < B; ++j)
+        {
+			for (int k = 0; k < width * height; k++) {
+				gamma_grad[i] = gamma_grad[i] + temp[j * m + i * width * height + k];
+			}			
+        }
+    }
+    // for (int i = 0; i < B; ++i)
+    //     for (int j = 0; j < m; ++j)
+    //         gamma_grad[j] = gamma_grad[j] + temp[i * m + j];
+    // BackwardVectorType gamma_grad_lr(channel);
+    funcProbTruncation<BackwardVectorType, BackwardType>(gamma_grad, LOG_MINI_BATCH + LOG_LEARNING_RATE, channel);
+    // print_vector(gamma_grad, "FLOAT", "BN_weight grad", gamma_grad.size());
     // funcReconstruct(, plainm, m, "gamma_grad", true);
 
-    subtractVectors(gamma, gamma_grad_lr, gamma, m);
+    subtractVectors(gamma, gamma_grad, gamma, channel);
 }
 
 void BNLayerOpt::weight_reduction() {
-	funcWeightReduction(low_gamma, gamma, gamma.size());
-    funcWeightReduction(low_beta, beta, beta.size());
+	// funcWeightReduction(low_gamma, gamma, gamma.size());
+    // funcWeightReduction(low_beta, beta, beta.size());
 }
 
 void BNLayerOpt::activation_extension() {
 	funcActivationExtension(high_activations, activations, activations.size());
     // funcActivationExtension(high_inv_sqrt, inv_sqrt, inv_sqrt.size());
-    funcActivationExtension(high_norm_x, norm_x, norm_x.size());
+    // funcActivationExtension(high_norm_x, norm_x, norm_x.size());
 }
 
 void BNLayerOpt::weight_extension() {
