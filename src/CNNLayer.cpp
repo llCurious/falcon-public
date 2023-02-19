@@ -163,6 +163,12 @@ void CNNLayer::forward(const ForwardVecorType &inputActivation)
 		for (size_t j = 0; j < Dout; ++j)
 			for (size_t k = 0; k < tempSize; ++k)
 				activations[i * Dout * tempSize + j * tempSize + k] = temp3[j * B * tempSize + i * tempSize + k] + low_biases[j];
+	
+	// ForwardVecorType a = inputActivation;
+	// print_vector(a, "FLOAT", "input_cnn", 100);
+	// // print_vector(weights, "FLOAT", "weights", 10);
+	// // print_vector(biases, "FLOAT", "biases", biases.size());
+	// print_vector(activations, "FLOAT", "out_cnn", 100);
 }
 
 // TODO: Recheck backprop after forward bug fixed.
@@ -258,6 +264,10 @@ void CNNLayer::computeDelta(BackwardVectorType &prevDelta)
 							temp3[r * sizeDeltaR + b * sizeDeltaB + beta * sizeDeltaBeta + alpha];
 					}
 	}
+
+	// cout << "CNN delta shape " << deltas.size() << ", CNN prevDelta shape: " << prevDelta.size() << endl;  
+	// print_vector(deltas, "FLOAT", "CNN-delta", 100);
+	// print_vector(prevDelta, "FLOAT", "CNN-prevDelta", 100);
 }
 
 void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
@@ -288,6 +298,8 @@ void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
 					for (size_t x = 0; x < ow; ++x)
 						temp1[d] = temp1[d] + deltas[b * sizeB + d * sizeD + y * sizeY + x];
 	}
+	// cout << "bias shape: " << biases.size() << endl;
+	// print_vector(temp1, "FLOAT", "deltaBias-CNN", 100);
 	if (IS_FALCON)
 	{
 		funcTruncate(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
@@ -351,6 +363,11 @@ void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
 		funcMatMul(temp2, temp3, temp4, (Dout), (ow * oh * B), (f * f * Din), 0, 1,
 				   BACKWARD_PRECISION + LOG_MINI_BATCH + LOG_LEARNING_RATE);
 
+	// BackwardVectorType ttt = prevActivations;
+	// print_vector(ttt, "FLOAT", "CNN prev act", 100);
+	// print_vector(deltas, "FLOAT", "CNN deltas", 100);
+
+	// cout << "CNN weight_grad size: " << temp4.size() << endl;
 	// print_vector(temp4, "FLOAT", "CNN weight_grad", 100);
 	subtractVectors(weights, temp4, weights, f * f * Din * Dout);
 	// print_vector(temp4, "FLOAT", "deltaWeight", 100);

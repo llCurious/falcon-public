@@ -126,10 +126,10 @@ void FCLayer::forward(const ForwardVecorType &inputActivation)
 			activations[r * columns + c] = activations[r * columns + c] + low_biases[c];
 
 	// ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_act", 100);
-	// print_vector(weights, "FLOAT", "weights", 100);
-	// print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "out_activations", 100);
+	// print_vector(a, "FLOAT", "input_fc", 10);
+	// // print_vector(weights, "FLOAT", "weights", 100);
+	// // print_vector(biases, "FLOAT", "biases", biases.size());
+	// print_vector(activations, "FLOAT", "out_fc", 10);
 }
 
 void FCLayer::computeDelta(BackwardVectorType &prevDelta)
@@ -145,8 +145,10 @@ void FCLayer::computeDelta(BackwardVectorType &prevDelta)
 		cout << "funcMatMul: " << funcTime(funcMatMul<BackwardVectorType>, deltas, extend_weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION) << endl;
 	else
 		funcMatMul(deltas, extend_weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION);
-	// print_vector(deltas, "FLOAT", "deltas-" + to_string(deltas.size()), deltas.size());
-	// print_vector(prevDelta, "FLOAT", "prevDelta", prevDelta.size());
+	
+	// cout << "FC shape: " << deltas.size() << endl;
+	// print_vector(deltas, "FLOAT", "fc-delta", 100);
+	// print_vector(prevDelta, "FLOAT", "fc-prevDelta", 100);
 }
 
 void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
@@ -163,6 +165,9 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 	for (size_t i = 0; i < rows; ++i)
 		for (size_t j = 0; j < columns; ++j)
 			temp[j] = temp[j] + deltas[i * columns + j];
+	
+	// print_vector(temp, "FLOAT", "deltaBias-FC", 20);
+
 	// TODO-trunc
 	if (IS_FALCON)
 	{
@@ -190,10 +195,9 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 	subtractVectors(weights, deltaWeight, weights, size);
 	// cout << "===============================" << endl;
 	// RSSVectorMyType xx = prevActivations;
-	// print_vector(xx, "FLOAT", "prevActivations", 100);
-	// print_vector(deltas, "FLOAT", "deltas-FC", 100);
-	// print_vector(deltaWeight, "FLOAT", "deltaWeight-FC", 100);
-	// print_vector(temp, "FLOAT", "deltaBias", temp.size());
+	// print_vector(xx, "FLOAT", "prevActivations", 20);
+	// print_vector(deltas, "FLOAT", "deltas-FC", 20);
+	// print_vector(deltaWeight, "FLOAT", "deltaWeight-FC", 20);
 }
 
 
