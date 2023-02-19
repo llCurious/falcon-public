@@ -59,6 +59,7 @@ int main(int argc, char **argv)
 	if (PRE_LOAD) {
 		network += " preloaded"; PRELOADING = true;
 		preload_network(PRELOADING, network, dataset, net);
+		network += LOAD_TRAINED ? " trained weights" : " init weights";
 	}
 	
 
@@ -66,6 +67,7 @@ int main(int argc, char **argv)
 	// Run unit tests in two modes:
 	//	1. Debug {Mat-Mul, DotProd, PC, Wrap, ReLUPrime, ReLU, Division, BN, SSBits, SS, and Maxpool}
 	//	2. Test {Mat-Mul1, Mat-Mul2, Mat-Mul3 (and similarly) Conv*, ReLU*, ReLUPrime*, and Maxpool*} where * = {1,2,3}
+	#if (DEBUG_ONLY)
 	//  runTest("Debug", "DotProd", network);
 	// runTest("Debug", "BN", network);
 	// runTest("Debug", "Division", network);
@@ -113,29 +115,30 @@ int main(int argc, char **argv)
 	size_t count = 10;
 	// // runOnly(net, l, what, network);
 	// runOnlyLayer(net, 1, network, count);
-	for (size_t i = 0; i < 3; i++)
-	{
-		// from layer 0 -> 2
-		// time
-		auto start = std::chrono::system_clock::now();
-		runOnlyLayer(net, i, network, count);
-		auto end = std::chrono::system_clock::now();
-		double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / count;
+	// for (size_t i = 0; i < 3; i++)
+	// {
+	// 	// from layer 0 -> 2
+	// 	// time
+	// 	auto start = std::chrono::system_clock::now();
+	// 	runOnlyLayer(net, i, network, count);
+	// 	auto end = std::chrono::system_clock::now();
+	// 	double time = (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() * 1e-6) / count;
 
-		// comm
-		uint64_t round = commObject.getRoundsRecv();
-		uint64_t commsize = commObject.getRecv();
-		runOnlyLayer(net, i, network, 1);
-		cout << i << OFFLINE_ON << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
-	}
+	// 	// comm
+	// 	uint64_t round = commObject.getRoundsRecv();
+	// 	uint64_t commsize = commObject.getRecv();
+	// 	runOnlyLayer(net, i, network, 1);
+	// 	cout << i << OFFLINE_ON << " time: " << time << "    round: " << commObject.getRoundsRecv() - round << "    size: " << commObject.getRecv() - commsize << endl;
+	// }
+	#endif
 
 #if (!DEBUG_ONLY)
 	// Run training
-	// cout << "----------------------------------------------" << endl;
-	// cout << "-------------------Run Training---------------" << endl;
-	// network += " train";
-	// printNetwork(net);
-	// train(net, network, dataset);
+	cout << "----------------------------------------------" << endl;
+	cout << "-------------------Run Training---------------" << endl;
+	network += " train";
+	printNetwork(net);
+	train(net, network, dataset);
 
 	// Run inference (possibly with preloading a network)
 	// cout << "----------------------------------------------" << endl;
