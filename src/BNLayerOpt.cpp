@@ -24,7 +24,9 @@ BNLayerOpt::BNLayerOpt(BNConfig *conf, int _layerNum)
       high_activations(conf->numBatches * conf->C * conf->w * conf->h),
     //   low_gamma(conf->C, make_pair(0, 0)),
     //   low_beta(conf->C, make_pair(0, 0)),
-      deltas(conf->C * conf->w * conf->h * conf->numBatches)
+      deltas(conf->C * conf->w * conf->h * conf->numBatches),
+      beta_velocity(conf->C, make_pair(0, 0)),
+	  gamma_velocity(conf->C, make_pair(0, 0))
 {
     initialize();
 };
@@ -72,10 +74,10 @@ void BNLayerOpt::forward(const ForwardVecorType &inputActivation)
     funcMPBatchNorm(inputActivation, high_norm_x, xmu, var, high_inv_sqrt, gamma, beta, activations, B, channel, width, height);
     // cout << "forward... " << size << " " << channel << " " << B << " " << endl;
     // ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_BN", size/B);
+	// print_vector(a, "FLOAT", "input_BN", a.size());
 	// print_vector(weights, "FLOAT", "weights", 100);
 	// print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "out_BN", size/B);
+	// print_vector(activations, "FLOAT", "out_BN", activations.size());
     /**
     ForwardType eps = (1e-5) * (1l << FORWARD_PRECISION);
 
@@ -459,7 +461,7 @@ void BNLayerOpt::computeDelta(BackwardVectorType &prevDelta)
     }
 
 
-    int dim_bits = int(log2(m));
+    int dim_bits = int(log2(B * width * height));
     // cout << m << ": " << dim_bits << endl;
 
     funcProbTruncation<BackwardVectorType, BackwardType>(dvar_xmu_mul2, dim_bits, size);    // -dxmu2
@@ -494,7 +496,7 @@ void BNLayerOpt::computeDelta(BackwardVectorType &prevDelta)
     for (int i = 0; i < size; i++) {
         prevDelta[i] = invsqrt_dxhat[i] - dvar_xmu_mul2[i] + trunc_davg_rep[i];
     }
-    // print_vector(deltas, "FLOAT", "delta-BN", 100);
+    // print_vector(deltas, "FLOAT", "delta-BN", deltas.size());
     // print_vector(prevDelta, "FLOAT", "BN-prevDelta", 100);
     // print_vector(prevDelta, "FLOAT", "x_grad", 100);
     // prevDelta = deltas; // Test
@@ -534,9 +536,19 @@ void BNLayerOpt::updateEquations(const BackwardVectorType &prevActivations)
 
     // BackwardVectorType beta_grad_lr(channel);
     // print_vector(beta_grad, "FLOAT", "BN_bias grad", beta_grad.size());
+    // print_vector(beta_grad, "FLOAT", "BN_bias grad", beta_grad.size());
 
     funcProbTruncation<BackwardVectorType, BackwardType>(beta_grad, LOG_MINI_BATCH + LOG_LEARNING_RATE, channel);
     subtractVectors(beta, beta_grad, beta, channel);
+    if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(beta_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, beta_velocity, MOMENTUM, beta_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, beta_velocity.size());
+		// v = v' + g
+		addVectors(diff, beta_grad, beta_velocity, beta_velocity.size());
+		subtractVectors(beta, diff, beta, beta_velocity.size());
+	}
 
     // funcTruncate(beta_grad, LOG_LEARNING_RATE, m);
     // subtractVectors(beta, beta_grad, beta, m);
@@ -560,6 +572,7 @@ void BNLayerOpt::updateEquations(const BackwardVectorType &prevActivations)
 			}			
         }
     }
+    // print_vector(gamma_grad, "FLOAT", "BN_weight grad", gamma_grad.size());
     // for (int i = 0; i < B; ++i)
     //     for (int j = 0; j < m; ++j)
     //         gamma_grad[j] = gamma_grad[j] + temp[i * m + j];
@@ -569,6 +582,15 @@ void BNLayerOpt::updateEquations(const BackwardVectorType &prevActivations)
     // funcReconstruct(, plainm, m, "gamma_grad", true);
 
     subtractVectors(gamma, gamma_grad, gamma, channel);
+    if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(gamma_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, gamma_velocity, MOMENTUM, gamma_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, gamma_velocity.size());
+		// v = v' + g
+		addVectors(diff, gamma_grad, gamma_velocity, gamma_velocity.size());
+		subtractVectors(gamma, diff, gamma, gamma_velocity.size());
+	}
 }
 
 void BNLayerOpt::weight_reduction() {

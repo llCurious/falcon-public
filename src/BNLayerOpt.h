@@ -32,6 +32,8 @@ private:
     BackwardVectorType var;
     BackwardVectorType beta_grad;
     BackwardVectorType gamma_grad;
+    BackwardVectorType beta_velocity;
+	BackwardVectorType gamma_velocity;
     
     size_t B;
     size_t channel;
