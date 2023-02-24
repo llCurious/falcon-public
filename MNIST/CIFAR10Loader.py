@@ -5,6 +5,7 @@ from torchvision import datasets, transforms
 import torch
 from PIL import Image
 
+is_transform=True
 
 def unpickle(file):
     import pickle
@@ -14,9 +15,12 @@ def unpickle(file):
     return dict
 
 
-# transform = transforms.Compose(
-#     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-# )
+transform = transforms.Compose(
+    [transforms.ToTensor(),
+     ]) if not is_transform else transforms.Compose(
+    [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+)
+scale = 255 if is_transform else 1
 
 base_path = f"{os.path.expanduser('~')}/Downloads/"
 if not os.path.exists(base_path):
@@ -35,15 +39,15 @@ data = test_dict[b"data"]
 label = test_dict[b"labels"]
 
 # from https://stackoverflow.com/questions/55319949/pil-typeerror-cannot-handle-this-data-type
-# img = np.array(data).astype(np.uint8).reshape(-1, 3, 32, 32).transpose((0, 2, 3, 1))
+img = np.array(data).astype(np.uint8).reshape(-1, 3, 32, 32).transpose((0, 2, 3, 1))
 
-# converted_data = []
-# for i in img:
-#     converted_i = Image.fromarray(i)
-#     converted_i = transform(converted_i).reshape(3072)
-#     converted_data.append(converted_i)
+converted_data = []
+for i in img:
+    converted_i = Image.fromarray(i)
+    converted_i = torch.round(transform(converted_i)*scale).type(torch.int32).reshape(3072)
+    converted_data.append(converted_i)
 
-data = np.array(data)
+data = np.stack(converted_data)
 label = np.array(label).reshape((len(label), 1))
 
 test_data = np.concatenate((data, label), axis=1)
@@ -64,15 +68,16 @@ for i in range(1, 6):
     label = test_dict[b"labels"]
 
     # from https://stackoverflow.com/questions/55319949/pil-typeerror-cannot-handle-this-data-type
-    # img = np.array(data).astype(np.uint8).reshape(-1, 3, 32, 32).transpose((0, 2, 3, 1))
+    img = np.array(data).astype(np.uint8).reshape(-1, 3, 32, 32).transpose((0, 2, 3, 1))
 
-    # converted_batch = []
-    # for i in img:
-    #     converted_i = Image.fromarray(i)
-    #     converted_i = transform(converted_i).reshape(3072)
-    #     converted_batch.append(converted_i)
+    converted_batch = []
+    for i in img:
+        converted_i = Image.fromarray(i)
+        converted_i = torch.round(transform(converted_i)*scale).type(torch.int32).reshape(3072)
+        converted_batch.append(converted_i)
 
     # data = np.stack(converted_batch)
+    data = np.stack(converted_batch)
     data = np.array(data)
     label = np.array(label).reshape((len(label), 1))
 
