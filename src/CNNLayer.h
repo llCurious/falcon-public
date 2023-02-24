@@ -21,6 +21,9 @@ private:
 	BackwardVectorType extend_weights;
 	BackwardVectorType biases;
 
+	BackwardVectorType biases_velocity;
+	BackwardVectorType weights_velocity;
+
 public:
 	//Constructor and initializer
 	CNNLayer(CNNConfig* conf, int _layerNum);

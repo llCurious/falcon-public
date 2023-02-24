@@ -23,7 +23,9 @@ CNNLayer::CNNLayer(CNNConfig *conf, int _layerNum)
 				  (((conf->imageHeight - conf->filterSize + 2 * conf->padding) / conf->stride) + 1)),
 	  deltas(conf->batchSize * conf->filters *
 			 (((conf->imageWidth - conf->filterSize + 2 * conf->padding) / conf->stride) + 1) *
-			 (((conf->imageHeight - conf->filterSize + 2 * conf->padding) / conf->stride) + 1))
+			 (((conf->imageHeight - conf->filterSize + 2 * conf->padding) / conf->stride) + 1)),
+	biases_velocity(conf->filters, make_pair(0, 0)),
+	  weights_velocity(conf->filterSize * conf->filterSize * conf->inputFeatures * conf->filters, make_pair(0, 0))
 {
 	initialize();
 };
@@ -165,10 +167,10 @@ void CNNLayer::forward(const ForwardVecorType &inputActivation)
 				activations[i * Dout * tempSize + j * tempSize + k] = temp3[j * B * tempSize + i * tempSize + k] + low_biases[j];
 	
 	// ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_cnn", 100);
+	// print_vector(a, "FLOAT", "input_cnn", a.size());
 	// // print_vector(weights, "FLOAT", "weights", 10);
 	// // print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "out_cnn", 100);
+	// print_vector(activations, "FLOAT", "out_cnn", activations.size());
 }
 
 // TODO: Recheck backprop after forward bug fixed.
@@ -266,7 +268,7 @@ void CNNLayer::computeDelta(BackwardVectorType &prevDelta)
 	}
 
 	// cout << "CNN delta shape " << deltas.size() << ", CNN prevDelta shape: " << prevDelta.size() << endl;  
-	// print_vector(deltas, "FLOAT", "CNN-delta", 100);
+	// print_vector(deltas, "FLOAT", "CNN-delta", deltas.size());
 	// print_vector(prevDelta, "FLOAT", "CNN-prevDelta", 100);
 }
 
@@ -309,6 +311,16 @@ void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
 		funcProbTruncation<BackwardVectorType, BackwardType>(temp1, LOG_MINI_BATCH + LOG_LEARNING_RATE, Dout);
 	}
 	subtractVectors(biases, temp1, biases, Dout);
+
+	if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(biases_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, biases_velocity, MOMENTUM, biases_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, biases_velocity.size());
+		// v = v' + g
+		addVectors(diff, temp1, biases_velocity, biases_velocity.size());
+		subtractVectors(biases, diff, biases, biases_velocity.size());
+	}
 
 	/********************** Weights update **********************/
 	// Reshape activations
@@ -370,6 +382,15 @@ void CNNLayer::updateEquations(const BackwardVectorType &prevActivations)
 	// cout << "CNN weight_grad size: " << temp4.size() << endl;
 	// print_vector(temp4, "FLOAT", "CNN weight_grad", 100);
 	subtractVectors(weights, temp4, weights, f * f * Din * Dout);
+	if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(weights_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, weights_velocity, MOMENTUM, weights_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, weights_velocity.size());
+		// v = v' + g
+		addVectors(diff, temp4, weights_velocity, weights_velocity.size());
+		subtractVectors(weights, diff, weights, weights_velocity.size());
+	}
 	// print_vector(temp4, "FLOAT", "deltaWeight", 100);
 }
 

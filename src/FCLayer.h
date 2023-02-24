@@ -22,6 +22,9 @@ private:
 	BackwardVectorType extend_weights;
 	BackwardVectorType biases;
 	BackwardVectorType deltas;
+
+	BackwardVectorType biases_velocity;
+	BackwardVectorType weights_velocity;
 	// BackwardVectorType extend_biases;
 
 public:

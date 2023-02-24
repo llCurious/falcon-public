@@ -15,7 +15,9 @@ FCLayer::FCLayer(FCConfig *conf, int _layerNum)
 	  low_weights(conf->inputDim * conf->outputDim),
 	  biases(conf->outputDim),
 	//   extend_biases(conf->outputDim),
-	  low_biases(conf->outputDim)
+	  low_biases(conf->outputDim),
+	  biases_velocity(conf->outputDim, make_pair(0, 0)),
+	  weights_velocity(conf->inputDim * conf->outputDim, make_pair(0, 0))
 {
 	initialize();
 }
@@ -126,10 +128,10 @@ void FCLayer::forward(const ForwardVecorType &inputActivation)
 			activations[r * columns + c] = activations[r * columns + c] + low_biases[c];
 
 	// ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_fc", 10);
+	// print_vector(a, "FLOAT", "input_fc", a.size());
 	// // print_vector(weights, "FLOAT", "weights", 100);
 	// // print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "out_fc", 10);
+	// print_vector(activations, "FLOAT", "out_fc", activations.size());
 }
 
 void FCLayer::computeDelta(BackwardVectorType &prevDelta)
@@ -147,7 +149,7 @@ void FCLayer::computeDelta(BackwardVectorType &prevDelta)
 		funcMatMul(deltas, extend_weights, prevDelta, rows, common_dim, columns, 0, 1, BACKWARD_PRECISION);
 	
 	// cout << "FC shape: " << deltas.size() << endl;
-	// print_vector(deltas, "FLOAT", "fc-delta", 100);
+	// print_vector(deltas, "FLOAT", "fc-delta", deltas.size());
 	// print_vector(prevDelta, "FLOAT", "fc-prevDelta", 100);
 }
 
@@ -166,7 +168,7 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 		for (size_t j = 0; j < columns; ++j)
 			temp[j] = temp[j] + deltas[i * columns + j];
 	
-	// print_vector(temp, "FLOAT", "deltaBias-FC", 20);
+	// print_vector(temp, "FLOAT", "deltaBias-FC", 100);
 
 	// TODO-trunc
 	if (IS_FALCON)
@@ -178,6 +180,16 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 		funcProbTruncation<BackwardVectorType, BackwardType>(temp, LOG_MINI_BATCH + LOG_LEARNING_RATE, columns);
 	}
 	subtractVectors(biases, temp, biases, columns);
+
+	if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(biases_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, biases_velocity, MOMENTUM, biases_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, biases_velocity.size());
+		// v = v' + g
+		addVectors(diff, temp, biases_velocity, biases_velocity.size());
+		subtractVectors(biases, diff, biases, biases_velocity.size());
+	}
 
 	// Update Weights
 	rows = conf.inputDim;
@@ -193,6 +205,15 @@ void FCLayer::updateEquations(const BackwardVectorType &prevActivations)
 				   BACKWARD_PRECISION + LOG_LEARNING_RATE + LOG_MINI_BATCH);
 
 	subtractVectors(weights, deltaWeight, weights, size);
+	if (USE_MOMENTUM) {
+		// update bias velocity. v' = v * m
+		BackwardVectorType diff(weights_velocity.size(), std::make_pair(0, 0));
+		funcMulConst(diff, weights_velocity, MOMENTUM, weights_velocity.size());
+		funcProbTruncation<BackwardVectorType, BackwardType>(diff, MOMENTUM_BASE, weights_velocity.size());
+		// v = v' + g
+		addVectors(diff, deltaWeight, weights_velocity, weights_velocity.size());
+		subtractVectors(weights, diff, weights, weights_velocity.size());
+	}
 	// cout << "===============================" << endl;
 	// RSSVectorMyType xx = prevActivations;
 	// print_vector(xx, "FLOAT", "prevActivations", 20);
