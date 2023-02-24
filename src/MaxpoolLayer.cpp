@@ -74,10 +74,10 @@ void MaxpoolLayer::forward(const ForwardVecorType &inputActivation)
 		funcMaxpool(temp1, activations, maxPrime, ow * oh * Din * B, f * f);
 
 	// ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_maxpool", 100);
+	// print_vector(a, "FLOAT", "input_maxpool", a.size());
 	// // print_vector(weights, "FLOAT", "weights", 10);
 	// // print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "output_maxpool", 100);
+	// print_vector(activations, "FLOAT", "output_maxpool", activations.size());
 }
 
 void MaxpoolLayer::computeDelta(BackwardVectorType &prevDelta)
@@ -130,7 +130,7 @@ void MaxpoolLayer::computeDelta(BackwardVectorType &prevDelta)
 		funcSelectShares(temp2, temp1, prevDelta, 1, iw * ih * Din * B);
 	
 	// cout << "delta size: " << deltas.size() << ", prevDeltas size: " << prevDelta.size() << endl;
-    // print_vector(deltas, "FLOAT", "MaxPool_delta", 100);
+    // print_vector(deltas, "FLOAT", "MaxPool_delta", deltas.size());
     // print_vector(temp2, "FLOAT", "MaxPool_delta_tmp", 100);
 
 	// RSSVectorSmallType temp_maxPrime(iw * ih * Din * B);

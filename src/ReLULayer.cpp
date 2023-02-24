@@ -35,10 +35,10 @@ void ReLULayer::forward(const ForwardVecorType &inputActivation)
 		funcRELU(inputActivation, reluPrime, activations, size);
 	
 	// ForwardVecorType a = inputActivation;
-	// print_vector(a, "FLOAT", "input_relu", 100);
+	// print_vector(a, "FLOAT", "input_relu", a.size());
 	// // print_vector(weights, "FLOAT", "weights", 100);
 	// // print_vector(biases, "FLOAT", "biases", biases.size());
-	// print_vector(activations, "FLOAT", "out_relu", 100);
+	// print_vector(activations, "FLOAT", "out_relu", activations.size());
 }
 
 
@@ -57,7 +57,7 @@ void ReLULayer::computeDelta(BackwardVectorType& prevDelta)
 	else
 		funcSelectShares(deltas, reluPrime, prevDelta, 0, size);
 	
-	// print_vector(deltas, "FLOAT", "deltas-ReLU", 100);
+	// print_vector(deltas, "FLOAT", "deltas-ReLU", deltas.size());
 	// print_vector(prevDelta, "FLOAT", "prevDelta-ReLU", 100);
 }
 
