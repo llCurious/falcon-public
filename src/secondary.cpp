@@ -66,26 +66,70 @@ void train(NeuralNetwork* net, string network, string dataset)
 	log_print("train");
 
 	float loss = 0, acc = 0;
-	string default_path = string(getenv("HOME"))+"/DNN/output/" + network + (USE_GPU ? "_GPU" : "_CPU") + (MP_TRAINING ? "_Mixed" : "_Full") + "_" + dataset;
+	string default_path = string(getenv("HOME"))+"/DNN/output/" + network + (USE_SPDZ_ALEXNET ? "_SPDZ" : "_Falcon") + (USE_GPU ? "_GPU" : "_CPU") 
+	+ (MP_TRAINING ? "_Mixed" : "_Full") + "_" + dataset
+	+ (INPUT_TRANSFORM ? "_Tran" : "")
+	+ (INPUT_SHUFFLE ? "_Shuffle" : "") + "_"
+	+ to_string(MINI_BATCH_SIZE) + "_"
+	+ to_string(LOG_LEARNING_RATE) + "_"
+	+ (USE_SOFTMAX_CE ? "CE" : "MSE");
 	ofstream accF(default_path + "_acc_"+to_string(NUM_ITERATIONS)+"-epoch.txt"), lossF(default_path + "_loss_"+to_string(NUM_ITERATIONS)+"-epoch.txt");
 	cout << "Output path: " << default_path + "_acc_"+to_string(NUM_ITERATIONS)+"-epoch.txt" << endl;
+
+	ofstream debugF(default_path + "_debug_"+to_string(NUM_ITERATIONS)+".txt");
 	for (int i = 0; i < NUM_ITERATIONS; ++i)
 	{
 		cout << "----------------------------------" << endl;  
 		cout << "Iteration " << i << endl;
+
+		// Step-1 Forward
 		readMiniBatch(net, "TRAINING");
 		net->weight_reduction();
 		net->forward();
+
+		cout << "----------------------------------" << endl;
+		cout << "Forward Done" << endl;
+		cout << "----------------------------------" << endl;
+		// Step-2 Backward
 		net->activation_extension();
 		net->weight_extension();
 		net->backward();
-		acc = net->getAccuracy();
-		loss = net->getLoss();
-		accF << to_string(i) << "\t" << to_string(acc) + "\n"; accF.flush();
-		lossF << to_string(i) << "\t" << to_string(loss) + "\n"; lossF.flush();
-		// cout << "----------------------------------" << endl;  
+
+		// Step-3 Evaluate
+		// acc = net->getAccuracy();
+		// loss = net->getLoss();
+		// accF << to_string(i) << "\t" << to_string(acc) + "\n"; accF.flush();
+		// lossF << to_string(i) << "\t" << to_string(loss) + "\n"; lossF.flush();
+
+		// size_t size = net->layers[NUM_LAYERS - 1]->getHighActivation()->size();
+		// vector<BackwardType> reconst_y(size);
+		// vector<float> reconst_y_float(size);
+		// funcReconstruct(*(net->layers[NUM_LAYERS - 1]->getHighActivation()), reconst_y, size, "NN output", false);
+		// for (size_t i = 0; i < size; i++)
+		// {
+		// 	if (sizeof(BackwardType) == 4)
+		// 	{ // int32
+		// 		reconst_y_float[i] = (static_cast<int32_t>(reconst_y[i])) / (float)(1l << FORWARD_PRECISION);
+		// 	}
+		// 	else if (sizeof(BackwardType) == 8)
+		// 	{ // int64
+		// 		reconst_y_float[i] = (static_cast<int64_t>(reconst_y[i])) / (float)(1l << BACKWARD_PRECISION);
+		// 	}
+		// 	debugF << to_string(reconst_y_float[i]) << " "; debugF.flush();
+		// }
+		// debugF << endl; debugF.flush();
+		// // cout << "----------------------------------" << endl;  
+		// if (i != 0 && i % TEST_EVAL_ITERATIONS == 0) {
+		// 	test(false, network, net);
+		// }
+
+		// adjust learning rate
+		// if (i != 0 && i % (int(NUM_ITERATIONS / 2)) == 0) {
+		// 	LOG_LEARNING_RATE += 1;
+		// }
 	}
 	accF.close(); lossF.close();
+	debugF.close();
 }
 
 
@@ -98,8 +142,8 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 
 	//counter[0]: Correct samples, counter[1]: total samples
 	vector<size_t> counter(2,0);
-
-	for (int i = 0; i < 300; ++i)
+	size_t iter = TEST_NUM_ITERATIONS;
+	for (int i = 0; i < iter; ++i)
 	{
 		// if (!PRELOADING)
 			readMiniBatch(net, "TESTING");
@@ -114,8 +158,11 @@ void test(bool PRELOADING, string network, NeuralNetwork* net)
 		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		 * **/
 		net->layers[NUM_LAYERS-1]->activation_extension();
-		net->getAccuracy();
+		counter[0] += net->getCorrectCount();
+		counter[1] += MINI_BATCH_SIZE;
 	}
+
+	cout << "Test accuracy: " << (counter[0]*100.0/counter[1]) << endl;
 	// print_vector((*(net->layers[NUM_LAYERS-1])->getActivation()), "FLOAT", "MPC Output over uint32_t:", 1280);
 
 	// Write output to file
@@ -838,7 +885,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				generate_zeros("cnn1_bias_1", 96, temp);
 				generate_zeros("cnn1_bias_2", 96, temp);
 			}
-			print_vector((*((CNNLayer*)net->layers[0])->getBias()), "FLOAT", "CNN1 bias", 96);
+			// print_vector((*((CNNLayer*)net->layers[0])->getBias()), "FLOAT", "CNN1 bias", 96);
 
 			
 			if (USE_BN) {
@@ -858,7 +905,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 					generate_zeros("bn1_gamma_1", 96, temp);
 					generate_zeros("bn1_gamma_2", 96, temp);
 				}
-				print_vector((*((BNLayerOpt*)net->layers[3])->getGamma()), "FLOAT", "BN1 gamma", 96);
+				// print_vector((*((BNLayerOpt*)net->layers[3])->getGamma()), "FLOAT", "BN1 gamma", 4*4*96);
 
 				/************************** BN1 beta **********************************/
 				string path_bn1_beta_1 = default_path+"bn1_beta_"+to_string(partyNum);
@@ -876,6 +923,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 					generate_zeros("bn1_beta_1", 96, temp);
 					generate_zeros("bn1_beta_2", 96, temp);
 				}
+				// print_vector((*((BNLayerOpt*)net->layers[3])->getBeta()), "FLOAT", "BN1 beta", 4*4*96);
 			}
 
 			/************************** Weight2 **********************************/
@@ -913,7 +961,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				generate_zeros("cnn2_bias_1", 256, temp);
 				generate_zeros("cnn2_bias_2", 256, temp);
 			}
-			print_vector((*((CNNLayer*)net->layers[4+offset1])->getBias()), "FLOAT", "CNN2 bias", 256);
+			// print_vector((*((CNNLayer*)net->layers[4+offset1])->getBias()), "FLOAT", "CNN2 bias", 256);
 
 			if (USE_BN) {
 				/************************** BN2 gamma **********************************/
@@ -921,10 +969,12 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 				string path_bn2_gamma_2 = default_path+"bn2_gamma_"+to_string(nextParty(partyNum));
 				ifstream f_bn2_gamma_1(path_bn2_gamma_1), f_bn2_gamma_2(path_bn2_gamma_2);
 
-				for (int i = 0; i < 256; ++i)
+				size_t size_BN = USE_SPDZ_ALEXNET ? 256 : 256;
+				size_t layer_BN = USE_SPDZ_ALEXNET ? 6 : 7;
+				for (int i = 0; i < size_BN; ++i)
 				{
 					f_bn2_gamma_1 >> temp_next; f_bn2_gamma_2 >> temp_prev;
-					(*((BNLayerOpt*)net->layers[7])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+					(*((BNLayerOpt*)net->layers[layer_BN])->getGamma())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 				}
 				f_bn2_gamma_1.close(); f_bn2_gamma_2.close();
 				if (ZEROS)
@@ -932,16 +982,17 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 					generate_zeros("bn2_gamma_1", 256, temp);
 					generate_zeros("bn2_gamma_2", 256, temp);
 				}
+				// print_vector((*((BNLayerOpt*)net->layers[layer_BN])->getGamma()), "FLOAT", "BN2 gamma", size_BN);
 
 				/************************** BN2 beta **********************************/
 				string path_bn2_beta_1 = default_path+"bn2_beta_"+to_string(partyNum);
 				string path_bn2_beta_2 = default_path+"bn2_beta_"+to_string(nextParty(partyNum));
 				ifstream f_bn2_beta_1(path_bn2_beta_1), f_bn2_beta_2(path_bn2_beta_2);
 
-				for (int i = 0; i < 256; ++i)
+				for (int i = 0; i < size_BN; ++i)
 				{
 					f_bn2_beta_1 >> temp_next; f_bn2_beta_2 >> temp_prev;
-					(*((BNLayerOpt*)net->layers[7])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
+					(*((BNLayerOpt*)net->layers[layer_BN])->getBeta())[i] = std::make_pair(floatToMyType(temp_next), floatToMyType(temp_prev));
 				}
 				f_bn2_beta_1.close(); f_bn2_beta_2.close();
 				if (ZEROS)
@@ -949,6 +1000,7 @@ void preload_network(bool PRELOADING, string network, string dataset, NeuralNetw
 					generate_zeros("bn2_beta_1", 256, temp);
 					generate_zeros("bn2_beta_2", 256, temp);
 				}
+				// print_vector((*((BNLayerOpt*)net->layers[layer_BN])->getBeta()), "FLOAT", "BN2 beta", size_BN);
 			}
 
 			/************************** Weight3 **********************************/
@@ -1798,8 +1850,8 @@ void loadData(string net, string dataset)
 	{
 		INPUT_SIZE = 784;
 		LAST_LAYER_SIZE = 10;
-		TRAINING_DATA_SIZE = 60000;
-		TEST_DATA_SIZE = 10000;
+		TRAINING_DATA_SIZE = 1000;
+		TEST_DATA_SIZE = 1000;
 		LARGE_NETWORK = false;
 	}
 	else if (dataset.compare("CIFAR10") == 0)
@@ -1809,8 +1861,8 @@ void loadData(string net, string dataset)
 		{
 			INPUT_SIZE = 32*32*3;
 			LAST_LAYER_SIZE = 10;
-			TRAINING_DATA_SIZE = 50000;
-			TEST_DATA_SIZE = 10000;			
+			TRAINING_DATA_SIZE = 1000;
+			TEST_DATA_SIZE = 1000;			
 		}
 		else if (net.compare("VGG16") == 0)
 		{
@@ -2096,16 +2148,41 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			// NUM_LAYERS = 18;		//Without BN
 			WITH_NORMALIZATION = false;
 			CNNConfig* l0 = new CNNConfig(32,32,3,96,11,4,9,MINI_BATCH_SIZE);
-			MaxpoolConfig* l1 = new MaxpoolConfig(10,10,96,3,2,MINI_BATCH_SIZE);
-			// TODO: check this. I modify from 5*5*96 to 4*4*96
-			// take the floor() operation to compute the out_img_width. https://medium.com/@RaghavPrabhu/cnn-architectures-lenet-alexnet-vgg-googlenet-and-resnet-7c81c017b848
-			ReLUConfig* l2 = new ReLUConfig(4*4*96,MINI_BATCH_SIZE);		
-			BNConfig * l3 = new BNConfig(4*4*96,MINI_BATCH_SIZE);
+			
+			LayerConfig *l1, *l2, *l3;
+			if (!USE_SPDZ_ALEXNET) {
+				/**
+				 * Raw
+				*/
+				l1 = new MaxpoolConfig(10,10,96,3,2,MINI_BATCH_SIZE);
+				// TODO: check this. I modify from 5*5*96 to 4*4*96
+				// take the floor() operation to compute the out_img_width. https://medium.com/@RaghavPrabhu/cnn-architectures-lenet-alexnet-vgg-googlenet-and-resnet-7c81c017b848
+				l2 = new ReLUConfig(4*4*96,MINI_BATCH_SIZE);		
+				l3 = new BNConfig(96, 4, 4, MINI_BATCH_SIZE);
+			} else {
+				/**
+				 * MP-SDPZ
+				*/
+				l1 = new ReLUConfig(10*10*96,MINI_BATCH_SIZE);	
+				l2 = new MaxpoolConfig(10,10,96,3,2,MINI_BATCH_SIZE);
+				l3 = new BNConfig(96, 4, 4, MINI_BATCH_SIZE);
+			}
 
 			CNNConfig* l4 = new CNNConfig(4,4,96,256,5,1,1,MINI_BATCH_SIZE);
-			MaxpoolConfig* l5 = new MaxpoolConfig(2,2,256,2,1,MINI_BATCH_SIZE);
-			ReLUConfig* l6 = new ReLUConfig(1*1*256,MINI_BATCH_SIZE);		
-			BNConfig * l7 = new BNConfig(1*1*256,MINI_BATCH_SIZE);
+
+			LayerConfig *l5, *l6, *l7;
+			if (!USE_SPDZ_ALEXNET) {
+				l5 = new MaxpoolConfig(2,2,256,2,1,MINI_BATCH_SIZE);
+				l6 = new ReLUConfig(1*1*256,MINI_BATCH_SIZE);		
+				l7 = new BNConfig(256, 1, 1,MINI_BATCH_SIZE);
+			} else {
+				/**
+				 * MP-SDPZ
+				*/
+				l5 = new ReLUConfig(2*2*256,MINI_BATCH_SIZE);	
+				l6 = new BNConfig(256, 2, 2,MINI_BATCH_SIZE);
+				l7 = new MaxpoolConfig(2,2,256,2,1,MINI_BATCH_SIZE);
+			}
 
 			CNNConfig* l8 = new CNNConfig(1,1,256,384,3,1,1,MINI_BATCH_SIZE);
 			ReLUConfig* l9 = new ReLUConfig(1*1*384,MINI_BATCH_SIZE);
@@ -2119,7 +2196,7 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			FCConfig* l16 = new FCConfig(256,MINI_BATCH_SIZE,256);
 			ReLUConfig* l17 = new ReLUConfig(256,MINI_BATCH_SIZE);
 			FCConfig* l18 = new FCConfig(256,MINI_BATCH_SIZE,10);
-			ReLUConfig* l19 = new ReLUConfig(10,MINI_BATCH_SIZE);
+			// ReLUConfig* l19 = new ReLUConfig(10,MINI_BATCH_SIZE);
 			config->addLayer(l0);
 			config->addLayer(l1);
 			config->addLayer(l2);
@@ -2152,12 +2229,12 @@ void selectNetwork(string network, string dataset, string security, NeuralNetCon
 			// TODO: check this. I modify from 5*5*96 to 4*4*96
 			// take the floor() operation to compute the out_img_width. https://medium.com/@RaghavPrabhu/cnn-architectures-lenet-alexnet-vgg-googlenet-and-resnet-7c81c017b848
 			ReLUConfig* l2 = new ReLUConfig(8*8*96,MINI_BATCH_SIZE);		
-			BNConfig * l3 = new BNConfig(8*8*96,MINI_BATCH_SIZE);
+			BNConfig * l3 = new BNConfig(96, 8, 8,MINI_BATCH_SIZE);
 
 			CNNConfig* l4 = new CNNConfig(8,8,96,256,5,1,1,MINI_BATCH_SIZE);
 			MaxpoolConfig* l5 = new MaxpoolConfig(6,6,256,2,1,MINI_BATCH_SIZE);
 			ReLUConfig* l6 = new ReLUConfig(5*5*256,MINI_BATCH_SIZE);		
-			BNConfig * l7 = new BNConfig(5*5*256,MINI_BATCH_SIZE);
+			BNConfig * l7 = new BNConfig(256, 5, 5,MINI_BATCH_SIZE);
 
 			CNNConfig* l8 = new CNNConfig(5,5,256,384,3,1,1,MINI_BATCH_SIZE);
 			ReLUConfig* l9 = new ReLUConfig(5*5*384,MINI_BATCH_SIZE);
