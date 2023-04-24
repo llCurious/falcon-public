@@ -97,6 +97,9 @@ void NeuralNetwork::backward()
 {
 	log_print("NN.backward");
 	computeDelta();
+	cout << "----------------------------------" << endl;
+	cout << "computeDelta Done" << endl;
+	cout << "----------------------------------" << endl;
 	updateEquations();
 }
 
@@ -148,8 +151,10 @@ void NeuralNetwork::computeDelta()
 		{
 			funcSoftmax(*(layers[NUM_LAYERS - 1]->getHighActivation()), softmax_output, rows, columns, false);
 			subtractVectors(softmax_output, outputData, *(layers[NUM_LAYERS - 1]->getDelta()), size);
-			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", 10);
-			// print_vector(softmax_output, "FLOAT", "predict_softmax", 10);
+			// funcProbTruncation<BackwardVectorType, BackwardType>(*(layers[NUM_LAYERS - 1]->getDelta()), LOG_MINI_BATCH, size);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getHighActivation()), "FLOAT", "predict", size);
+			// print_vector(softmax_output, "FLOAT", "predict_softmax", size);
+			// print_vector(*(layers[NUM_LAYERS - 1]->getDelta()), "FLOAT", "loss", (layers[NUM_LAYERS - 1]->getDelta())->size());
 			// print_vector(outputData, "FLOAT", "target", LAST_LAYER_SIZE * MINI_BATCH_SIZE);
 		}
 		else

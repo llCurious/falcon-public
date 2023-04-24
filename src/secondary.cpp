@@ -2507,13 +2507,12 @@ void runOnlyLayer(NeuralNetwork* net, size_t l, string& network, size_t count)
 {
 	size_t total_layers = net->layers.size();
 	assert((l >= 0 and l < total_layers) && "Incorrect layer number for runOnly"); 
-	network = network + " L" + std::to_string(l) + (MP_TRAINING ? " Mixed-Precision" : " Full-Precision");
-
+	cout << "Run building block parameter: " << network + " L" + std::to_string(l) + (MP_TRAINING ? " Mixed-Precision" : " Full-Precision") << endl;
 	for (size_t i = 0; i < count; i++) {
 		if (l == 0) {
 			net->layers[0]->weight_reduction();
 			net->layers[0]->forward(net->low_inputData);
-			net->layers[0]->activation_extension();
+			// net->layers[0]->activation_extension();
 			net->layers[0]->weight_extension();
 			net->layers[0]->updateEquations(net->inputData);
 		} else {

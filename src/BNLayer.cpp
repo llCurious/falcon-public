@@ -3,7 +3,7 @@
 // #include "Functionalities.h"
 // using namespace std;
 
-// BNLayer::BNLayer(BNConfig *conf, int _layerNum)
+// BNLayer::BNLayer(BNRawConfig *conf, int _layerNum)
 // 	: Layer(_layerNum),
 // 	  conf(conf->inputSize, conf->numBatches),
 // 	  gamma(conf->numBatches),

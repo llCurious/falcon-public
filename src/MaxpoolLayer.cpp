@@ -154,7 +154,7 @@ void MaxpoolLayer::weight_reduction()
 void MaxpoolLayer::activation_extension()
 {
 	// cout << "<<< Max Pooling >>> No need to perform activation extension." << endl;
-	funcActivationExtension(high_activations, activations, activations.size());
+	// funcActivationExtension(high_activations, activations, activations.size());
 }
 
 void MaxpoolLayer::weight_extension()

@@ -11,7 +11,7 @@
 #include <bitset>
 #include <iostream>
 
-#define MP_TRAINING false
+#define MP_TRAINING true
 
 /********************* Macros *********************/
 #define _aligned_malloc(size, alignment) aligned_alloc(alignment, size)
@@ -38,21 +38,24 @@
 #define USING_EIGEN false
 #define PRIME_NUMBER 67
 #define FLOAT_PRECISION 20
-#define FLOAT_BIAS (1 << FLOAT_PRECISION)
+#define FLOAT_BIAS (1l << FLOAT_PRECISION)
 #define PRECISE_DIVISION false
 
 /********************* Neural Network globals *********************/
 // Batch size has to be a power of two
-#define REC_ITERS 7
-#define REC_Y 7
+#define REC_ITERS 7 // funcReciprocal use
+#define REC_Y 7     // funcReciprocal2 use
 #define REC_INIT 4 // This should be 4 for MNIST and CIFAR10, 8 for Tiny ImageNet
-#define INVSQRT_ITERS 6
-#define LOG_MINI_BATCH 5
+#define INVSQRT_ITERS 12
+#define LOG_MINI_BATCH 6
 #define MINI_BATCH_SIZE (1 << LOG_MINI_BATCH)
-#define LOG_LEARNING_RATE 5
-#define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
+// int LOG_LEARNING_RATE = 4;
+#define LOG_LEARNING_RATE 4
+// #define LEARNING_RATE (1 << (FLOAT_PRECISION - LOG_LEARNING_RATE))
 #define NO_OF_EPOCHS 1.5
-#define NUM_ITERATIONS 5*1563 // 7035 / 2400
+#define NUM_ITERATIONS 10 // 16000 7820 18750
+#define TEST_EVAL_ITERATIONS 1560 // 1500 780 1875
+#define TEST_NUM_ITERATIONS 310 // 300 150 310
 // #define NUM_ITERATIONS ((int) (NO_OF_EPOCHS * TRAINING_DATA_SIZE/MINI_BATCH_SIZE))
 
 /********************* Typedefs and others *********************/
@@ -100,7 +103,7 @@ operator<<(std::ostream &dest, longBit value);
 #define USE_SOFTMAX_CE true
 #define MP_FOR_DIVISION (true && MP_TRAINING)
 #define MP_FOR_INV_SQRT (true && MP_TRAINING)
-#define MP_FOR_EXP (true && MP_TRAINING)
+#define MP_FOR_EXP (false && MP_TRAINING)
 #define PLAINTEXT_INV_SQRT false
 #define PLAINTEXT_RECIPROCAL false
 #define PLAINTEXT_EXP false
@@ -131,8 +134,15 @@ typedef typename std::conditional<MP_TRAINING, RSSLowType, RSSMyType>::type RSSF
 #define DEBUG_ONLY false
 #define OFFLINE_ON false
 #define PRE_LOAD true
-#define LOAD_TRAINED false
+#define LOAD_TRAINED false   // load from iteration 7812
 #define IS_FALCON false
 #define USE_GPU true
+#define USE_SPDZ_ALEXNET false
+#define PORT_START 31000
+#define INPUT_TRANSFORM true
+#define INPUT_SHUFFLE false
+#define USE_MOMENTUM false
+#define MOMENTUM_BASE 10
+#define MOMENTUM 1 // truncate 4-bit. (12 -> 0.8) (14 -> 0.9)
 
 #endif

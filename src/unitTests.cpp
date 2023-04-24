@@ -245,7 +245,10 @@ void getBNInput(string filename, vector<float> &x_raw, vector<float> &grad_raw, 
 // template <typename Vec, typename T>
 void benchBN()
 {
-	size_t ds[2] = {100, 1000};
+	size_t ds[2] = {256, 1536};
+	size_t C[2] = {256, 96};
+	size_t W[2] = {1, 4};
+	size_t H[2] = {1, 4};
 	// batch size: 32,64,128,256
 	size_t B = (1 << LOG_MINI_BATCH), D;
 	clock_t start, end;
@@ -279,7 +282,7 @@ void benchBN()
 
 	for (size_t j = 0; j < 2; j++)
 	{
-		D = ds[j];
+		D = C[j] * W[j] * H[j];
 		size_t size = B * D;
 
 		vector<float> x_raw(size);
@@ -293,7 +296,7 @@ void benchBN()
 		double time_sum = 0;
 		if (IS_FALCON)
 		{
-			// BNConfig *bn_conf = new BNConfig(D, B);
+			// BNRawConfig *bn_conf = new BNRawConfig(D, B);
 			// BNLayer *layer = new BNLayer(bn_conf, 0);
 
 			// // getBNInput(x_raw, grad_raw, input_act, grad, B, D);
@@ -320,7 +323,7 @@ void benchBN()
 		}
 		else
 		{
-			BNConfig *bn_conf = new BNConfig(D, B);
+			BNConfig *bn_conf = new BNConfig(C[j], W[j], H[j], B);
 			BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
 
 			getBNInput(x_raw, grad_raw, input_act, grad, B, D);
@@ -407,14 +410,14 @@ void benchBNAcc()
 	}
 	else
 	{
-		BNConfig *bn_conf = new BNConfig(D, B);
-		BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+		// BNConfig *bn_conf = new BNConfig(D, B);
+		// BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
 
-		getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
-		runBN(layer, forward_output, input_act, grad, x_grad);
+		// getBNInput(infile, x_raw, grad_raw, input_act, grad, B, D);
+		// runBN(layer, forward_output, input_act, grad, x_grad);
 
-		gammagrad = *layer->getGammaGrad();
-		betagrad = *layer->getBetaGrad();
+		// gammagrad = *layer->getGammaGrad();
+		// betagrad = *layer->getBetaGrad();
 	}
 
 	// record output, x_forward, x_grad, gamma_grad, beta_grad
@@ -900,7 +903,7 @@ void debugMSExtension()
 
 void debugTruncAndReduce()
 {
-	int checkParty = PARTY_B;
+	int checkParty = PARTY_A;
 
 	int trunc_bits = 10;
 	size_t size = 500;
@@ -936,7 +939,7 @@ void debugTruncAndReduce()
 			int t1 = (int(data[i]) >> trunc_bits);
 			int t2 = int(output_p[i]);
 			assert(t2 == t1 || t2 == t1 - 1 || t2 == t1 - 2);
-			// cout << (int(data[i]) >> trunc_bits) << " " << int(output_p[i]) << endl;
+			cout << t1 << " " << t2 << endl;
 		}
 	}
 }
@@ -980,30 +983,30 @@ void debugMPBNLayer()
 	funcGetShares(input_act, x_p);
 	funcGetShares(grad, grad_p);
 
-	BNConfig *bn_conf = new BNConfig(D, B);
-	BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
-	layer->printLayer();
+	// BNConfig *bn_conf = new BNConfig(D, B);
+	// BNLayerOpt *layer = new BNLayerOpt(bn_conf, 0);
+	// layer->printLayer();
 
-	// Forward.
-	ForwardVecorType forward_output(size);
-	BackwardVectorType backward_output(size);
-	layer->weight_reduction();
-	layer->forward(input_act);
-	forward_output = *layer->getActivation();
-	print_vector(forward_output, "FLOAT", "BN Forward", size);
+	// // Forward.
+	// ForwardVecorType forward_output(size);
+	// BackwardVectorType backward_output(size);
+	// layer->weight_reduction();
+	// layer->forward(input_act);
+	// forward_output = *layer->getActivation();
+	// print_vector(forward_output, "FLOAT", "BN Forward", size);
 
-	// Backward.
-	BackwardVectorType x_grad(size);
-	// layer->backward(grad);
-	*(layer->getDelta()) = grad;
-	layer->activation_extension();
-	layer->computeDelta(x_grad);
-	print_vector(x_grad, "FLOAT", "BN Backward- X", size);
+	// // Backward.
+	// BackwardVectorType x_grad(size);
+	// // layer->backward(grad);
+	// *(layer->getDelta()) = grad;
+	// layer->activation_extension();
+	// layer->computeDelta(x_grad);
+	// print_vector(x_grad, "FLOAT", "BN Backward- X", size);
 
-	// Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
-	BackwardVectorType high_input_act(input_act.size());
-	funcActivationExtension(high_input_act, input_act, input_act.size());
-	layer->updateEquations(high_input_act);
+	// // Noted: i recommend print the calculated delta for beta and gamma in BNLayerOpt.
+	// BackwardVectorType high_input_act(input_act.size());
+	// funcActivationExtension(high_input_act, input_act, input_act.size());
+	// layer->updateEquations(high_input_act);
 }
 
 void runTest(string str, string whichTest, string &network)
@@ -1275,15 +1278,15 @@ void runTest(string str, string whichTest, string &network)
 			// benchBN<RSSVectorLowType, lowBit>();
 			// benchBNAcc<RSSVectorMyType, myType>();
 			// benchBN<RSSVectorMyType, myType>();
-			// benchBN();
+			benchBN();
 			// benchBNAcc<RSSVectorMyType();
-			benchBNAcc();
+			// benchBNAcc();
 		}
 		else if (whichTest.compare("SoftMax") == 0)
 		{
 			network = "SoftMax";
-			benchSoftMax<RSSVectorHighType, highBit>();
-			// benchSoftMax<RSSVectorLowType, lowBit>();
+			// benchSoftMax<RSSVectorHighType, highBit>();
+			benchSoftMax<RSSVectorLowType, lowBit>();
 			// benchSoftMaxAcc<RSSVectorHighType, highBit>();
 			// benchSoftMaxAcc<RSSVectorLowType, lowBit>();
 		}

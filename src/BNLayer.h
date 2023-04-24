@@ -1,6 +1,7 @@
 
 // #pragma once
 // #include "BNConfig.h"
+// #include "BNRawConfig.h"
 // #include "Layer.h"
 // #include "tools.h"
 // #include "connect.h"
@@ -12,7 +13,7 @@
 // class BNLayer : public Layer
 // {
 // private:
-// 	BNConfig conf;
+// 	BNRawConfig conf;
 // 	RSSVectorMyType activations;
 // 	RSSVectorMyType deltas;
 // 	RSSVectorMyType gamma;
@@ -24,7 +25,7 @@
 // // 
 // public:
 // 	// Constructor and initializer
-// 	BNLayer(BNConfig *conf, int _layerNum);
+// 	BNLayer(BNRawConfig *conf, int _layerNum);
 // 	void initialize();
 
 // 	// Functions
